@@ -1521,21 +1521,27 @@
     ],
   };
 
+  // navigator.onLine is unreliable (iOS often reports true in airplane mode),
+  // so it only picks the optimistic first try — the error handler below is
+  // the real offline detection, and usedOfflineStyle the real offline signal.
+  let usedOfflineStyle = navigator.onLine === false;
+
   const map = new mapboxgl.Map({
     container: 'map',
-    style: navigator.onLine === false ? OFFLINE_STYLE : 'mapbox://styles/mapbox/outdoors-v12',
+    style: usedOfflineStyle ? OFFLINE_STYLE : 'mapbox://styles/mapbox/outdoors-v12',
     center: [-89.73, 43.43],
     zoom: 11,
     customAttribution: '© <a href="https://openbeta.io" target="_blank" rel="noopener">OpenBeta</a> contributors (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>)',
   });
 
-  // If the remote style fails before anything has loaded (flaky/no signal),
-  // swap to the local fallback so 'load' still fires and bootstrap() runs.
+  // If the remote style fails before anything has loaded (offline, blocked
+  // token, flaky signal), swap to the local fallback so the app still boots.
   let styleEverLoaded = false;
   map.on('style.load', () => { styleEverLoaded = true; });
   map.on('error', e => {
     if (!styleEverLoaded) {
       styleEverLoaded = true; // one-shot guard
+      usedOfflineStyle = true;
       map.setStyle(OFFLINE_STYLE);
     }
   });
@@ -2138,11 +2144,14 @@
     document.title = `${exp.title} — Apex Adventure Alliance`;
 
     // Apply the experience's basemap (default outdoors is already loaded).
-    // Skipped offline — remote styles can't load and would clobber the fallback.
-    if (exp.basemap && navigator.onLine !== false) {
+    // Skipped when running on the offline fallback style — a remote style
+    // can't load and replacing the style would strand initLayers waiting
+    // on a 'style.load' that never comes.
+    let switchedStyle = false;
+    if (exp.basemap && !usedOfflineStyle) {
       const i = BASEMAPS.findIndex(b => b.style === exp.basemap);
-      if (i > 0) setBasemap(i);
-      else if (i === -1) { map.setStyle(exp.basemap); }  // custom style not in the switcher
+      if (i > 0) { setBasemap(i); switchedStyle = true; }
+      else if (i === -1) { map.setStyle(exp.basemap); switchedStyle = true; }  // custom style not in the switcher
     }
 
     // Apply view
@@ -2153,11 +2162,15 @@
       map.setZoom(exp.initial_zoom);
     }
 
-    // Wait for style to be loaded before adding layers
-    if (map.isStyleLoaded()) {
-      await initLayers(config.layers);
-    } else {
+    // bootOnce only runs once a style is in place, so the current style is
+    // usable right now — only a basemap switch above needs a fresh
+    // 'style.load' wait. (Checking isStyleLoaded() here instead is a trap:
+    // bootstrap can run INSIDE the style.load event, where it returns false
+    // but no further style.load will ever fire.)
+    if (switchedStyle) {
       map.once('style.load', async () => { await initLayers(config.layers); });
+    } else {
+      await initLayers(config.layers);
     }
   }
 
@@ -2194,7 +2207,12 @@
   }
 
   // ── Map events ───────────────────────────────────────────────
-  map.on('load', bootstrap);
+  // Boot on whichever fires first: 'load' never fires if the INITIAL style
+  // failed and was swapped to the offline fallback, but 'style.load' does.
+  let booted = false;
+  const bootOnce = () => { if (!booted) { booted = true; bootstrap(); } };
+  map.on('load', bootOnce);
+  map.on('style.load', bootOnce);
 
   // Re-add layers after basemap switch
   map.on('style.load', () => {
@@ -2319,8 +2337,14 @@
       }
 
       status.textContent = 'Saving app…';
-      const shell = await caches.open('apex-shell-v1');
-      await shell.add(new Request(location.href, { cache: 'reload' }));
+      const reg = await navigator.serviceWorker.ready;
+      const shell = await caches.open('apex-shell-v2'); // keep in sync with VERSION in sw.js
+      const pageResp = await fetch(location.href, { cache: 'reload' });
+      if (pageResp.ok) {
+        // reg.scope is the canonical shell key the SW serves navigations from
+        await shell.put(reg.scope, pageResp.clone());
+        await shell.put(location.href, pageResp);
+      }
       await Promise.allSettled([
         shell.add('manifest.webmanifest'),
         shell.add('icons/icon-192.png'),

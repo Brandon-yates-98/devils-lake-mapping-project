@@ -1,12 +1,17 @@
 /* Apex Adventure Alliance — service worker for the public map.
  *
  * Caching policy:
- *  - App shell (the HTML page, manifest, icons): network-first, cache fallback,
- *    so users always get fresh code online but the app still opens offline.
+ *  - App shell (the HTML page, manifest, icons): precached at install (so the
+ *    app opens offline even on a fresh home-screen install), refreshed
+ *    network-first on navigation. Navigations NEVER reject — worst case they
+ *    get a friendly offline page; a rejected navigation hangs iOS PWAs on the
+ *    splash screen forever.
  *  - CDN libraries & fonts (Mapbox GL JS itself, supabase-js, Font Awesome,
  *    Google Fonts, site logos): cache-first — versioned/immutable URLs.
  *  - Supabase REST reads (experience list, etc.): network-first, cache fallback.
  *  - Supabase Storage (feature photos): cache-first.
+ *  - Open-source basemap tiles (OpenTopoMap/OSM): cache-first — "Save offline"
+ *    prefetches the experience area; these MAY be cached, unlike Mapbox tiles.
  *  - Mapbox APIs (styles, tiles, glyphs, sprites, telemetry): NEVER cached —
  *    persisting Mapbox map content offline is not permitted by their TOS.
  *    Only the GL JS library files under /mapbox-gl-js/ are cached.
@@ -14,13 +19,21 @@
  *    key — the page persists those to IndexedDB itself (see rpcCached()).
  */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL = `apex-shell-${VERSION}`;
 const CDN = `apex-cdn-${VERSION}`;
 const DATA = `apex-data-${VERSION}`;
 const MEDIA = `apex-media-${VERSION}`;
 const TILES = `apex-tiles-${VERSION}`;
 const ALL_CACHES = [SHELL, CDN, DATA, MEDIA, TILES];
+
+// Canonical cache key for the app shell — the scope directory URL ('/…/').
+// Navigations are stored and matched under this single string key; URL-string
+// keys avoid WebKit quirks with navigation Request objects, and one key covers
+// every ?experience= variant (the HTML is identical).
+const SHELL_KEY = self.registration.scope;
+
+const SHELL_PRECACHE = ['./', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png'];
 
 const CDN_PRECACHE = [
   'https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css',
@@ -40,10 +53,19 @@ const CDN_HOSTS = new Set([
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
-    const cache = await caches.open(CDN);
+    const shell = await caches.open(SHELL);
+    // The page itself, stored under the canonical key
+    try {
+      const resp = await fetch('./', { cache: 'no-cache' });
+      if (resp.ok) await shell.put(SHELL_KEY, resp);
+    } catch (e) { /* offline install — runtime caching will fill in */ }
+    await Promise.allSettled(
+      SHELL_PRECACHE.slice(1).map(u => shell.add(u))
+    );
+    const cdn = await caches.open(CDN);
     // no-cors: these are plain <script>/<link> resources; opaque copies are fine
     await Promise.allSettled(
-      CDN_PRECACHE.map(url => cache.add(new Request(url, { mode: 'no-cors' })))
+      CDN_PRECACHE.map(url => cdn.add(new Request(url, { mode: 'no-cors' })))
     );
     await self.skipWaiting();
   })());
@@ -59,23 +81,54 @@ self.addEventListener('activate', event => {
   })());
 });
 
+const OFFLINE_FALLBACK_HTML = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offline — Apex Maps</title></head>
+<body style="background:#0a140a;color:rgba(255,255,255,0.7);font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;padding:24px">
+<div><h2 style="color:#9bc23c">You're offline</h2>
+<p>This map hasn't been saved on this device yet.<br>Connect once and tap "Save map for offline use".</p></div>
+</body></html>`;
+
+// Navigations must always resolve — a rejected navigation strands the user
+// (iOS PWAs hang on the splash screen). Network first, then the precached
+// shell, then a friendly offline page.
+async function handleNavigation(request) {
+  const cache = await caches.open(SHELL);
+  try {
+    const resp = await fetch(request);
+    if (resp && resp.ok) {
+      try { await cache.put(SHELL_KEY, resp.clone()); } catch (e) { /* quota/etc — non-fatal */ }
+    }
+    return resp;
+  } catch (err) {
+    const hit = await cache.match(SHELL_KEY)
+      || await cache.match(request.url, { ignoreSearch: true });
+    if (hit) return hit;
+    return new Response(OFFLINE_FALLBACK_HTML, { status: 503, headers: { 'Content-Type': 'text/html' } });
+  }
+}
+
 async function cacheFirst(cacheName, request) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(request, { ignoreVary: true });
   if (hit) return hit;
   const resp = await fetch(request);
-  if (resp && (resp.ok || resp.type === 'opaque')) cache.put(request, resp.clone());
+  if (resp && (resp.ok || resp.type === 'opaque')) {
+    try { await cache.put(request, resp.clone()); } catch (e) { /* non-fatal */ }
+  }
   return resp;
 }
 
-async function networkFirst(cacheName, request, { ignoreSearch = false } = {}) {
+async function networkFirst(cacheName, request) {
   const cache = await caches.open(cacheName);
   try {
     const resp = await fetch(request);
-    if (resp && (resp.ok || resp.type === 'opaque')) cache.put(request, resp.clone());
+    if (resp && (resp.ok || resp.type === 'opaque')) {
+      try { await cache.put(request, resp.clone()); } catch (e) { /* non-fatal */ }
+    }
     return resp;
   } catch (err) {
-    const hit = await cache.match(request, { ignoreSearch, ignoreVary: true });
+    const hit = await cache.match(request, { ignoreVary: true });
     if (hit) return hit;
     throw err;
   }
@@ -87,9 +140,8 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(req.url);
 
-  // The page itself — any ?experience= variant falls back to the cached copy
   if (req.mode === 'navigate') {
-    event.respondWith(networkFirst(SHELL, req, { ignoreSearch: true }));
+    event.respondWith(handleNavigation(req));
     return;
   }
 
