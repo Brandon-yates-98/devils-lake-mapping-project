@@ -844,11 +844,18 @@
     return self ? [...path, self] : path.slice();
   }
   function areaKeyOf(p) { return p.area_id || p.name || ''; }
+  // Rows from older importer runs identify areas by a different id than the
+  // climbs' area_path (openbeta uuid vs row area_id). buildClimbAreaIndex
+  // fills this alias map so every known id resolves to one canonical key —
+  // without it the tree splits into a flat list and counts read 0.
+  let areaAlias = {};
+  const canonicalAreaKey = k => areaAlias[k] || k;
   // Does a feature belong to the selected area's sub-tree?
   function inArea(p, isAreaLayer, selectedKey) {
     if (selectedKey === 'all') return true;
+    const want = canonicalAreaKey(selectedKey);
     const chain = isAreaLayer ? areaSelfChain(p) : climbAreaChain(p);
-    return chain.includes(selectedKey);
+    return chain.some(k => canonicalAreaKey(k) === want);
   }
 
   // Campsite drive-time filter: max minutes to each shore (null = no cap).
@@ -1112,50 +1119,89 @@
   }
 
   // Build climbCountByKey (sub-tree counts) + an area node map for the tree.
-  let climbAreaNodes = {};   // areaKey → { key, name, parentKey, depth, childKeys:[] }
+  let climbAreaNodes = {};   // canonical areaKey → { key, name, parentKey, depth, childKeys:[] }
   function buildClimbAreaIndex() {
+    const areaFeats = (layerCache['climbing_areas'] || { features: [] }).features;
+
+    // Pass 1: alias map — register every id an area is known by (openbeta_id,
+    // area_id) under one canonical key, openbeta_id first since climbs'
+    // area_path chains use openbeta uuids. Older importer runs wrote a
+    // different area_id scheme; without aliasing the tree shatters into a
+    // flat list and counts read 0.
+    const canonOf = p => {
+      let cd = p.custom_data;
+      if (typeof cd === 'string') { try { cd = JSON.parse(cd); } catch { cd = {}; } }
+      return { ob: cd && cd.openbeta_id, canon: (cd && cd.openbeta_id) || p.area_id || p.name || '' };
+    };
+    areaAlias = {};
+    areaFeats.forEach(f => {
+      const p = f.properties;
+      const { ob, canon } = canonOf(p);
+      if (!canon) return;
+      [ob, p.area_id].forEach(a => { if (a) areaAlias[a] = canon; });
+    });
+
+    // Pass 2: counts — each climb counts toward its whole (canonical) chain.
     climbCountByKey = {};
     CLIMB_SOURCES.forEach(srcKey => {
       (layerCache[srcKey] || { features: [] }).features.forEach(f => {
-        // Each climb counts toward its whole area chain (parent + all ancestors).
-        new Set(climbAreaChain(f.properties)).forEach(k => {
+        new Set(climbAreaChain(f.properties).map(canonicalAreaKey)).forEach(k => {
           climbCountByKey[k] = (climbCountByKey[k] || 0) + 1;
         });
       });
     });
 
+    // Pass 3: nodes + parent links (canonicalized on both sides). Key derives
+    // exactly as in pass 1 — routing through areaKeyOf (area_id-first) would
+    // misfile old-scheme rows whose area_id aliases to a different area.
     climbAreaNodes = {};
-    const areaFeats = (layerCache['climbing_areas'] || { features: [] }).features;
     areaFeats.forEach(f => {
       const p = f.properties;
-      const key = areaKeyOf(p);
+      const key = canonOf(p).canon;
       if (!key) return;
       const path = Array.isArray(p.area_path) ? p.area_path : [];
       climbAreaNodes[key] = {
         key, name: p.name || '(unnamed area)',
-        parentKey: p.parent_id || (path.length ? path[path.length - 1] : ''),
+        parentKey: canonicalAreaKey(p.parent_id || (path.length ? path[path.length - 1] : '')),
         depth: typeof p.depth === 'number' ? p.depth : 0,
         childKeys: [],
       };
     });
-    // Link children to parents (parents that exist in the set).
     Object.values(climbAreaNodes).forEach(n => {
-      if (n.parentKey && climbAreaNodes[n.parentKey]) climbAreaNodes[n.parentKey].childKeys.push(n.key);
+      if (n.parentKey && n.parentKey !== n.key && climbAreaNodes[n.parentKey]) {
+        climbAreaNodes[n.parentKey].childKeys.push(n.key);
+      }
     });
   }
 
   // Fill #cf-area with a tree-ordered, indented option per area (+ climb count).
+  // Areas whose whole sub-tree has no climbs are noise in a filter — hidden.
   function populateAreaSelect() {
     const sel = document.getElementById('cf-area');
     if (!sel) return;
     const nodes = climbAreaNodes;
-    const byName = (a, b) => nodes[a].name.localeCompare(nodes[b].name);
+    // numeric:true keeps OpenBeta's ordered wall names sane ("2:" before "10:")
+    const byName = (a, b) => nodes[a].name.localeCompare(nodes[b].name, undefined, { numeric: true, sensitivity: 'base' });
     const roots = Object.values(nodes)
       .filter(n => !n.parentKey || !nodes[n.parentKey])
       .map(n => n.key).sort(byName);
 
+    // Effective sub-tree count: own chain count or best descendant (guards
+    // against odd data where a parent has unlinked climbs below it).
+    const effCount = {};
+    const calcEff = key => {
+      const kids = nodes[key].childKeys.reduce((s, c) => s + calcEff(c), 0);
+      return (effCount[key] = Math.max(climbCountByKey[key] || 0, kids));
+    };
+    roots.forEach(calcEff);
+
+    // Only prune when climb data is actually loaded — an experience with just
+    // the areas layer (no routes/boulders) would otherwise empty the list.
+    const haveClimbs = Object.keys(climbCountByKey).length > 0;
+
     const opts = ['<option value="all">All Areas</option>'];
     const walk = (key, depth) => {
+      if (haveClimbs && !effCount[key]) return;
       const n = nodes[key];
       const count = climbCountByKey[key] || 0;
       const indent = ' '.repeat(depth);   // em-space per level
@@ -1170,6 +1216,7 @@
   // Select an area (from the dropdown, an area marker, or a climb popup),
   // reveal + expand the climbing UI, filter to its sub-tree, and zoom to it.
   function selectClimbArea(areaKey) {
+    if (areaKey !== 'all') areaKey = canonicalAreaKey(areaKey); // popups/markers may carry an alias id
     climbFilter.area = areaKey;
     const sel = document.getElementById('cf-area');
     if (sel) sel.value = areaKey;
@@ -1186,11 +1233,12 @@
   }
 
   function zoomToClimbArea(areaKey) {
+    const want = canonicalAreaKey(areaKey);
     const b = new mapboxgl.LngLatBounds();
     let n = 0;
     CLIMB_SOURCES.forEach(src => {
       (layerCache[src] || { features: [] }).features.forEach(f => {
-        if (climbAreaChain(f.properties).includes(areaKey)) { b.extend(f.geometry.coordinates); n++; }
+        if (climbAreaChain(f.properties).some(k => canonicalAreaKey(k) === want)) { b.extend(f.geometry.coordinates); n++; }
       });
     });
     if (n) map.fitBounds(b, { padding: 80, maxZoom: 16 });
