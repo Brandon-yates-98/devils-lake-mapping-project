@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apex Adventure Alliance — Trail Map</title>
+  <meta name="description" content="Interactive trail, climbing, and adventure maps by Apex Adventure Alliance. Works offline — save the map and take it to the crag." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Apex Adventure Alliance — Trail Maps" />
+  <meta property="og:description" content="Interactive trail, climbing, and adventure maps. Works offline on your phone." />
+  <meta property="og:image" content="https://apexadventurealliance.com/wp-content/uploads/2025/04/ApexPrimaryLogoFinal-271x300.png" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0a140a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Apex Maps" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.1"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif, Arial;
+      background: #0a140a;
+    }
+
+    body { display: flex; flex-direction: column; }
+
+    /* ════════════════════════════════════
+       HEADER
+    ════════════════════════════════════ */
+    #apex-header {
+      height: 58px;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #0a1a0a 0%, #162914 50%, #1e3318 100%);
+      border-bottom: 3px solid #9bc23c;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 14px;
+      z-index: 100;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.5);
+      position: relative;
+    }
+    #apex-header::after {
+      content: '';
+      position: absolute;
+      bottom: -3px; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(155,194,60,0.6), transparent);
+    }
+
+    .header-logo {
+      height: 38px; width: auto;
+      filter: brightness(0) invert(1);
+      opacity: 0.9; flex-shrink: 0;
+    }
+    .header-divider {
+      width: 1px; height: 28px;
+      background: rgba(155,194,60,0.35); flex-shrink: 0;
+    }
+    .header-brand { display: flex; flex-direction: column; justify-content: center; line-height: 1.2; }
+    .header-org { font-size: 9.5px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: #9bc23c; }
+    .header-title { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: 0.3px; }
+    .header-spacer { flex: 1; }
+    .header-pills { display: flex; align-items: center; gap: 7px; }
+    .header-pill {
+      display: flex; align-items: center; gap: 5px;
+      background: rgba(155,194,60,0.12);
+      border: 1px solid rgba(155,194,60,0.3);
+      border-radius: 20px; padding: 4px 11px;
+      font-size: 10.5px; font-weight: 700;
+      color: #9bc23c; letter-spacing: 0.3px; white-space: nowrap;
+    }
+    .header-pill i { font-size: 9px; }
+
+    /* ── Mobile hamburger ── */
+    #menu-toggle {
+      display: none;
+      align-items: center; justify-content: center;
+      width: 36px; height: 36px;
+      background: rgba(155,194,60,0.12);
+      border: 1px solid rgba(155,194,60,0.3);
+      border-radius: 5px;
+      color: #9bc23c; font-size: 16px;
+      cursor: pointer; flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════════
+       LAYOUT
+    ════════════════════════════════════ */
+    #map-wrapper { flex: 1; display: flex; overflow: hidden; position: relative; }
+
+    /* ════════════════════════════════════
+       LEFT PANEL
+    ════════════════════════════════════ */
+    #left-panel {
+      width: 210px;
+      flex-shrink: 0;
+      background: #0d1b0d;
+      border-right: 1px solid rgba(155,194,60,0.18);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(155,194,60,0.3) transparent;
+      z-index: 10;
+      transition: transform 0.25s ease;
+    }
+    #left-panel::-webkit-scrollbar { width: 4px; }
+    #left-panel::-webkit-scrollbar-thumb { background: rgba(155,194,60,0.3); border-radius: 2px; }
+
+    /* Mobile overlay */
+    @media (max-width: 600px) {
+      #left-panel {
+        position: absolute;
+        top: 0; left: 0; bottom: 0;
+        transform: translateX(-100%);
+        box-shadow: none;
+      }
+      #left-panel.open {
+        transform: translateX(0);
+        box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+      }
+      #menu-toggle { display: flex; }
+      .header-pills { display: none; }
+    }
+
+    .panel-section {
+      padding: 14px 12px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .panel-section-title {
+      font-size: 8.5px; font-weight: 800;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: #9bc23c; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .panel-section-title::after {
+      content: ''; flex: 1; height: 1px; order: 1;
+      background: linear-gradient(90deg, rgba(155,194,60,0.3), transparent);
+    }
+    /* Collapsible sections: click the title to toggle; caret sits at the far right. */
+    .panel-section.collapsible > .panel-section-title { cursor: pointer; user-select: none; }
+    .ps-caret {
+      order: 2; flex: 0 0 auto; font-size: 9px; color: rgba(155,194,60,0.7);
+      transition: transform 0.18s ease;
+    }
+    .panel-section.collapsed .ps-caret { transform: rotate(-90deg); }
+    .layer-toggle-all {
+      order: 3; flex: 0 0 auto;
+      font-size: 7.5px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+      color: rgba(155,194,60,0.7); background: none;
+      border: 1px solid rgba(155,194,60,0.3); border-radius: 3px;
+      padding: 2px 6px; cursor: pointer; font-family: inherit;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .layer-toggle-all:hover { color: #9bc23c; border-color: rgba(155,194,60,0.7); }
+
+    /* ─── Offline section ─── */
+    .offline-btn {
+      width: 100%; padding: 8px 10px;
+      font-family: inherit; font-size: 10px; font-weight: 800;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      color: #9bc23c; background: rgba(155,194,60,0.08);
+      border: 1px solid rgba(155,194,60,0.35); border-radius: 6px;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .offline-btn:hover { background: rgba(155,194,60,0.16); border-color: rgba(155,194,60,0.7); }
+    .offline-btn:disabled { opacity: 0.5; cursor: wait; }
+    .offline-status {
+      font-size: 9.5px; color: rgba(255,255,255,0.45);
+      margin-top: 6px; min-height: 12px; line-height: 1.4;
+    }
+    .offline-status.ok { color: #9bc23c; }
+    .offline-tip {
+      font-size: 9.5px; color: rgba(255,255,255,0.4); line-height: 1.5;
+      margin-top: 8px; padding: 7px 9px;
+      background: rgba(255,255,255,0.04); border-radius: 5px;
+    }
+    .offline-tip b, .offline-tip i { color: rgba(255,255,255,0.65); }
+    .panel-section.collapsed > *:not(.panel-section-title) { display: none; }
+
+    /* ─── Layer Manager ─── */
+    .layer-group-label {
+      font-size: 7px; font-weight: 800;
+      letter-spacing: 1.8px; text-transform: uppercase;
+      color: rgba(155,194,60,0.4);
+      padding: 9px 2px 3px;
+      margin-top: 2px;
+    }
+    .layer-group-label:first-child { padding-top: 2px; }
+
+    .layer-row {
+      display: flex; align-items: center;
+      gap: 6px; padding: 5px 3px;
+      border-radius: 4px;
+      transition: background 0.15s;
+      cursor: pointer; user-select: none;
+    }
+    .layer-row:hover { background: rgba(255,255,255,0.04); }
+
+    .layer-swatch {
+      width: 8px; height: 8px;
+      border-radius: 2px; flex-shrink: 0;
+      opacity: 0.5; transition: opacity 0.2s;
+    }
+    .layer-row.on .layer-swatch { opacity: 1; }
+
+    .layer-name {
+      flex: 1;
+      font-size: 11.5px; font-weight: 600;
+      color: rgba(255,255,255,0.35);
+      transition: color 0.15s;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .layer-row.on .layer-name { color: rgba(255,255,255,0.82); }
+
+    .layer-count {
+      font-size: 8px; font-weight: 700;
+      color: rgba(255,255,255,0.2);
+      padding: 1px 5px;
+      background: rgba(0,0,0,0.15);
+      border-radius: 8px;
+      min-width: 22px; text-align: center;
+      flex-shrink: 0; transition: color 0.15s, background 0.15s;
+    }
+    .layer-row.on .layer-count {
+      color: rgba(155,194,60,0.7);
+      background: rgba(155,194,60,0.1);
+    }
+
+    .layer-toggle {
+      width: 26px; height: 14px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 7px;
+      position: relative; flex-shrink: 0;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .layer-toggle::after {
+      content: '';
+      position: absolute;
+      width: 10px; height: 10px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 50%;
+      top: 1px; left: 1px;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .layer-row.on .layer-toggle {
+      background: rgba(155,194,60,0.28);
+      border-color: rgba(155,194,60,0.5);
+    }
+    .layer-row.on .layer-toggle::after {
+      transform: translateX(12px);
+      background: #9bc23c;
+    }
+
+    /* ── POI type filter chips ── */
+    .poi-filters {
+      display: none;
+      flex-wrap: wrap;
+      gap: 3px;
+      padding: 2px 4px 6px 14px;
+    }
+    .poi-filters.visible { display: flex; }
+    .poi-chip {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.3px;
+      padding: 2px 7px; border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.4);
+      cursor: pointer; transition: all 0.15s; user-select: none;
+    }
+    .poi-chip:hover { background: rgba(155,194,60,0.12); color: rgba(255,255,255,0.65); }
+    .poi-chip.active {
+      background: rgba(155,194,60,0.22);
+      border-color: rgba(155,194,60,0.45);
+      color: #9bc23c;
+    }
+
+    /* ── Climbing filter panel ── */
+    #climbing-filter-panel { display: none; }
+    .cf-search-wrap {
+      position: relative; margin-bottom: 8px;
+    }
+    .cf-search-icon {
+      position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+      color: rgba(155,194,60,0.45); font-size: 10px; pointer-events: none;
+    }
+    .cf-search-input {
+      width: 100%; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;
+      padding: 6px 26px 6px 26px; color: #fff;
+      font-family: 'Inter', sans-serif; font-size: 11.5px; outline: none;
+    }
+    .cf-search-input::placeholder { color: rgba(255,255,255,0.22); }
+    .cf-search-input:focus { border-color: rgba(155,194,60,0.4); background: rgba(155,194,60,0.06); }
+    .cf-autocomplete {
+      position: absolute; left: 0; right: 0; top: calc(100% + 3px);
+      background: #111f0e; border: 1px solid rgba(155,194,60,0.22);
+      border-radius: 6px; max-height: 200px; overflow-y: auto;
+      z-index: 300; list-style: none; padding: 3px 0;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.55); display: none;
+    }
+    .cf-autocomplete.open { display: block; }
+    .cf-autocomplete li {
+      padding: 6px 10px 5px; font-size: 11.5px; color: rgba(255,255,255,0.65);
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      border-radius: 4px; margin: 0 3px;
+    }
+    .cf-autocomplete li:hover, .cf-autocomplete li.cf-ac-sel {
+      background: rgba(155,194,60,0.13); color: #fff;
+    }
+    .cf-autocomplete li mark { background: none; color: #9bc23c; font-weight: 700; }
+    .cf-ac-meta { font-size: 9.5px; color: rgba(255,255,255,0.28); margin-left: auto; white-space: nowrap; }
+    .cf-clear-btn {
+      position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: rgba(255,255,255,0.3);
+      font-size: 15px; cursor: pointer; padding: 0; line-height: 1;
+    }
+    .cf-clear-btn:hover { color: rgba(255,255,255,0.7); }
+    .cf-label {
+      font-size: 7.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+      color: rgba(255,255,255,0.28); margin: 8px 0 4px;
+    }
+    .cf-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .cf-chip {
+      font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 10px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.38); cursor: pointer; transition: all 0.15s; user-select: none;
+    }
+    .cf-chip:hover { background: rgba(155,194,60,0.1); color: rgba(255,255,255,0.65); }
+    .cf-chip.active { background: rgba(155,194,60,0.2); border-color: rgba(155,194,60,0.45); color: #9bc23c; }
+    .cf-select {
+      width: 100%; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;
+      padding: 5px 8px; color: rgba(255,255,255,0.6);
+      font-family: 'Inter', sans-serif; font-size: 11px; outline: none;
+    }
+    .cf-select option { background: #0d1b0d; }
+    .cf-result-count {
+      display: none; margin-top: 9px;
+      font-size: 9px; font-weight: 700; text-align: center;
+      color: rgba(155,194,60,0.6); letter-spacing: 0.3px;
+    }
+    .cf-result-count.show { display: block; }
+    .cf-reset-btn {
+      width: 100%; margin-top: 8px; padding: 6px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 5px; color: rgba(255,255,255,0.35);
+      font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.3px; cursor: pointer; transition: all 0.15s; display: none;
+    }
+    .cf-reset-btn:hover { background: rgba(231,76,60,0.1); border-color: rgba(231,76,60,0.3); color: rgba(231,76,60,0.75); }
+
+    /* ── Campsite drive-time sliders ── */
+    #camp-filter-panel { display: none; }
+    .df-row { margin-bottom: 12px; }
+    .df-row:last-of-type { margin-bottom: 4px; }
+    .df-label {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.55);
+      letter-spacing: 0.3px; margin-bottom: 6px;
+    }
+    .df-label i { font-size: 9px; margin-right: 3px; color: rgba(155,194,60,0.7); }
+    .df-val { font-size: 11px; font-weight: 800; color: #9bc23c; letter-spacing: 0; }
+    .df-slider {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+      border-radius: 3px; background: rgba(255,255,255,0.12); outline: none; cursor: pointer;
+    }
+    .df-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 15px; height: 15px;
+      border-radius: 50%; background: #9bc23c; border: 2px solid #1a2418; cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+    .df-slider::-moz-range-thumb {
+      width: 15px; height: 15px; border-radius: 50%; background: #9bc23c;
+      border: 2px solid #1a2418; cursor: pointer;
+    }
+
+    /* ── Feature filters (presets + ad-hoc) ── */
+    #feature-filter-panel { display: none; }
+    .ff-presets { display: flex; flex-wrap: wrap; gap: 5px; }
+    .ff-preset {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 700; padding: 5px 10px; border-radius: 13px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.15s; user-select: none;
+    }
+    .ff-preset i { font-size: 9px; opacity: 0.85; }
+    .ff-preset:hover { background: rgba(155,194,60,0.1); color: rgba(255,255,255,0.78); }
+    .ff-preset.active { background: rgba(155,194,60,0.22); border-color: rgba(155,194,60,0.5); color: #b6d96a; }
+    .ff-adhoc { margin-top: 10px; }
+    .ff-adhoc > summary {
+      list-style: none; cursor: pointer; font-size: 9px; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 4px 0; user-select: none;
+    }
+    .ff-adhoc > summary::-webkit-details-marker { display: none; }
+    .ff-adhoc > summary::before { content: '＋ '; color: rgba(155,194,60,0.5); }
+    .ff-adhoc[open] > summary::before { content: '－ '; }
+    .ff-cond-row { display: flex; gap: 4px; margin-top: 5px; align-items: center; }
+    .ff-cond-row .cf-select { padding: 4px 5px; font-size: 10px; }
+    .ff-cond-field { flex: 1.3; min-width: 0; }
+    .ff-cond-op { flex: 0.9; min-width: 0; }
+    .ff-cond-val {
+      flex: 1; min-width: 0; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;
+      padding: 4px 6px; color: rgba(255,255,255,0.7); font-family: 'Inter', sans-serif; font-size: 10px; outline: none;
+    }
+    .ff-cond-del {
+      flex: 0 0 auto; width: 20px; height: 20px; border-radius: 4px; cursor: pointer;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.35); font-size: 11px; line-height: 1; display: flex; align-items: center; justify-content: center;
+    }
+    .ff-cond-del:hover { background: rgba(231,76,60,0.12); color: rgba(231,76,60,0.8); }
+    .ff-mini-btn {
+      margin-top: 7px; padding: 5px 8px; border-radius: 5px; cursor: pointer;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.5); font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600;
+    }
+    .ff-mini-btn:hover { background: rgba(155,194,60,0.1); color: #9bc23c; }
+    .ff-apply-btn {
+      flex: 1; margin-top: 8px; padding: 6px; border-radius: 5px; cursor: pointer;
+      background: rgba(155,194,60,0.18); border: 1px solid rgba(155,194,60,0.4);
+      color: #b6d96a; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700;
+    }
+    .ff-apply-btn:hover { background: rgba(155,194,60,0.28); }
+
+    /* ── Popup OpenBeta link ── */
+    .popup-ob-link {
+      display: flex; align-items: center; gap: 5px; margin-top: 8px;
+      padding-top: 8px; border-top: 1px solid #eee;
+      font-size: 11px; font-weight: 700; color: #e74c3c;
+      text-decoration: none;
+    }
+    .popup-ob-link:hover { color: #c0392b; }
+    .popup-ob-link i { font-size: 9px; }
+    /* ── OpenBeta area association ── */
+    .popup-area-climbs-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; margin-top: 8px; padding: 7px; border: none; border-radius: 6px;
+      background: #8e44ad; color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 11.5px; font-weight: 700; cursor: pointer; transition: background 0.15s;
+    }
+    .popup-area-climbs-btn:hover { background: #7d3c98; }
+    .popup-area-climbs-btn i { font-size: 11px; }
+    .popup-area-link {
+      display: inline-flex; align-items: center; gap: 5px; margin-top: 8px;
+      padding: 4px 9px; border: 1px solid #d9c2e8; border-radius: 12px;
+      background: #f5edfa; color: #8e44ad; font-family: 'Inter', sans-serif;
+      font-size: 10.5px; font-weight: 700; cursor: pointer; transition: background 0.15s;
+    }
+    .popup-area-link:hover { background: #ecdcf5; }
+    .popup-area-link i { font-size: 9px; }
+    .popup-directions-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; margin-top: 8px; padding: 7px; border-radius: 6px; cursor: pointer;
+      background: linear-gradient(135deg,#5a9fe0,#3d7ec4); border: none; color: #fff;
+      font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700;
+      transition: filter 0.15s;
+    }
+    .popup-directions-btn:hover { filter: brightness(1.08); }
+    .popup-directions-btn i { font-size: 11px; }
+
+    /* ─── On-map basemap switcher (traditional tile thumbnail) ─── */
+    #basemap-switcher {
+      position: absolute; left: 12px; bottom: 12px; z-index: 5;
+      width: 66px; height: 66px; padding: 0; overflow: hidden;
+      border-radius: 8px; border: 2px solid #fff; cursor: pointer;
+      background-color: #2c3e50; background-size: cover; background-position: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+      font-family: 'Inter', sans-serif;
+      transition: transform 0.12s ease, box-shadow 0.15s ease;
+    }
+    #basemap-switcher:hover { transform: scale(1.05); box-shadow: 0 4px 14px rgba(0,0,0,0.45); }
+    #bms-label {
+      position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 0 4px;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+      color: #fff; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+      background: linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0));
+    }
+
+    /* ─── Panel Footer ─── */
+    .panel-footer {
+      margin-top: auto; padding: 16px 14px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      border-top: 1px solid rgba(155,194,60,0.1);
+    }
+    .panel-footer-logo { width: 72px; height: auto; filter: brightness(0) invert(1); opacity: 0.45; }
+    .panel-footer-tagline { font-size: 9px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(155,194,60,0.4); text-align: center; }
+
+    /* ════════════════════════════════════
+       MAP
+    ════════════════════════════════════ */
+    #map { flex: 1; position: relative; }
+    .mapboxgl-ctrl-top-right { top: 10px; right: 10px; }
+    .mapboxgl-ctrl-bottom-right { bottom: 30px; right: 10px; }
+
+    /* ════════════════════════════════════
+       LOADING SCREEN
+    ════════════════════════════════════ */
+    #loading-screen {
+      position: absolute; inset: 0;
+      background: rgba(8,16,8,0.94);
+      backdrop-filter: blur(8px);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 50; gap: 14px;
+      transition: opacity 0.6s ease;
+    }
+    #loading-screen.fade-out { opacity: 0; pointer-events: none; }
+    .loading-logo { height: 64px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; animation: logo-pulse 2s ease-in-out infinite; }
+    .loading-title { font-size: 11px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #9bc23c; }
+    .loading-sub { font-size: 10px; font-weight: 500; letter-spacing: 1px; color: rgba(255,255,255,0.4); text-transform: uppercase; }
+    .loading-dots { display: flex; gap: 7px; margin-top: 4px; }
+    .loading-dot { width: 7px; height: 7px; border-radius: 50%; background: #9bc23c; animation: dot-bounce 1.3s ease-in-out infinite; opacity: 0.5; }
+    .loading-dot:nth-child(2) { animation-delay: 0.22s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.44s; }
+
+    @keyframes logo-pulse { 0%,100% { opacity:0.75; transform:scale(1); } 50% { opacity:1; transform:scale(1.04); } }
+    @keyframes dot-bounce { 0%,80%,100% { transform:translateY(0); opacity:0.35; } 40% { transform:translateY(-7px); opacity:1; } }
+
+    /* ════════════════════════════════════
+       POPUP
+    ════════════════════════════════════ */
+    .mapboxgl-popup-content {
+      padding: 0 !important; border-radius: 8px !important;
+      overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,0.35) !important;
+      min-width: 215px; font-family: 'Inter', sans-serif;
+    }
+    .popup-header { background: linear-gradient(135deg,#162914,#1e3318); padding: 10px 12px 9px; border-bottom: 2px solid #9bc23c; }
+    .popup-feature-name { font-size: 13.5px; font-weight: 800; color: #fff; line-height: 1.3; margin-bottom: 5px; }
+    .popup-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 10px;
+      font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; color: #fff;
+    }
+    .popup-body { background: #fff; padding: 9px 12px 11px; }
+    .popup-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #f2f2f2; gap: 8px; }
+    .popup-row:last-child { border-bottom: none; }
+    .popup-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #999; flex-shrink: 0; }
+    .popup-value { font-size: 12px; font-weight: 700; color: #1a1a1a; text-align: right; word-break: break-word; }
+    .popup-value a { color: #2980b9; text-decoration: none; }
+    .popup-value a:hover { text-decoration: underline; }
+    .popup-empty { font-size: 11px; color: #bbb; padding: 4px 0; font-style: italic; }
+    .popup-apex-desc { padding: 8px 0 6px; border-bottom: 1px solid #e8e8e8; margin-bottom: 2px; }
+    .popup-apex-desc-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #999; margin-bottom: 4px; }
+    .popup-apex-desc-text { font-size: 12px; color: #222; line-height: 1.55; white-space: pre-wrap; }
+    .mapboxgl-popup-close-button { color: rgba(255,255,255,0.6) !important; font-size: 18px !important; line-height: 1 !important; padding: 5px 8px !important; top: 0 !important; right: 0 !important; }
+    .mapboxgl-popup-close-button:hover { color: #fff !important; background: rgba(255,255,255,0.12) !important; border-radius: 0 8px 0 4px !important; }
+
+    /* ─── Error state ─── */
+    #error-screen {
+      display: none;
+      position: absolute; inset: 0;
+      background: rgba(8,16,8,0.97);
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 12px;
+      z-index: 60;
+    }
+    #error-screen.show { display: flex; }
+    .error-icon { font-size: 36px; color: #e17055; }
+    .error-msg { color: rgba(255,255,255,0.6); font-size: 13px; text-align: center; max-width: 260px; }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════ -->
+<header id="apex-header">
+  <button id="menu-toggle" aria-label="Toggle layer panel">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+  <img class="header-logo" src="https://apexadventurealliance.com/wp-content/uploads/2023/07/cropped-rope-logo-1.png" alt="Apex Adventure Alliance" />
+  <div class="header-divider"></div>
+  <div class="header-brand">
+    <span class="header-org">Apex Adventure Alliance</span>
+    <span class="header-title" id="map-title">Loading&hellip;</span>
+  </div>
+  <div class="header-spacer"></div>
+  <div class="header-pills">
+    <span class="header-pill"><i class="fa-solid fa-location-dot"></i> Sauk County, WI</span>
+    <span class="header-pill" id="feature-count-badge"><i class="fa-solid fa-layer-group"></i> Loading&hellip;</span>
+  </div>
+</header>
+
+<!-- ══ MAP + SIDEBAR ═══════════════════════════════════════════ -->
+<main id="map-wrapper">
+
+  <div id="loading-screen">
+    <img class="loading-logo" src="https://apexadventurealliance.com/wp-content/uploads/2023/07/cropped-rope-logo-1.png" alt="Apex Adventure Alliance" />
+    <div class="loading-title">Apex Adventure Alliance</div>
+    <div class="loading-sub">Loading map data</div>
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  </div>
+
+  <div id="error-screen">
+    <div class="error-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <div class="error-msg" id="error-msg">Experience not found.</div>
+  </div>
+
+  <!-- Left Sidebar (built dynamically from experience config) -->
+  <aside id="left-panel">
+    <!-- Experience switcher — shown when more than one public experience exists -->
+    <div class="panel-section" id="experience-section" style="display:none">
+      <div class="panel-section-title">Experience</div>
+      <select id="experience-select" class="cf-select"></select>
+    </div>
+
+    <div class="panel-section" id="layers-section">
+      <div class="panel-section-title">Layers<button id="toggle-all-layers" class="layer-toggle-all" title="Show / hide all layers"><i class="fa-solid fa-eye"></i> All</button></div>
+      <div id="layer-list"><!-- populated by buildLayersFromConfig --></div>
+    </div>
+
+    <!-- Climbing search + filters — shown only when climbing layers are in the experience -->
+    <div id="climbing-filter-panel" class="panel-section collapsible collapsed">
+      <div class="panel-section-title">Climbing Filters<i class="fa-solid fa-chevron-down ps-caret"></i></div>
+
+      <div class="cf-search-wrap">
+        <i class="fa-solid fa-magnifying-glass cf-search-icon"></i>
+        <input type="text" id="cf-search" class="cf-search-input" placeholder="Search routes &amp; problems…" autocomplete="off" />
+        <button id="cf-search-clear" class="cf-clear-btn" aria-label="Clear search" style="display:none">×</button>
+        <ul id="cf-suggestions" class="cf-autocomplete" role="listbox"></ul>
+      </div>
+
+      <div class="cf-label">Wall / Sector</div>
+      <select id="cf-area" class="cf-select">
+        <option value="all">All Areas</option>
+      </select>
+
+      <div class="cf-label">Type</div>
+      <div id="cf-types" class="cf-chips">
+        <span class="cf-chip" data-type="trad">Trad</span>
+        <span class="cf-chip" data-type="sport">Sport</span>
+        <span class="cf-chip" data-type="tr">T/R</span>
+        <span class="cf-chip" data-type="aid">Aid</span>
+        <span class="cf-chip" data-type="alpine">Alpine</span>
+        <span class="cf-chip" data-type="mixed">Mixed</span>
+        <span class="cf-chip" data-type="boulder">Boulder</span>
+      </div>
+
+      <div class="cf-label">Grade</div>
+      <div id="cf-grades" class="cf-chips">
+        <span class="cf-chip active" data-bucket="all">All</span>
+        <span class="cf-chip" data-bucket="easy" title="≤5.8 · V0–V3">≤5.8</span>
+        <span class="cf-chip" data-bucket="mod" title="5.9–5.10d · V4–V6">5.9–5.10</span>
+        <span class="cf-chip" data-bucket="hard" title="5.11a–5.11d · V7–V9">5.11</span>
+        <span class="cf-chip" data-bucket="proj" title="5.12+ · V10+">5.12+</span>
+      </div>
+
+      <div id="cf-result-count" class="cf-result-count"></div>
+      <button id="cf-reset" class="cf-reset-btn">Reset Filters</button>
+    </div>
+
+    <!-- Campsite filters — drive time to each shore + max nightly price -->
+    <div id="camp-filter-panel" class="panel-section collapsible">
+      <div class="panel-section-title">Campsite Filters<i class="fa-solid fa-chevron-down ps-caret"></i></div>
+      <div class="df-row">
+        <div class="df-label"><span><i class="fa-solid fa-car-side"></i> Max to North Shore</span><span id="df-north-val" class="df-val">Any</span></div>
+        <input type="range" id="df-north" class="df-slider" min="0" max="60" step="5" value="60" />
+      </div>
+      <div class="df-row">
+        <div class="df-label"><span><i class="fa-solid fa-car-side"></i> Max to South Shore</span><span id="df-south-val" class="df-val">Any</span></div>
+        <input type="range" id="df-south" class="df-slider" min="0" max="60" step="5" value="60" />
+      </div>
+      <div class="df-row">
+        <div class="df-label"><span><i class="fa-solid fa-dollar-sign"></i> Max nightly price (from)</span><span id="df-price-val" class="df-val">Any</span></div>
+        <input type="range" id="df-price" class="df-slider" min="0" max="100" step="5" value="100" />
+      </div>
+      <div id="df-result-count" class="cf-result-count"></div>
+      <button id="df-reset" class="cf-reset-btn" style="display:none">Reset</button>
+    </div>
+
+    <!-- Feature filters — preset buttons + ad-hoc builder (shown when defined / available) -->
+    <div id="feature-filter-panel" class="panel-section collapsible">
+      <div class="panel-section-title">Filters<i class="fa-solid fa-chevron-down ps-caret"></i></div>
+      <div id="ff-presets" class="ff-presets"></div>
+
+      <details id="ff-adhoc" class="ff-adhoc">
+        <summary>Custom filter</summary>
+        <div class="cf-label">Layer</div>
+        <select id="ff-layer" class="cf-select"></select>
+        <div class="cf-label">Match</div>
+        <div id="ff-match" class="cf-chips">
+          <span class="cf-chip active" data-match="all">All conditions</span>
+          <span class="cf-chip" data-match="any">Any condition</span>
+        </div>
+        <div id="ff-conditions"></div>
+        <button id="ff-add-cond" class="ff-mini-btn"><i class="fa-solid fa-plus"></i> Add condition</button>
+        <div style="display:flex;gap:6px">
+          <button id="ff-apply" class="ff-apply-btn">Apply</button>
+        </div>
+        <div id="ff-adhoc-count" class="cf-result-count"></div>
+      </details>
+
+      <button id="ff-clear" class="cf-reset-btn">Clear Filters</button>
+    </div>
+
+    <!-- Offline: save the experience to the device (PWA) -->
+    <div class="panel-section" id="offline-section">
+      <div class="panel-section-title">Offline</div>
+      <button id="offline-save-btn" class="offline-btn"><i class="fa-solid fa-download"></i> Save map for offline use</button>
+      <div id="offline-status" class="offline-status"></div>
+      <div id="ios-install-tip" class="offline-tip" style="display:none">
+        Tip: tap <i class="fa-solid fa-arrow-up-from-bracket"></i> Share → <b>Add to Home Screen</b> to install this map as an app.
+      </div>
+    </div>
+
+    <div class="panel-footer">
+      <img class="panel-footer-logo"
+           src="https://apexadventurealliance.com/wp-content/uploads/2025/04/ApexPrimaryLogoFinal-271x300.png"
+           alt="Apex Adventure Alliance" />
+      <div class="panel-footer-tagline">Wisconsin Climbing Guides</div>
+    </div>
+  </aside>
+
+  <div id="map">
+    <button id="basemap-switcher" title="Switch basemap" aria-label="Switch basemap">
+      <span id="bms-label">Satellite</span>
+    </button>
+  </div>
+
+</main>
+
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiYnlhdGVzNDAiLCJhIjoiY21wNG53eDhkMGQ4aDJyb2xwaWMyYTJ6bCJ9.UixLEupbwuR2wKDum5b8DQ';
+
+  const db = supabase.createClient(
+    'https://lcenhesezodgrjrymngg.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjZW5oZXNlem9kZ3JqcnltbmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Mjk2MDksImV4cCI6MjA5NTAwNTYwOX0.HD9iIKp267i3t2csvLA68TBZ4ASDBL14xznlSQumn30'
+  );
+
+  // ── Offline store ────────────────────────────────────────────
+  // Supabase RPCs are POSTs, which the service worker's Cache Storage can't
+  // key — so RPC results are persisted here (IndexedDB) instead. Everything
+  // else (page, libs, REST GETs, photos) is cached by sw.js transparently.
+  const idb = {
+    _db: null,
+    open() {
+      if (this._db) return this._db;
+      this._db = new Promise((res, rej) => {
+        const req = indexedDB.open('apex-offline', 1);
+        req.onupgradeneeded = () => req.result.createObjectStore('kv');
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(req.error);
+      });
+      return this._db;
+    },
+    async get(key) {
+      const d = await this.open();
+      return new Promise((res, rej) => {
+        const req = d.transaction('kv').objectStore('kv').get(key);
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(req.error);
+      });
+    },
+    async set(key, val) {
+      const d = await this.open();
+      return new Promise((res, rej) => {
+        const tx = d.transaction('kv', 'readwrite');
+        tx.objectStore('kv').put(val, key);
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+      });
+    },
+  };
+
+  // Network-first RPC: persist good responses, serve the last good copy offline.
+  async function rpcCached(fn, fnArgs, cacheKey) {
+    try {
+      const { data, error } = await db.rpc(fn, fnArgs);
+      if (error || data == null) throw error || new Error('empty RPC response');
+      idb.set(cacheKey, data).catch(() => {});
+      return data;
+    } catch (e) {
+      return idb.get(cacheKey).catch(() => null).then(v => v ?? null);
+    }
+  }
+
+  // ── State ────────────────────────────────────────────────────
+  let experienceConfig = null;  // full config from get_experience_config
+  let layerMeta = {};           // sourceKey → layer config object
+  const sourceToMapboxLayers = {};  // sourceKey → [mapbox layer ids]
+  const layerToSource = {};         // mapbox layer id → sourceKey
+  const layerCache = {};
+  let trailHoverId = null;
+  let interactionsRegistered = false;
+
+  const CLIMBING_SOURCES = ['climbing_routes', 'climbing_boulders', 'climbing_areas'];
+  const CLIMB_SOURCES = ['climbing_routes', 'climbing_boulders'];   // climbs only (no areas)
+  const climbFilter = { search: '', area: 'all', types: new Set(), grade: 'all' };
+
+  // ── OpenBeta area ↔ climbs association ────────────────────────
+  // climbFilter.area holds an "area key": the area's OpenBeta uuid (new imports)
+  // or its name (legacy data). These helpers unify both so selecting an area
+  // matches that area AND everything nested under it.
+  let climbCountByKey = {};   // areaKey → # climbs in its sub-tree
+
+  // Area-uuid chain a climb belongs to (root → immediate parent), newest schema
+  // first; falls back to [area_id] then [area_name] for older imports.
+  function climbAreaChain(p) {
+    if (Array.isArray(p.area_path) && p.area_path.length) return p.area_path;
+    if (p.area_id) return [p.area_id];
+    if (p.area_name) return [p.area_name];
+    return [];
+  }
+  // A climbing-area feature's own key plus its ancestors (so a parent area
+  // "contains" itself and its descendants).
+  function areaSelfChain(p) {
+    const self = p.area_id || p.name || '';
+    const path = Array.isArray(p.area_path) ? p.area_path : [];
+    return self ? [...path, self] : path.slice();
+  }
+  function areaKeyOf(p) { return p.area_id || p.name || ''; }
+  // Does a feature belong to the selected area's sub-tree?
+  function inArea(p, isAreaLayer, selectedKey) {
+    if (selectedKey === 'all') return true;
+    const chain = isAreaLayer ? areaSelfChain(p) : climbAreaChain(p);
+    return chain.includes(selectedKey);
+  }
+
+  // Campsite drive-time filter: max minutes to each shore (null = no cap).
+  const CAMPING_SOURCE = 'pois_camping';
+  const campFilter = { north: null, south: null, price: null };
+
+  // ── Feature filter state ─────────────────────────────────────
+  const layerBaseFilter = {};        // sourceKey → configured filter_expr (mapbox) | null
+  let savedFilters = [];             // experience.saved_filters presets
+  const activePresetIds = new Set(); // ids of currently-pressed preset buttons
+  let adhocFilter = null;            // { target, expr, conditions, match } | null
+
+  // ── Directions state ─────────────────────────────────────────
+  // Routing is delegated to the device's maps app (Google/Apple) via deep link,
+  // so there's no in-app route geometry, API calls, or start-point resolution.
+  let geolocate = null;              // GeolocateControl instance (map control)
+  const dirProfile = 'driving';      // maps-app travel mode for popup "Directions" deep link
+
+  const FILTER_OPS = [
+    { op: 'exists',   label: 'has any value', noVal: true },
+    { op: 'absent',   label: 'is empty',      noVal: true },
+    { op: '<',        label: '<' },
+    { op: '<=',       label: '≤' },
+    { op: '>',        label: '>' },
+    { op: '>=',       label: '≥' },
+    { op: '==',       label: '=' },
+    { op: '!=',       label: '≠' },
+    { op: 'contains', label: 'contains' },
+  ];
+
+  // Compile one condition {field, op, value} → a Mapbox filter expression.
+  // Value comparisons are guarded by ['has', field] so missing fields never match.
+  function conditionToExpr(c) {
+    const f = c.field;
+    if (!f) return null;
+    const num = c.value !== '' && c.value != null && !isNaN(Number(c.value));
+    switch (c.op) {
+      case 'exists': return ['all', ['has', f], ['!=', ['to-string', ['get', f]], '']];
+      case 'absent': return ['any', ['!', ['has', f]], ['==', ['to-string', ['coalesce', ['get', f], '']], '']];
+      case '<': case '<=': case '>': case '>=':
+        return ['all', ['has', f], [c.op, ['to-number', ['get', f]], Number(c.value)]];
+      case '==': return num ? ['==', ['to-number', ['get', f]], Number(c.value)]
+                            : ['==', ['to-string', ['coalesce', ['get', f], '']], String(c.value)];
+      case '!=': return num ? ['!=', ['to-number', ['get', f]], Number(c.value)]
+                            : ['!=', ['to-string', ['coalesce', ['get', f], '']], String(c.value)];
+      case 'contains':
+        return ['all', ['has', f], ['in', String(c.value).toLowerCase(), ['downcase', ['to-string', ['coalesce', ['get', f], '']]]]];
+      default: return null;
+    }
+  }
+  function compileConditions(conditions, match) {
+    const exprs = (conditions || []).map(conditionToExpr).filter(Boolean);
+    if (!exprs.length) return null;
+    if (exprs.length === 1) return exprs[0];
+    return [match === 'any' ? 'any' : 'all', ...exprs];
+  }
+  // JS mirror of a condition (used to count matches against cached GeoJSON).
+  function condMatches(c, props) {
+    const raw = props[c.field];
+    const present = raw != null && String(raw).trim() !== '';
+    const num = c.value !== '' && c.value != null && !isNaN(Number(c.value));
+    switch (c.op) {
+      case 'exists':   return present;
+      case 'absent':   return !present;
+      case '<':        return present && Number(raw) < Number(c.value);
+      case '<=':       return present && Number(raw) <= Number(c.value);
+      case '>':        return present && Number(raw) > Number(c.value);
+      case '>=':       return present && Number(raw) >= Number(c.value);
+      case '==':       return present && (num ? Number(raw) === Number(c.value) : String(raw) === String(c.value));
+      case '!=':       return present ? (num ? Number(raw) !== Number(c.value) : String(raw) !== String(c.value)) : true;
+      case 'contains': return present && String(raw).toLowerCase().includes(String(c.value).toLowerCase());
+      default:         return true;
+    }
+  }
+  function countMatches(target, conditions, match) {
+    const gj = layerCache[target];
+    if (!gj || !gj.features) return null;
+    const conds = conditions || [];
+    const total = gj.features.length;
+    const matching = gj.features.filter(feat => {
+      const p = feat.properties || {};
+      if (!conds.length) return true;
+      return match === 'any' ? conds.some(c => condMatches(c, p)) : conds.every(c => condMatches(c, p));
+    }).length;
+    return { matching, total };
+  }
+  // Field names available for a layer: configured field_schema + keys present in its data.
+  function layerFieldNames(src) {
+    const names = new Set();
+    const fs = (layerMeta[src] && layerMeta[src].field_schema) || [];
+    fs.forEach(f => { if (f.name) names.add(f.name); });
+    const gj = layerCache[src];
+    if (gj && gj.features) {
+      const INTERNAL = new Set(['id', '_draw_id', 'photos', 'custom_data']);
+      gj.features.slice(0, 400).forEach(f => Object.keys(f.properties || {}).forEach(k => {
+        if (!INTERNAL.has(k)) names.add(k);
+      }));
+    }
+    return [...names].sort();
+  }
+
+  // ── Popup helpers (unchanged from original) ──────────────────
+  const SKIP_KEYS = new Set(['_osm_type', '_osm_id', 'wikidata', 'wikipedia', 'type', 'name', 'id', 'photos', 'custom_data']);
+  const SKIP_PREFIXES = ['tiger:', 'gnis:', 'source', 'is_in:', 'addr:'];
+  const SKIP_SUFFIXES = [':wikidata', ':wikipedia', ':reviewed', ':note'];
+
+  const PRIMARY_TAG_KEYS = {
+    trails:    ['highway'],
+    routes:    ['route'],
+    roads:     ['highway'],
+    natural:   ['natural'],
+    water:     ['waterway', 'water', 'natural'],
+    parks:     ['leisure', 'boundary'],
+    landuse:   ['landuse', 'amenity'],
+    buildings: ['amenity', 'building', 'shelter_type'],
+    parking:   ['parking', 'amenity'],
+    barriers:  ['barrier'],
+    pois:      ['amenity', 'tourism', 'shop', 'information', 'sport', 'historic'],
+    other:     ['amenity', 'natural', 'highway', 'landuse'],
+  };
+
+  function fmtKey(k) { return k.replace(/[_:]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
+  function fmtVal(k, v) {
+    const s = String(v).replace(/_/g, ' ');
+    if (k === 'website' || k === 'url' || s.startsWith('http')) {
+      const display = s.length > 35 ? s.slice(0, 35) + '…' : s;
+      return `<a href="${v}" target="_blank" rel="noopener">${display}</a>`;
+    }
+    if (s.length < 40) return s.replace(/\b\w/g, c => c.toUpperCase());
+    return s;
+  }
+  function shouldSkip(k) {
+    if (SKIP_KEYS.has(k)) return true;
+    if (SKIP_PREFIXES.some(p => k.startsWith(p))) return true;
+    if (SKIP_SUFFIXES.some(s => k.endsWith(s))) return true;
+    return false;
+  }
+
+  // ── Custom popup template helpers ─────────────────────────────
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  // Merge custom_data over base props so {{ grade }} works either way; always expose name + photos[].
+  function buildCtx(props) {
+    let cd = {};
+    try { const raw = props.custom_data; cd = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : {}; } catch {}
+    let photos = props.photos;
+    if (typeof photos === 'string') { try { photos = JSON.parse(photos); } catch { photos = []; } }
+    if (!Array.isArray(photos)) photos = [];
+    return { ...props, ...cd, name: props.name || cd.name || '', photos };
+  }
+  // Render {{#each photos}}, {{#if field}}, and {{ field }} tokens against ctx (values escaped).
+  function renderPopupTemplate(template, ctx) {
+    let out = String(template);
+    out = out.replace(/\{\{\s*#each\s+(\w+)\s*\}\}([\s\S]*?)\{\{\s*\/each\s*\}\}/g, (m, key, inner) => {
+      const arr = Array.isArray(ctx[key]) ? ctx[key] : [];
+      return arr.map(item => inner.replace(/\{\{\s*this\s*\}\}/g, escapeHtml(item))).join('');
+    });
+    out = out.replace(/\{\{\s*#if\s+(\w+)\s*\}\}([\s\S]*?)\{\{\s*\/if\s*\}\}/g, (m, key, inner) => {
+      const v = ctx[key];
+      const has = v != null && !(Array.isArray(v) ? v.length === 0 : String(v).trim() === '');
+      return has ? inner : '';
+    });
+    out = out.replace(/\{\{\s*(\w+)\s*\}\}/g, (m, key) => {
+      const v = ctx[key];
+      if (v == null || Array.isArray(v)) return '';
+      return escapeHtml(v);
+    });
+    return out;
+  }
+  // Scope author CSS to the popup wrapper so it can't bleed into other Mapbox popups.
+  // NOTE: simple rules only — @media / @keyframes headers are left untouched (their inner
+  // rules won't be scoped), which is acceptable for popup styling.
+  function scopePopupCss(css, scopeSel) {
+    scopeSel = scopeSel || '.apex-popup-custom';
+    return String(css).replace(/([^{}]+)\{([^{}]*)\}/g, (m, sel, body) => {
+      const s = sel.trim();
+      if (s.startsWith('@')) return m;
+      const scoped = s.split(',').map(part => `${scopeSel} ${part.trim()}`).join(', ');
+      return `${scoped}{${body}}`;
+    });
+  }
+
+  // ── Climbing grade helpers ────────────────────────────────────
+  function ydsRank(g) {
+    const m = String(g).match(/^5\.(\d+)([a-dA-D]?)/);
+    if (!m) return -1;
+    return parseInt(m[1]) * 4 + (m[2] ? m[2].toLowerCase().charCodeAt(0) - 97 : 0);
+  }
+  function vRank(g) { const m = String(g).match(/^[Vv](\d+)/); return m ? parseInt(m[1]) : -1; }
+  function gradeInBucket(grade, bucket) {
+    if (!grade || bucket === 'all') return true;
+    const r = ydsRank(grade), v = vRank(grade);
+    if (bucket === 'easy') return (r >= 0 && r <= 32) || (v >= 0 && v <= 3);
+    if (bucket === 'mod')  return (r >= 36 && r <= 43) || (v >= 4 && v <= 6);
+    if (bucket === 'hard') return (r >= 44 && r <= 47) || (v >= 7 && v <= 9);
+    if (bucket === 'proj') return r >= 48 || v >= 10;
+    return true;
+  }
+
+  // ── Climbing filter apply ─────────────────────────────────────
+  function applyClimbingFilters() {
+    const { search, area, types, grade } = climbFilter;
+    const searchLow = search.toLowerCase();
+    const hasFilter = search || area !== 'all' || types.size > 0 || grade !== 'all';
+    let total = 0;
+
+    CLIMBING_SOURCES.forEach(srcKey => {
+      const src = map.getSource(srcKey);
+      const cached = layerCache[srcKey];
+      if (!src || !cached) return;
+
+      if (!hasFilter) {
+        src.setData(cached);
+        total += cached.features.length;
+        return;
+      }
+
+      const isAreaLayer = srcKey === 'climbing_areas';
+      const filtered = cached.features.filter(f => {
+        const p = f.properties;
+        if (search && !(p.name || '').toLowerCase().includes(searchLow)) return false;
+        if (area !== 'all' && !inArea(p, isAreaLayer, area)) return false;
+        if (types.size > 0 && srcKey !== 'climbing_areas') {
+          const rt = (p.route_type || '').toLowerCase();
+          const matched = [...types].some(t =>
+            rt === t || rt.startsWith(t + '/') || rt.endsWith('/' + t) || rt.includes('/' + t + '/')
+          );
+          if (!matched) return false;
+        }
+        if (grade !== 'all' && !gradeInBucket(p.grade || '', grade)) return false;
+        return true;
+      });
+
+      src.setData({ type: 'FeatureCollection', features: filtered });
+      total += filtered.length;
+    });
+
+    const countEl = document.getElementById('cf-result-count');
+    const resetBtn = document.getElementById('cf-reset');
+    if (countEl) {
+      countEl.textContent = hasFilter ? `${total.toLocaleString()} results` : '';
+      countEl.classList.toggle('show', !!hasFilter);
+    }
+    if (resetBtn) resetBtn.style.display = hasFilter ? '' : 'none';
+  }
+
+  // ── Climbing filter init (called after data loads) ────────────
+  function initClimbingFilters(layers) {
+    const hasClimbing = layers.some(l => CLIMBING_SOURCES.includes(l.source_key));
+    const panel = document.getElementById('climbing-filter-panel');
+    if (!panel) return;
+    panel.style.display = hasClimbing ? 'block' : 'none';
+    if (!hasClimbing) return;
+
+    // Climbing layers follow their own visible_by_default (off by default) — the
+    // filter section is collapsed initially, so we don't force the layers on.
+
+    buildClimbAreaIndex();
+    populateAreaSelect();
+  }
+
+  // Build climbCountByKey (sub-tree counts) + an area node map for the tree.
+  let climbAreaNodes = {};   // areaKey → { key, name, parentKey, depth, childKeys:[] }
+  function buildClimbAreaIndex() {
+    climbCountByKey = {};
+    CLIMB_SOURCES.forEach(srcKey => {
+      (layerCache[srcKey] || { features: [] }).features.forEach(f => {
+        // Each climb counts toward its whole area chain (parent + all ancestors).
+        new Set(climbAreaChain(f.properties)).forEach(k => {
+          climbCountByKey[k] = (climbCountByKey[k] || 0) + 1;
+        });
+      });
+    });
+
+    climbAreaNodes = {};
+    const areaFeats = (layerCache['climbing_areas'] || { features: [] }).features;
+    areaFeats.forEach(f => {
+      const p = f.properties;
+      const key = areaKeyOf(p);
+      if (!key) return;
+      const path = Array.isArray(p.area_path) ? p.area_path : [];
+      climbAreaNodes[key] = {
+        key, name: p.name || '(unnamed area)',
+        parentKey: p.parent_id || (path.length ? path[path.length - 1] : ''),
+        depth: typeof p.depth === 'number' ? p.depth : 0,
+        childKeys: [],
+      };
+    });
+    // Link children to parents (parents that exist in the set).
+    Object.values(climbAreaNodes).forEach(n => {
+      if (n.parentKey && climbAreaNodes[n.parentKey]) climbAreaNodes[n.parentKey].childKeys.push(n.key);
+    });
+  }
+
+  // Fill #cf-area with a tree-ordered, indented option per area (+ climb count).
+  function populateAreaSelect() {
+    const sel = document.getElementById('cf-area');
+    if (!sel) return;
+    const nodes = climbAreaNodes;
+    const byName = (a, b) => nodes[a].name.localeCompare(nodes[b].name);
+    const roots = Object.values(nodes)
+      .filter(n => !n.parentKey || !nodes[n.parentKey])
+      .map(n => n.key).sort(byName);
+
+    const opts = ['<option value="all">All Areas</option>'];
+    const walk = (key, depth) => {
+      const n = nodes[key];
+      const count = climbCountByKey[key] || 0;
+      const indent = ' '.repeat(depth);   // em-space per level
+      opts.push(`<option value="${escapeHtml(key)}">${indent}${escapeHtml(n.name)}${count ? ` (${count})` : ''}</option>`);
+      n.childKeys.slice().sort(byName).forEach(c => walk(c, depth + 1));
+    };
+    roots.forEach(k => walk(k, 0));
+    sel.innerHTML = opts.join('');
+    sel.value = climbFilter.area;
+  }
+
+  // Select an area (from the dropdown, an area marker, or a climb popup),
+  // reveal + expand the climbing UI, filter to its sub-tree, and zoom to it.
+  function selectClimbArea(areaKey) {
+    climbFilter.area = areaKey;
+    const sel = document.getElementById('cf-area');
+    if (sel) sel.value = areaKey;
+    CLIMBING_SOURCES.forEach(s => {
+      if (!layerMeta[s]) return;
+      setLayerVisible(s, true);
+      const row = document.querySelector(`.layer-row[data-source="${s}"]`);
+      if (row) row.classList.add('on');
+    });
+    const panel = document.getElementById('climbing-filter-panel');
+    if (panel) panel.classList.remove('collapsed');
+    applyClimbingFilters();
+    if (areaKey !== 'all') zoomToClimbArea(areaKey);
+  }
+
+  function zoomToClimbArea(areaKey) {
+    const b = new mapboxgl.LngLatBounds();
+    let n = 0;
+    CLIMB_SOURCES.forEach(src => {
+      (layerCache[src] || { features: [] }).features.forEach(f => {
+        if (climbAreaChain(f.properties).includes(areaKey)) { b.extend(f.geometry.coordinates); n++; }
+      });
+    });
+    if (n) map.fitBounds(b, { padding: 80, maxZoom: 16 });
+  }
+
+  // ── Campsite filters ──────────────────────────────────────────
+  // Max-value sliders over pois_camping properties (drive time to each shore +
+  // min nightly price). All share one predicate and filter via setData,
+  // mirroring the climbing filter. Each slider's top position means "no cap".
+  const CAMP_SLIDERS = [
+    { id: 'df-north', valId: 'df-north-val', key: 'north', prop: 'drive_min_north_shore', step: 5, fmt: v => `${v} min` },
+    { id: 'df-south', valId: 'df-south-val', key: 'south', prop: 'drive_min_south_shore', step: 5, fmt: v => `${v} min` },
+    { id: 'df-price', valId: 'df-price-val', key: 'price', prop: 'min_price',             step: 5, fmt: v => `$${v}` },
+  ];
+
+  function applyCampFilter() {
+    const src = map.getSource(CAMPING_SOURCE);
+    const cached = layerCache[CAMPING_SOURCE];
+    if (!src || !cached) return;
+    const active = CAMP_SLIDERS.filter(s => campFilter[s.key] != null);
+
+    const features = !active.length ? cached.features : cached.features.filter(f => {
+      const p = f.properties || {};
+      // A capped slider excludes campsites missing that value (can't confirm they qualify).
+      return active.every(s => { const v = p[s.prop]; return v != null && v <= campFilter[s.key]; });
+    });
+    src.setData({ type: 'FeatureCollection', features });
+
+    const countEl = document.getElementById('df-result-count');
+    if (countEl) {
+      countEl.textContent = active.length ? `${features.length} of ${cached.features.length} campsites` : '';
+      countEl.classList.toggle('show', active.length > 0);
+    }
+    const resetBtn = document.getElementById('df-reset');
+    if (resetBtn) resetBtn.style.display = active.length ? 'block' : 'none';
+  }
+
+  function initCampFilter(layers) {
+    const panel = document.getElementById('camp-filter-panel');
+    if (!panel) return;
+    const cached = layerCache[CAMPING_SOURCE];
+    const hasCamping = layers.some(l => l.source_key === CAMPING_SOURCE) && cached && cached.features.length;
+    panel.style.display = hasCamping ? 'block' : 'none';
+    if (!hasCamping) return;
+
+    // Enable the camping layer — the panel implies intent to browse campsites.
+    if (layerMeta[CAMPING_SOURCE]) {
+      setLayerVisible(CAMPING_SOURCE, true);
+      const row = document.querySelector(`.layer-row[data-source="${CAMPING_SOURCE}"]`);
+      if (row && !row.classList.contains('on')) row.classList.add('on');
+    }
+
+    CAMP_SLIDERS.forEach(cfg => {
+      const slider = document.getElementById(cfg.id);
+      const valEl = document.getElementById(cfg.valId);
+      campFilter[cfg.key] = null;
+      if (!slider) return;
+
+      // Ceiling = max value present in the data, rounded up to the step.
+      let max = 0, any = false;
+      cached.features.forEach(f => {
+        const v = f.properties && f.properties[cfg.prop];
+        if (v != null) { any = true; if (v > max) max = v; }
+      });
+      // Hide rows whose data is absent (e.g. drive times before the migration runs).
+      const rowEl = slider.closest('.df-row');
+      if (!any) { if (rowEl) rowEl.style.display = 'none'; return; }
+      if (rowEl) rowEl.style.display = '';
+
+      const ceil = Math.max(cfg.step, Math.ceil(max / cfg.step) * cfg.step);
+      slider.max = ceil;
+      slider.value = ceil;
+      if (valEl) valEl.textContent = 'Any';
+      slider.oninput = () => {
+        const v = Number(slider.value);
+        const capped = v < ceil;          // top of range means "no cap"
+        campFilter[cfg.key] = capped ? v : null;
+        if (valEl) valEl.textContent = capped ? cfg.fmt(v) : 'Any';
+        applyCampFilter();
+      };
+    });
+
+    const resetBtn = document.getElementById('df-reset');
+    if (resetBtn) resetBtn.onclick = () => {
+      CAMP_SLIDERS.forEach(cfg => {
+        const s = document.getElementById(cfg.id);
+        if (s && s.oninput) { s.value = s.max; s.oninput(); }
+      });
+    };
+  }
+
+  // ── Climbing autocomplete helpers ─────────────────────────────
+  function cfHighlight(text, q) {
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if (i === -1) return text;
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+  }
+
+  function cfBuildSuggestions(q) {
+    if (!q || q.length < 1) return [];
+    const ql = q.toLowerCase();
+    const seen = new Set();
+    const out = [];
+    ['climbing_routes', 'climbing_boulders'].forEach(srcKey => {
+      (layerCache[srcKey] || { features: [] }).features.forEach(f => {
+        if (out.length >= 8) return;
+        const name = (f.properties.name || '').trim();
+        if (!name || seen.has(name.toLowerCase())) return;
+        if (!name.toLowerCase().includes(ql)) return;
+        seen.add(name.toLowerCase());
+        out.push({
+          name,
+          grade: f.properties.grade || '',
+          route_type: f.properties.route_type || '',
+        });
+      });
+    });
+    return out;
+  }
+
+  // ── Climbing filter event wiring (called once) ────────────────
+  function setupClimbingFilterListeners() {
+    const input = document.getElementById('cf-search');
+    const clearBtn = document.getElementById('cf-search-clear');
+    const sugg = document.getElementById('cf-suggestions');
+    let debounce = null;
+    let selIdx = -1;
+
+    function closeSuggestions() {
+      sugg.classList.remove('open');
+      sugg.innerHTML = '';
+      selIdx = -1;
+    }
+
+    function selectSuggestion(name) {
+      input.value = name;
+      clearBtn.style.display = '';
+      climbFilter.search = name;
+      closeSuggestions();
+      applyClimbingFilters();
+    }
+
+    function renderSuggestions(q) {
+      const items = cfBuildSuggestions(q);
+      if (!items.length || !q) { closeSuggestions(); return; }
+      sugg.innerHTML = items.map((it, i) => {
+        const meta = [it.grade, it.route_type].filter(Boolean).join(' · ');
+        return `<li role="option" data-name="${it.name.replace(/"/g,'&quot;')}">`
+          + cfHighlight(it.name, q)
+          + (meta ? `<span class="cf-ac-meta">${meta}</span>` : '')
+          + '</li>';
+      }).join('');
+      sugg.classList.add('open');
+      selIdx = -1;
+      sugg.querySelectorAll('li').forEach(li => {
+        li.addEventListener('mousedown', e => {
+          e.preventDefault();
+          selectSuggestion(li.dataset.name);
+        });
+      });
+    }
+
+    input.addEventListener('input', e => {
+      clearTimeout(debounce);
+      const val = e.target.value;
+      clearBtn.style.display = val ? '' : 'none';
+      renderSuggestions(val);
+      debounce = setTimeout(() => { climbFilter.search = val; applyClimbingFilters(); }, 220);
+    });
+
+    input.addEventListener('keydown', e => {
+      const lis = sugg.querySelectorAll('li');
+      if (!lis.length) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        lis[selIdx]?.classList.remove('cf-ac-sel');
+        selIdx = (selIdx + 1) % lis.length;
+        lis[selIdx].classList.add('cf-ac-sel');
+        lis[selIdx].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        lis[selIdx]?.classList.remove('cf-ac-sel');
+        selIdx = (selIdx - 1 + lis.length) % lis.length;
+        lis[selIdx].classList.add('cf-ac-sel');
+        lis[selIdx].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter' && selIdx >= 0) {
+        e.preventDefault();
+        selectSuggestion(lis[selIdx].dataset.name);
+      } else if (e.key === 'Escape') {
+        closeSuggestions();
+      }
+    });
+
+    input.addEventListener('blur', () => setTimeout(closeSuggestions, 120));
+
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      clearBtn.style.display = 'none';
+      climbFilter.search = '';
+      closeSuggestions();
+      applyClimbingFilters();
+    });
+    document.getElementById('cf-area').addEventListener('change', e => {
+      // selectClimbArea applies the filter and zooms to the chosen area's climbs.
+      if (e.target.value === 'all') { climbFilter.area = 'all'; applyClimbingFilters(); }
+      else selectClimbArea(e.target.value);
+    });
+    document.querySelectorAll('#cf-types .cf-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const t = chip.dataset.type;
+        if (climbFilter.types.has(t)) { climbFilter.types.delete(t); chip.classList.remove('active'); }
+        else { climbFilter.types.add(t); chip.classList.add('active'); }
+        applyClimbingFilters();
+      });
+    });
+    document.querySelectorAll('#cf-grades .cf-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#cf-grades .cf-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        climbFilter.grade = chip.dataset.bucket;
+        applyClimbingFilters();
+      });
+    });
+    document.getElementById('cf-reset').addEventListener('click', () => {
+      climbFilter.search = ''; climbFilter.area = 'all';
+      climbFilter.types.clear(); climbFilter.grade = 'all';
+      input.value = '';
+      clearBtn.style.display = 'none';
+      closeSuggestions();
+      document.getElementById('cf-area').value = 'all';
+      document.querySelectorAll('#cf-types .cf-chip').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('#cf-grades .cf-chip').forEach(c => c.classList.remove('active'));
+      document.querySelector('#cf-grades .cf-chip[data-bucket="all"]').classList.add('active');
+      applyClimbingFilters();
+    });
+  }
+
+  function buildPopupHTML(props, sourceKey) {
+    const cfg = layerMeta[sourceKey] || { label: 'Feature', color: '#7f8c8d' };
+    if (cfg.popup_template && cfg.popup_template.trim()) {
+      const body = renderPopupTemplate(cfg.popup_template, buildCtx(props));
+      const style = cfg.popup_css ? `<style>${scopePopupCss(cfg.popup_css)}</style>` : '';
+      return `${style}<div class="apex-popup-custom">${body}</div>`;
+    }
+    const name = props.name || null;
+    const tagKeys = PRIMARY_TAG_KEYS[sourceKey] || [];
+    let badgeKey = null, badgeVal = null;
+    for (const k of tagKeys) { if (props[k]) { badgeKey = k; badgeVal = props[k]; break; } }
+    const badgeText = badgeVal
+      ? String(badgeVal).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      : cfg.label;
+    const title = name || badgeText;
+    const skipInRows = new Set([...SKIP_KEYS, badgeKey].filter(Boolean));
+    let customData = {};
+    try {
+      const raw = props.custom_data;
+      customData = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : {};
+    } catch {}
+
+    // Custom fields: render using field_schema labels if defined, else fall back to apex_description
+    const fieldSchema = cfg.field_schema || [];
+    let customHTML = '';
+    if (fieldSchema.length) {
+      const fieldRows = fieldSchema
+        .map(f => {
+          // check custom_data first, then direct properties (e.g. climbing routes store grade/fa as props)
+          const val = customData[f.name] != null ? customData[f.name] : props[f.name];
+          if (val == null || String(val).trim() === '') return '';
+          skipInRows.add(f.name);  // don't also show in raw rows section
+          return `<div class="popup-row"><span class="popup-label">${f.label}</span><span class="popup-value">${val}</span></div>`;
+        })
+        .filter(Boolean)
+        .join('');
+      if (fieldRows) customHTML = `<div style="border-bottom:1px solid #eee;margin-bottom:4px">${fieldRows}</div>`;
+    } else if (customData.apex_description) {
+      customHTML = `<div class="popup-apex-desc">
+        <div class="popup-apex-desc-label">Description</div>
+        <div class="popup-apex-desc-text">${customData.apex_description}</div>
+      </div>`;
+    }
+
+    const rows = Object.entries(props)
+      .filter(([k, v]) => !skipInRows.has(k) && !shouldSkip(k) && v != null && String(v).trim() !== '')
+      .slice(0, 9)
+      .map(([k, v]) => `<div class="popup-row"><span class="popup-label">${fmtKey(k)}</span><span class="popup-value">${fmtVal(k, v)}</span></div>`)
+      .join('');
+    // OpenBeta area association: areas get a "show climbs" button, climbs get
+    // a chip linking back to their area. Both call selectClimbArea (wired below).
+    let climbAssocHTML = '';
+    if (sourceKey === 'climbing_areas') {
+      const ak = areaKeyOf(props);
+      const cnt = climbCountByKey[ak] != null ? climbCountByKey[ak] : (Number(props.climb_count) || 0);
+      if (ak && cnt > 0) {
+        climbAssocHTML = `<button class="popup-area-climbs-btn" data-area-key="${escapeHtml(ak)}"><i class="fa-solid fa-mountain-sun"></i> Show ${cnt} climb${cnt === 1 ? '' : 's'} here</button>`;
+      }
+    } else if ((sourceKey === 'climbing_routes' || sourceKey === 'climbing_boulders') && props.area_name) {
+      const ak = props.area_id || props.area_name;
+      climbAssocHTML = `<button class="popup-area-link" data-area-key="${escapeHtml(ak)}" title="Show this area's climbs"><i class="fa-solid fa-layer-group"></i> ${escapeHtml(props.area_name)}</button>`;
+    }
+
+    return `
+      <div class="popup-header">
+        <div class="popup-feature-name">${title}</div>
+        <span class="popup-badge" style="background:${cfg.color}">${badgeText}</span>
+      </div>
+      <div class="popup-body">
+        ${customHTML}
+        ${rows || (!customHTML ? '<div class="popup-empty">No additional attributes</div>' : '')}
+        ${climbAssocHTML}
+        ${customData.openbeta_id && sourceKey.startsWith('climbing_')
+          ? `<a href="${sourceKey === 'climbing_areas'
+              ? 'https://openbeta.io/areas/' + customData.openbeta_id
+              : 'https://openbeta.io/climbs/' + customData.openbeta_id
+            }" target="_blank" rel="noopener" class="popup-ob-link"><i class="fa-solid fa-arrow-up-right-from-square"></i> View on OpenBeta</a>`
+          : ''}
+        <button class="popup-directions-btn"><i class="fa-solid fa-route"></i> Directions</button>
+      </div>`;
+  }
+
+  // ── Map init ─────────────────────────────────────────────────
+  // Minimal local style used when the Mapbox basemap can't be fetched
+  // (offline): a plain background so the experience overlays still render.
+  // Mapbox tiles are never cached (TOS), so offline = data on dark canvas.
+  const OFFLINE_STYLE = {
+    version: 8,
+    name: 'apex-offline',
+    glyphs: 'mapbox://fonts/mapbox/{fontstack}/{range}.pbf',
+    sources: {},
+    layers: [{ id: 'offline-bg', type: 'background', paint: { 'background-color': '#16201a' } }],
+  };
+
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: navigator.onLine === false ? OFFLINE_STYLE : 'mapbox://styles/mapbox/outdoors-v12',
+    center: [-89.73, 43.43],
+    zoom: 11,
+    customAttribution: '© <a href="https://openbeta.io" target="_blank" rel="noopener">OpenBeta</a> contributors (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>)',
+  });
+
+  // If the remote style fails before anything has loaded (flaky/no signal),
+  // swap to the local fallback so 'load' still fires and bootstrap() runs.
+  let styleEverLoaded = false;
+  map.on('style.load', () => { styleEverLoaded = true; });
+  map.on('error', e => {
+    if (!styleEverLoaded) {
+      styleEverLoaded = true; // one-shot guard
+      map.setStyle(OFFLINE_STYLE);
+    }
+  });
+  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+  map.addControl(new mapboxgl.ScaleControl({ unit: 'imperial' }), 'bottom-right');
+
+  // Geolocation — "center on me" map control (navigation itself is delegated
+  // to the device maps app, so this no longer feeds a routing start point)
+  geolocate = new mapboxgl.GeolocateControl({
+    positionOptions: { enableHighAccuracy: true },
+    trackUserLocation: true,
+    showUserHeading: true,
+  });
+  map.addControl(geolocate, 'top-right');
+
+  // ── On-map basemap switcher ──────────────────────────────────
+  // Traditional tile-switcher: a thumbnail of the *alternate* basemap; click to swap.
+  const BASEMAPS = [
+    { style: 'mapbox://styles/mapbox/outdoors-v12',          label: 'Map',       staticId: 'outdoors-v12' },
+    { style: 'mapbox://styles/mapbox/satellite-streets-v12', label: 'Satellite', staticId: 'satellite-streets-v12' },
+  ];
+  let basemapIdx = 0;
+
+  function basemapThumbUrl(staticId) {
+    const c = map.getCenter();
+    return `https://api.mapbox.com/styles/v1/mapbox/${staticId}/static/`
+      + `${c.lng.toFixed(4)},${c.lat.toFixed(4)},8,0/132x132@2x`
+      + `?access_token=${mapboxgl.accessToken}&attribution=false&logo=false`;
+  }
+  function renderBasemapSwitcher() {
+    const btn = document.getElementById('basemap-switcher');
+    const lbl = document.getElementById('bms-label');
+    if (!btn) return;
+    const next = BASEMAPS[(basemapIdx + 1) % BASEMAPS.length];  // what clicking switches to
+    btn.style.backgroundImage = `url("${basemapThumbUrl(next.staticId)}")`;
+    if (lbl) lbl.textContent = next.label;
+  }
+  function setBasemap(idx) {
+    basemapIdx = ((idx % BASEMAPS.length) + BASEMAPS.length) % BASEMAPS.length;
+    map.setStyle(BASEMAPS[basemapIdx].style);
+    renderBasemapSwitcher();
+  }
+  document.getElementById('basemap-switcher').addEventListener('click', () => setBasemap(basemapIdx + 1));
+  renderBasemapSwitcher();
+
+  // Fallback white circle for any Maki icon name not found in the current style sprite
+  map.on('styleimagemissing', e => {
+    const size = 15;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    map.addImage(e.id, { width: size, height: size, data: ctx.getImageData(0, 0, size, size).data });
+  });
+
+  // ── Layer renderer: adds Mapbox sources + layers for one experience layer config
+  function addLayerToMap(layerCfg) {
+    const key = layerCfg.source_key;
+    const color = (layerCfg.style_overrides && layerCfg.style_overrides.color)
+      || (layerCfg.default_style && layerCfg.default_style.color)
+      || '#7f8c8d';
+    const geomType = layerCfg.geom_type;
+    const filter = layerCfg.filter_expr || null;
+    const firstSymbol = map.getStyle().layers.find(l => l.type === 'symbol')?.id;
+    const mapboxIds = [];
+
+    if (map.getSource(key)) return; // already added (style reload guard)
+
+    if (key === 'trails') {
+      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, generateId: true });
+      const TRAIL_COLOR = ['match', ['get', 'highway'],
+        'footway', '#3498db', 'path', '#27ae60', 'track', '#e67e22',
+        'steps', '#9b59b6', 'cycleway', '#1abc9c', '#7f8c8d'];
+      map.addLayer({ id: key+'-glow', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': TRAIL_COLOR,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 12, 14, 20],
+          'line-blur': 9,
+          'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.4, 0] } });
+      map.addLayer({ id: key+'-case', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#fff', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 3.5, 14, 6.5], 'line-opacity': 0.5 } });
+      map.addLayer({ id: key+'-line', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': TRAIL_COLOR, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 14, 4] } });
+      mapboxIds.push(key+'-glow', key+'-case', key+'-line');
+    } else if (geomType === 'line') {
+      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      const spec = { id: key+'-line', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': color,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 14, 4], 'line-opacity': 0.9 } };
+      if (filter) spec.filter = filter;
+      if (key === 'routes') {
+        spec.paint['line-color'] = ['coalesce', ['get', 'colour'], color];
+        spec.paint['line-dasharray'] = [4, 2];
+      }
+      map.addLayer(spec);
+      mapboxIds.push(key+'-line');
+    } else if (geomType === 'point') {
+      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      // icon: from default_style (subtype POIs, climbing areas, etc.)
+      //       or derived via match for the legacy consolidated 'pois' source
+      const dsIcon = layerCfg.default_style && layerCfg.default_style.icon;
+      const POI_TYPE = ['coalesce', ['get', 'amenity'], ['get', 'tourism'], ['get', 'leisure'], ['get', 'natural'], ''];
+      const iconImage = dsIcon
+        ? dsIcon
+        : key === 'pois'
+          ? ['match', POI_TYPE,
+              'parking', 'parking', 'viewpoint', 'viewpoint',
+              'camp_site', 'campsite', 'picnic_site', 'picnic-site',
+              'shelter', 'shelter', 'toilets', 'toilets',
+              'drinking_water', 'drinking-water', 'restaurant', 'restaurant',
+              'cafe', 'cafe', 'information', 'information',
+              'peak', 'mountain', 'waterfall', 'waterfall',
+              'swimming_pool', 'swimming', 'bench', 'picnic-site', 'marker']
+          : null;
+
+      if (iconImage) {
+        const circleR = key === 'pois' || dsIcon
+          ? ['interpolate', ['linear'], ['zoom'], 10, 4.5, 14, 7.5]
+          : ['interpolate', ['linear'], ['zoom'], 10, 3.5, 14, 5.5];
+        const circleColor = (key === 'pois' && !dsIcon)
+          ? ['match', POI_TYPE,
+              'parking', '#4a90d9', 'viewpoint', '#e67e22', 'camp_site', '#27ae60',
+              'picnic_site', '#00b894', 'shelter', '#e17055', 'toilets', '#636e72',
+              'drinking_water', '#3498db', 'restaurant', '#e84393', 'cafe', '#e84393',
+              'information', '#3498db', 'peak', '#8e44ad', color]
+          : color;
+        const circleSpec = { id: key+'-circle', type: 'circle', source: key,
+          paint: { 'circle-color': circleColor, 'circle-radius': circleR,
+            'circle-stroke-width': 2, 'circle-stroke-color': '#fff', 'circle-opacity': 0.92 } };
+        if (filter) circleSpec.filter = filter;
+        map.addLayer(circleSpec);
+        const iconSpec = { id: key+'-icon', type: 'symbol', source: key,
+          layout: {
+            'icon-image': iconImage,
+            'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.65, 14, 0.98],
+            // Pin the icon to its (always-drawn) circle so it never collides out
+            // at certain zooms — keeps marker rendering consistent across zoom.
+            'icon-allow-overlap': true,
+            'icon-ignore-placement': true,
+            'text-field': ['step', ['zoom'], '', 12, ['coalesce', ['get', 'name'], '']],
+            'text-size': 11, 'text-offset': [0, 1.5],
+            'text-anchor': 'top', 'text-optional': true, 'text-max-width': 8,
+          },
+          paint: { 'icon-color': '#ffffff',
+            'text-color': '#333', 'text-halo-color': '#fff', 'text-halo-width': 1.5 } };
+        if (filter) iconSpec.filter = filter;
+        map.addLayer(iconSpec);
+        mapboxIds.push(key+'-circle', key+'-icon');
+      } else {
+        const spec = { id: key+'-circle', type: 'circle', source: key,
+          paint: { 'circle-color': color,
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 7],
+            'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff', 'circle-opacity': 0.92 } };
+        if (filter) spec.filter = filter;
+        map.addLayer(spec);
+        mapboxIds.push(key+'-circle');
+      }
+    } else {
+      // polygon or mixed — add fill, outline, and circle sub-layers
+      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      const fillSpec = { id: key+'-fill', type: 'fill', source: key,
+        paint: { 'fill-color': color, 'fill-opacity': 0.3 },
+        filter: ['==', '$type', 'Polygon'] };
+      if (filter) fillSpec.filter = ['all', fillSpec.filter, filter];
+      map.addLayer(fillSpec, firstSymbol);
+      mapboxIds.push(key+'-fill');
+
+      const outlineSpec = { id: key+'-outline', type: 'line', source: key,
+        paint: { 'line-color': color, 'line-width': 1, 'line-opacity': 0.65 },
+        filter: ['==', '$type', 'Polygon'] };
+      if (filter) outlineSpec.filter = ['all', outlineSpec.filter, filter];
+      map.addLayer(outlineSpec, firstSymbol);
+      mapboxIds.push(key+'-outline');
+
+      if (geomType === 'mixed') {
+        const lineSpec = { id: key+'-line', type: 'line', source: key,
+          paint: { 'line-color': color, 'line-width': 1.5 },
+          filter: ['==', '$type', 'LineString'] };
+        if (filter) lineSpec.filter = ['all', lineSpec.filter, filter];
+        map.addLayer(lineSpec);
+        mapboxIds.push(key+'-line');
+
+        const circleSpec = { id: key+'-circle', type: 'circle', source: key,
+          paint: { 'circle-color': color, 'circle-radius': 5,
+            'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
+          filter: ['==', '$type', 'Point'] };
+        if (filter) circleSpec.filter = ['all', circleSpec.filter, filter];
+        map.addLayer(circleSpec);
+        mapboxIds.push(key+'-circle');
+      }
+    }
+
+    sourceToMapboxLayers[key] = mapboxIds;
+    mapboxIds.forEach(id => { layerToSource[id] = key; });
+
+    // Apply visibility
+    const vis = layerCfg.visible_by_default ? 'visible' : 'none';
+    mapboxIds.forEach(id => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis); });
+  }
+
+  // ── Feature filters: apply combined (base AND active presets AND ad-hoc) ──
+  function applyFeatureFilters() {
+    // Collect extra exprs per source from active presets + ad-hoc filter.
+    const bySource = {};
+    savedFilters.forEach(f => {
+      if (!activePresetIds.has(f.id)) return;
+      const e = compileConditions(f.conditions, f.match);
+      if (e) (bySource[f.target] = bySource[f.target] || []).push(e);
+    });
+    if (adhocFilter && adhocFilter.expr) {
+      (bySource[adhocFilter.target] = bySource[adhocFilter.target] || []).push(adhocFilter.expr);
+    }
+    // Every source any preset/ad-hoc could touch — so toggling off resets it to base.
+    const managed = new Set(savedFilters.map(f => f.target));
+    if (adhocFilter) managed.add(adhocFilter.target);
+    managed.forEach(src => {
+      const base = layerBaseFilter[src] || null;
+      const extra = bySource[src] || [];
+      let combined;
+      if (!extra.length) combined = base;
+      else if (base) combined = ['all', base, ...extra];
+      else combined = extra.length === 1 ? extra[0] : ['all', ...extra];
+      (sourceToMapboxLayers[src] || []).forEach(id => {
+        if (map.getLayer(id)) map.setFilter(id, combined);
+      });
+    });
+    const anyActive = activePresetIds.size > 0 || !!(adhocFilter && adhocFilter.expr);
+    const clearBtn = document.getElementById('ff-clear');
+    if (clearBtn) clearBtn.style.display = anyActive ? 'block' : 'none';
+  }
+
+  function clearAllFeatureFilters() {
+    activePresetIds.clear();
+    adhocFilter = null;
+    document.querySelectorAll('#ff-presets .ff-preset').forEach(b => b.classList.remove('active'));
+    const cnt = document.getElementById('ff-adhoc-count');
+    if (cnt) cnt.classList.remove('show');
+    applyFeatureFilters();
+  }
+
+  function initFeatureFilters(layers) {
+    savedFilters = (experienceConfig.experience && experienceConfig.experience.saved_filters) || [];
+    activePresetIds.clear();
+    adhocFilter = null;
+
+    const panel = document.getElementById('feature-filter-panel');
+    // Layers that expose at least one filterable field (for the ad-hoc builder).
+    const filterableLayers = layers.filter(l => layerFieldNames(l.source_key).length);
+    if (!savedFilters.length && !filterableLayers.length) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+
+    // Preset buttons
+    const presetWrap = document.getElementById('ff-presets');
+    presetWrap.innerHTML = '';
+    if (!savedFilters.length) {
+      presetWrap.innerHTML = '<div style="font-size:9.5px;color:rgba(255,255,255,0.25);font-style:italic">No saved filters — use the custom filter below.</div>';
+    }
+    savedFilters.forEach(f => {
+      const btn = document.createElement('button');
+      btn.className = 'ff-preset';
+      btn.dataset.id = f.id;
+      btn.innerHTML = `${f.icon ? `<i class="fa-solid ${f.icon}"></i>` : ''}<span>${f.label}</span>`;
+      btn.addEventListener('click', () => {
+        if (activePresetIds.has(f.id)) { activePresetIds.delete(f.id); btn.classList.remove('active'); }
+        else { activePresetIds.add(f.id); btn.classList.add('active'); }
+        applyFeatureFilters();
+      });
+      presetWrap.appendChild(btn);
+    });
+
+    // Ad-hoc builder
+    const adhocBox = document.getElementById('ff-adhoc');
+    const layerSel = document.getElementById('ff-layer');
+    if (!filterableLayers.length) {
+      adhocBox.style.display = 'none';
+    } else {
+      adhocBox.style.display = '';
+      layerSel.innerHTML = filterableLayers
+        .map(l => `<option value="${l.source_key}">${layerMeta[l.source_key].label}</option>`).join('');
+      const rebuild = () => renderAdhocConditions(layerSel.value);
+      layerSel.onchange = rebuild;
+      document.querySelectorAll('#ff-match .cf-chip').forEach(chip => {
+        chip.onclick = () => {
+          document.querySelectorAll('#ff-match .cf-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+        };
+      });
+      document.getElementById('ff-add-cond').onclick = () => addAdhocConditionRow(layerSel.value);
+      document.getElementById('ff-apply').onclick = applyAdhocFilter;
+      rebuild();
+    }
+
+    document.getElementById('ff-clear').onclick = clearAllFeatureFilters;
+    applyFeatureFilters();
+  }
+
+  function adhocConditionRowHTML(fieldNames) {
+    const fieldOpts = fieldNames.map(n => `<option value="${n}">${n}</option>`).join('');
+    const opOpts = FILTER_OPS.map(o => `<option value="${o.op}">${o.label}</option>`).join('');
+    return `<div class="ff-cond-row">
+      <select class="cf-select ff-cond-field">${fieldOpts}</select>
+      <select class="cf-select ff-cond-op">${opOpts}</select>
+      <input class="ff-cond-val" type="text" placeholder="value" />
+      <div class="ff-cond-del" title="Remove">×</div>
+    </div>`;
+  }
+  function wireAdhocRow(row) {
+    const opSel = row.querySelector('.ff-cond-op');
+    const valInput = row.querySelector('.ff-cond-val');
+    const syncVal = () => {
+      const meta = FILTER_OPS.find(o => o.op === opSel.value);
+      valInput.style.display = (meta && meta.noVal) ? 'none' : '';
+    };
+    opSel.addEventListener('change', syncVal);
+    syncVal();
+    row.querySelector('.ff-cond-del').addEventListener('click', () => row.remove());
+  }
+  function renderAdhocConditions(src) {
+    const box = document.getElementById('ff-conditions');
+    box.innerHTML = '';
+    addAdhocConditionRow(src);
+  }
+  function addAdhocConditionRow(src) {
+    const box = document.getElementById('ff-conditions');
+    const names = layerFieldNames(src);
+    box.insertAdjacentHTML('beforeend', adhocConditionRowHTML(names));
+    wireAdhocRow(box.lastElementChild);
+  }
+  function applyAdhocFilter() {
+    const target = document.getElementById('ff-layer').value;
+    const activeChip = document.querySelector('#ff-match .cf-chip.active');
+    const match = activeChip ? activeChip.dataset.match : 'all';
+    const conditions = [...document.querySelectorAll('#ff-conditions .ff-cond-row')].map(row => ({
+      field: row.querySelector('.ff-cond-field').value,
+      op: row.querySelector('.ff-cond-op').value,
+      value: row.querySelector('.ff-cond-val').value.trim(),
+    })).filter(c => c.field);
+    const expr = compileConditions(conditions, match);
+    adhocFilter = expr ? { target, expr, conditions, match } : null;
+    applyFeatureFilters();
+    const cntEl = document.getElementById('ff-adhoc-count');
+    const c = expr ? countMatches(target, conditions, match) : null;
+    if (c) { cntEl.textContent = `${c.matching} of ${c.total} match`; cntEl.classList.add('show'); }
+    else { cntEl.classList.remove('show'); }
+  }
+
+  // ── Geometry helper: centroid for the popup "Directions" destination ──
+  function featureCentroid(geom) {
+    if (!geom) return null;
+    if (geom.type === 'Point') return geom.coordinates;
+    if (geom.type === 'MultiPoint' || geom.type === 'LineString') {
+      const c = geom.coordinates; return c[Math.floor(c.length / 2)];
+    }
+    if (geom.type === 'MultiLineString') {
+      const c = geom.coordinates[0]; return c[Math.floor(c.length / 2)];
+    }
+    // Polygon / MultiPolygon → average of the outer ring
+    let ring = geom.type === 'Polygon' ? geom.coordinates[0] : geom.coordinates[0][0];
+    if (!ring || !ring.length) return null;
+    let x = 0, y = 0;
+    ring.forEach(p => { x += p[0]; y += p[1]; });
+    return [x / ring.length, y / ring.length];
+  }
+
+  // ── Hand off to the device's native maps app ─────────────────
+  // No in-app route geometry or API calls — the maps app uses live GPS as
+  // the start and handles traffic, turn-by-turn, and re-routing for free.
+  function openDirections(dest /* [lng, lat] */) {
+    const [lng, lat] = dest;
+    const walk = dirProfile === 'walking';
+    const isApple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+    const url = isApple
+      ? `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=${walk ? 'w' : 'd'}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=${walk ? 'walking' : 'driving'}`;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  // ── Build sidebar + add all map layers from experience config ─
+  function buildLayersFromConfig(layers) {
+    const listEl = document.getElementById('layer-list');
+    listEl.innerHTML = '';
+    let currentGroup = null;
+
+    layers.forEach(layerCfg => {
+      layerMeta[layerCfg.source_key] = {
+        label: layerCfg.label,
+        color: (layerCfg.style_overrides && layerCfg.style_overrides.color)
+          || (layerCfg.default_style && layerCfg.default_style.color)
+          || '#7f8c8d',
+        field_schema: layerCfg.field_schema || [],
+        popup_template: layerCfg.popup_template || null,
+        popup_css: layerCfg.popup_css || null,
+      };
+      layerBaseFilter[layerCfg.source_key] = layerCfg.filter_expr || null;
+
+      // Group header
+      if (layerCfg.layer_group !== currentGroup) {
+        currentGroup = layerCfg.layer_group;
+        const g = document.createElement('div');
+        g.className = 'layer-group-label';
+        g.textContent = currentGroup;
+        listEl.appendChild(g);
+      }
+
+      const color = layerMeta[layerCfg.source_key].color;
+      const isOn = layerCfg.visible_by_default;
+      const row = document.createElement('div');
+      row.className = 'layer-row' + (isOn ? ' on' : '');
+      row.dataset.source = layerCfg.source_key;
+      row.innerHTML = `
+        <div class="layer-swatch" style="background:${color}${layerCfg.geom_type==='point'?';border-radius:50%':''}"></div>
+        <span class="layer-name">${layerCfg.label}</span>
+        <span class="layer-count" id="count-${layerCfg.source_key}">—</span>
+        <div class="layer-toggle"></div>`;
+      row.addEventListener('click', () => {
+        const nowOn = row.classList.toggle('on');
+        setLayerVisible(layerCfg.source_key, nowOn);
+        if (layerCfg.source_key === 'pois') {
+          const chips = document.getElementById('poi-filter-chips');
+          if (chips) chips.classList.toggle('visible', nowOn);
+        }
+      });
+      listEl.appendChild(row);
+
+      // Add to map
+      addLayerToMap(layerCfg);
+
+      // Filter chips for the POI layer
+      if (layerCfg.source_key === 'pois') {
+        const chipPanel = document.createElement('div');
+        chipPanel.className = 'poi-filters' + (isOn ? ' visible' : '');
+        chipPanel.id = 'poi-filter-chips';
+        const POI_CHIPS = [
+          { label: 'Viewpoints', expr: ['==', ['get', 'tourism'], 'viewpoint'] },
+          { label: 'Parking',    expr: ['==', ['get', 'amenity'], 'parking'] },
+          { label: 'Camping',    expr: ['match', ['get', 'tourism'], ['camp_site', 'picnic_site'], true, false] },
+          { label: 'Water',      expr: ['==', ['get', 'amenity'], 'drinking_water'] },
+          { label: 'Restrooms',  expr: ['==', ['get', 'amenity'], 'toilets'] },
+          { label: 'Shelters',   expr: ['==', ['get', 'amenity'], 'shelter'] },
+          { label: 'Food',       expr: ['match', ['get', 'amenity'], ['restaurant', 'cafe'], true, false] },
+        ];
+        let activeChip = null;
+        POI_CHIPS.forEach(chip => {
+          const el = document.createElement('span');
+          el.className = 'poi-chip';
+          el.textContent = chip.label;
+          el.addEventListener('click', e => {
+            e.stopPropagation();
+            if (activeChip === el) {
+              el.classList.remove('active');
+              activeChip = null;
+              ['pois-circle', 'pois-icon'].forEach(lid => {
+                if (map.getLayer(lid)) map.setFilter(lid, null);
+              });
+            } else {
+              if (activeChip) activeChip.classList.remove('active');
+              el.classList.add('active');
+              activeChip = el;
+              ['pois-circle', 'pois-icon'].forEach(lid => {
+                if (map.getLayer(lid)) map.setFilter(lid, chip.expr);
+              });
+            }
+          });
+          chipPanel.appendChild(el);
+        });
+        listEl.appendChild(chipPanel);
+      }
+    });
+  }
+
+  function setLayerVisible(sourceKey, visible) {
+    const val = visible ? 'visible' : 'none';
+    (sourceToMapboxLayers[sourceKey] || []).forEach(id => {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', val);
+    });
+  }
+
+  // ── Interactions ─────────────────────────────────────────────
+  function registerInteractions() {
+    if (interactionsRegistered) return;
+    interactionsRegistered = true;
+
+    map.on('mousemove', 'trails-line', (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+      if (trailHoverId !== null) map.setFeatureState({ source: 'trails', id: trailHoverId }, { hover: false });
+      trailHoverId = e.features[0].id;
+      map.setFeatureState({ source: 'trails', id: trailHoverId }, { hover: true });
+    });
+    map.on('mouseleave', 'trails-line', () => {
+      map.getCanvas().style.cursor = '';
+      if (trailHoverId !== null) {
+        map.setFeatureState({ source: 'trails', id: trailHoverId }, { hover: false });
+        trailHoverId = null;
+      }
+    });
+
+    Object.keys(layerToSource).forEach(lid => {
+      if (lid === 'trails-line' || lid === 'trails-glow' || lid === 'trails-case') return;
+      map.on('mouseenter', lid, () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', lid, () => { map.getCanvas().style.cursor = ''; });
+    });
+
+    Object.keys(layerToSource).forEach(lid => {
+      if (lid.endsWith('-glow') || lid.endsWith('-case') || lid.endsWith('-outline')) return;
+      map.on('click', lid, (e) => {
+        if (e.originalEvent._popupHandled) return;
+        const sourceKey = layerToSource[lid];
+        const feature = e.features[0];
+        const props = feature.properties;
+        const popup = new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '290px' })
+          .setLngLat(e.lngLat)
+          .setHTML(buildPopupHTML(props, sourceKey))
+          .addTo(map);
+        const dirBtn = popup.getElement().querySelector('.popup-directions-btn');
+        if (dirBtn) dirBtn.addEventListener('click', () => {
+          const dest = featureCentroid(feature.geometry) || [e.lngLat.lng, e.lngLat.lat];
+          openDirections(dest);
+        });
+        // OpenBeta area association: jump to an area's climbs (from an area
+        // marker's "Show climbs" button or a climb's area chip).
+        const areaBtn = popup.getElement().querySelector('.popup-area-climbs-btn, .popup-area-link');
+        if (areaBtn) areaBtn.addEventListener('click', () => {
+          const key = areaBtn.getAttribute('data-area-key');
+          popup.remove();
+          if (key) selectClimbArea(key);
+        });
+        e.originalEvent._popupHandled = true;
+      });
+    });
+  }
+
+  // ── Data loading ─────────────────────────────────────────────
+  async function loadLayerData(layers) {
+    let totalFeatures = 0;
+    await Promise.allSettled(
+      layers.map(async layerCfg => {
+        const key = layerCfg.source_key;
+        if (!layerCache[key]) {
+          const data = await rpcCached('get_layer_geojson', { p_source: key }, 'layer:' + key);
+          if (data) {
+            data.features = (data.features || []).filter(f => f.geometry != null);
+            layerCache[key] = data;
+          }
+        }
+        const src = map.getSource(key);
+        if (src && layerCache[key]) {
+          src.setData(layerCache[key]);
+          const count = layerCache[key].features.length;
+          totalFeatures += count;
+          const el = document.getElementById('count-' + key);
+          if (el) el.textContent = count;
+        }
+      })
+    );
+    return totalFeatures;
+  }
+
+  // ── Main bootstrap ───────────────────────────────────────────
+  // Populate the experience switcher from all public experiences (anon can
+  // read is_public = true rows per RLS). Navigates by changing ?experience=.
+  async function initExperiencePicker(currentSlug) {
+    const { data, error } = await db.from('experiences')
+      .select('slug, title').eq('is_public', true).order('title');
+    if (error || !data || data.length <= 1) return; // nothing to switch between
+    const sel = document.getElementById('experience-select');
+    sel.innerHTML = data.map(e =>
+      `<option value="${e.slug}" ${e.slug === currentSlug ? 'selected' : ''}>${e.title}</option>`).join('');
+    document.getElementById('experience-section').style.display = 'block';
+    sel.onchange = () => {
+      if (sel.value && sel.value !== currentSlug) {
+        location.search = '?experience=' + encodeURIComponent(sel.value);
+      }
+    };
+  }
+
+  async function bootstrap() {
+    const slug = new URLSearchParams(location.search).get('experience') || 'default';
+    initExperiencePicker(slug);  // fire-and-forget; independent of map load
+    const config = await rpcCached('get_experience_config', { p_slug: slug }, 'config:' + slug);
+
+    if (!config) {
+      document.getElementById('loading-screen').classList.add('fade-out');
+      const errEl = document.getElementById('error-screen');
+      document.getElementById('error-msg').textContent = `Experience "${slug}" not found.`;
+      errEl.classList.add('show');
+      return;
+    }
+
+    experienceConfig = config;
+    const exp = config.experience;
+
+    // Apply header
+    document.getElementById('map-title').textContent = exp.title || 'Trail Map';
+    document.title = `${exp.title} — Apex Adventure Alliance`;
+
+    // Apply the experience's basemap (default outdoors is already loaded).
+    // Skipped offline — remote styles can't load and would clobber the fallback.
+    if (exp.basemap && navigator.onLine !== false) {
+      const i = BASEMAPS.findIndex(b => b.style === exp.basemap);
+      if (i > 0) setBasemap(i);
+      else if (i === -1) { map.setStyle(exp.basemap); }  // custom style not in the switcher
+    }
+
+    // Apply view
+    if (exp.bounds) {
+      map.fitBounds(exp.bounds, { padding: 40 });
+    } else {
+      map.setCenter(exp.initial_center);
+      map.setZoom(exp.initial_zoom);
+    }
+
+    // Wait for style to be loaded before adding layers
+    if (map.isStyleLoaded()) {
+      await initLayers(config.layers);
+    } else {
+      map.once('style.load', async () => { await initLayers(config.layers); });
+    }
+  }
+
+  async function initLayers(layers) {
+    buildLayersFromConfig(layers);
+    registerInteractions();
+    setupClimbingFilterListeners();
+    const total = await loadLayerData(layers);
+    initClimbingFilters(layers);
+    initCampFilter(layers);
+    initFeatureFilters(layers);
+
+    document.getElementById('feature-count-badge').innerHTML =
+      `<i class="fa-solid fa-layer-group"></i> ${total.toLocaleString()} Features`;
+
+    // Fit to trails if no explicit bounds set
+    const exp = experienceConfig.experience;
+    if (!exp.bounds && layerCache['trails']) {
+      try {
+        const bounds = new mapboxgl.LngLatBounds();
+        layerCache['trails'].features.forEach(feat => {
+          const coords = feat.geometry.type === 'LineString'
+            ? feat.geometry.coordinates
+            : feat.geometry.coordinates.flat();
+          coords.forEach(c => bounds.extend(c));
+        });
+        if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 50, maxZoom: 14 });
+      } catch (err) { /* no trails layer, skip */ }
+    }
+
+    const el = document.getElementById('loading-screen');
+    el.classList.add('fade-out');
+    setTimeout(() => el.remove(), 700);
+  }
+
+  // ── Map events ───────────────────────────────────────────────
+  map.on('load', bootstrap);
+
+  // Re-add layers after basemap switch
+  map.on('style.load', () => {
+    if (!experienceConfig) return;
+    interactionsRegistered = false;
+    Object.keys(sourceToMapboxLayers).forEach(k => delete sourceToMapboxLayers[k]);
+    Object.keys(layerToSource).forEach(k => delete layerToSource[k]);
+    buildLayersFromConfig(experienceConfig.layers);
+    registerInteractions();
+    experienceConfig.layers.forEach(layerCfg => {
+      const key = layerCfg.source_key;
+      const src = map.getSource(key);
+      if (src && layerCache[key]) src.setData(layerCache[key]);
+    });
+    // Re-apply any active climbing + drive-time filters to the rebuilt sources
+    applyClimbingFilters();
+    applyCampFilter();
+  });
+
+  // ── Panel controls ───────────────────────────────────────────
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    document.getElementById('left-panel').classList.toggle('open');
+  });
+
+  // Collapsible sections — click the title to expand/collapse.
+  document.querySelectorAll('.panel-section.collapsible > .panel-section-title').forEach(title => {
+    title.addEventListener('click', () => title.parentElement.classList.toggle('collapsed'));
+  });
+
+  // Show all layers if any are hidden; otherwise hide all. Reuses each
+  // row's click handler so map visibility and POI chips stay in sync.
+  document.getElementById('toggle-all-layers').addEventListener('click', e => {
+    e.stopPropagation();
+    const rows = [...document.querySelectorAll('#layer-list .layer-row')];
+    if (!rows.length) return;
+    const turnOn = rows.some(r => !r.classList.contains('on'));
+    rows.forEach(r => { if (r.classList.contains('on') !== turnOn) r.click(); });
+  });
+
+  // ── PWA / offline ────────────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // iOS never prompts for install — nudge Safari users toward Add to Home Screen
+  const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (isIos && !isStandalone) {
+    document.getElementById('ios-install-tip').style.display = 'block';
+  }
+
+  // "Save for offline": the experience config + layer GeoJSON are already in
+  // IndexedDB (rpcCached) and the shell/libs in the SW caches — this makes the
+  // save explicit: pin storage, re-cache the page, and prefetch every photo.
+  document.getElementById('offline-save-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('offline-save-btn');
+    const status = document.getElementById('offline-status');
+    if (!('serviceWorker' in navigator) || !('caches' in window)) {
+      status.textContent = 'Offline mode is not supported by this browser.';
+      return;
+    }
+    btn.disabled = true;
+    status.classList.remove('ok');
+    try {
+      await navigator.serviceWorker.ready;
+      if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().catch(() => {});
+      }
+
+      status.textContent = 'Saving app…';
+      const shell = await caches.open('apex-shell-v1');
+      await shell.add(new Request(location.href, { cache: 'reload' }));
+      await Promise.allSettled([
+        shell.add('manifest.webmanifest'),
+        shell.add('icons/icon-192.png'),
+        shell.add('icons/icon-180.png'),
+      ]);
+
+      // Prefetch feature photos so popups work offline (SW caches them)
+      const photoUrls = new Set();
+      Object.values(layerCache).forEach(fc => (fc.features || []).forEach(f => {
+        let p = f.properties && f.properties.photos;
+        if (typeof p === 'string') { try { p = JSON.parse(p); } catch { p = []; } }
+        (Array.isArray(p) ? p : []).forEach(u => {
+          if (typeof u === 'string' && /^https?:/.test(u)) photoUrls.add(u);
+        });
+      }));
+      const urls = [...photoUrls];
+      let done = 0;
+      const BATCH = 6;
+      for (let i = 0; i < urls.length; i += BATCH) {
+        await Promise.allSettled(urls.slice(i, i + BATCH).map(u =>
+          fetch(u).then(() => { done++; })
+        ));
+        status.textContent = `Saving photos… ${Math.min(i + BATCH, urls.length)} / ${urls.length}`;
+      }
+
+      status.textContent = `Saved — this map now works offline${urls.length ? ` (${done} of ${urls.length} photos)` : ''}. The basemap still needs signal; your trails, climbs & points stay visible.`;
+      status.classList.add('ok');
+    } catch (err) {
+      status.textContent = 'Could not finish saving — check your connection and try again.';
+    }
+    btn.disabled = false;
+  });
+
+</script>
+</body>
+</html>

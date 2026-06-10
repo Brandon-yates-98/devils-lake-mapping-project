@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Map Editor — Apex Adventure Alliance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.1"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Inter', sans-serif, Arial; background: #0a140a; }
+    body { display: flex; flex-direction: column; }
+
+    /* ════ LOGIN MODAL ════════════════════════════════════════ */
+    #login-modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(5,12,5,0.96); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center; z-index: 200;
+    }
+    #login-modal.show { display: flex; }
+    #login-box {
+      background: #0d1b0d; border: 1px solid rgba(155,194,60,0.3);
+      border-radius: 10px; padding: 32px; width: 320px;
+      display: flex; flex-direction: column; gap: 14px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    }
+    #login-box img { width: 60px; margin: 0 auto; filter: brightness(0) invert(1); opacity: 0.8; }
+    #login-box h2 { text-align: center; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: 1px; }
+    #login-box p { text-align: center; font-size: 11px; color: rgba(155,194,60,0.6); letter-spacing: 0.5px; }
+    .login-input {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(155,194,60,0.25);
+      border-radius: 5px; padding: 9px 12px; color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 13px; width: 100%; outline: none;
+    }
+    .login-input:focus { border-color: rgba(155,194,60,0.6); }
+    #login-btn {
+      background: #9bc23c; color: #fff; border: none; border-radius: 5px;
+      padding: 10px; font-family: 'Inter', sans-serif; font-size: 13px;
+      font-weight: 700; cursor: pointer; transition: background 0.2s;
+    }
+    #login-btn:hover { background: #87ae28; }
+    #login-error { font-size: 11px; color: #e17055; text-align: center; min-height: 16px; }
+
+    /* ════ HEADER ═════════════════════════════════════════════ */
+    #apex-header {
+      height: 54px; flex-shrink: 0;
+      background: linear-gradient(135deg, #0a1a0a 0%, #162914 50%, #1e3318 100%);
+      border-bottom: 3px solid #9bc23c;
+      display: flex; align-items: center; padding: 0 16px; gap: 12px;
+      z-index: 100; box-shadow: 0 2px 16px rgba(0,0,0,0.5); position: relative;
+    }
+    #apex-header::after {
+      content: ''; position: absolute; bottom: -3px; left: 0; right: 0;
+      height: 1px; background: linear-gradient(90deg, transparent, rgba(155,194,60,0.6), transparent);
+    }
+    .header-logo { height: 34px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; flex-shrink: 0; }
+    .header-divider { width: 1px; height: 26px; background: rgba(155,194,60,0.3); flex-shrink: 0; }
+    .header-brand { display: flex; flex-direction: column; line-height: 1.2; }
+    .header-org { font-size: 9px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: #9bc23c; }
+    .header-title { font-size: 14px; font-weight: 800; color: #fff; }
+    .header-spacer { flex: 1; }
+    .editor-badge {
+      background: rgba(155,194,60,0.15); border: 1px solid rgba(155,194,60,0.35);
+      border-radius: 4px; padding: 3px 10px; font-size: 10px; font-weight: 700;
+      color: #9bc23c; letter-spacing: 1px; text-transform: uppercase;
+    }
+    #exp-title-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(155,194,60,0.18); border: 1px solid rgba(155,194,60,0.5);
+      border-radius: 6px; padding: 5px 12px; font-size: 13px; font-weight: 700;
+      color: #fff; max-width: 340px;
+    }
+    #exp-title-badge i { color: #9bc23c; font-size: 12px; flex-shrink: 0; }
+    #exp-title-badge .exp-badge-prefix {
+      font-size: 9px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+      color: #9bc23c; flex-shrink: 0;
+    }
+    #exp-title-badge .exp-badge-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #exp-title-badge.empty {
+      background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.45); font-weight: 600;
+    }
+    #exp-title-badge.empty i { color: rgba(255,255,255,0.3); }
+    #exp-title-badge.empty .exp-badge-prefix { display: none; }
+    #logout-btn {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 5px; padding: 5px 11px; color: rgba(255,255,255,0.5);
+      font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer;
+    }
+    #logout-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.8); }
+
+    /* ════ LAYOUT ═════════════════════════════════════════════ */
+    #map-wrapper { flex: 1; display: flex; overflow: hidden; position: relative; }
+
+    /* ════ LEFT PANEL ═════════════════════════════════════════ */
+    #left-panel {
+      width: 200px; flex-shrink: 0;
+      background: #0d1b0d; border-right: 1px solid rgba(155,194,60,0.18);
+      display: flex; flex-direction: column; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: rgba(155,194,60,0.3) transparent; z-index: 10;
+    }
+    #left-panel::-webkit-scrollbar { width: 4px; }
+    #left-panel::-webkit-scrollbar-thumb { background: rgba(155,194,60,0.3); border-radius: 2px; }
+    .panel-section { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .panel-section-title {
+      font-size: 8px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+      color: #9bc23c; margin-bottom: 9px; display: flex; align-items: center; gap: 6px;
+    }
+    .panel-section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(155,194,60,0.3), transparent); }
+    .layer-toggle-all {
+      order: 2; flex: 0 0 auto;
+      font-size: 7px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+      color: rgba(155,194,60,0.7); background: none;
+      border: 1px solid rgba(155,194,60,0.3); border-radius: 3px;
+      padding: 2px 6px; cursor: pointer; font-family: inherit;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .layer-toggle-all:hover { color: #9bc23c; border-color: rgba(155,194,60,0.7); }
+    .layer-group-label {
+      font-size: 7px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase;
+      color: rgba(155,194,60,0.4); padding: 8px 2px 3px;
+    }
+    .layer-row {
+      display: flex; align-items: center; gap: 5px; padding: 4px 3px;
+      border-radius: 4px; transition: background 0.15s; cursor: pointer; user-select: none;
+    }
+    .layer-row:hover { background: rgba(255,255,255,0.04); }
+    .layer-swatch { width: 7px; height: 7px; border-radius: 2px; flex-shrink: 0; opacity: 0.5; transition: opacity 0.2s; }
+    .layer-row.on .layer-swatch { opacity: 1; }
+    .layer-name { flex: 1; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.35); transition: color 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .layer-row.on .layer-name { color: rgba(255,255,255,0.82); }
+    .layer-count { font-size: 8px; font-weight: 700; color: rgba(255,255,255,0.2); padding: 1px 5px; background: rgba(0,0,0,0.15); border-radius: 8px; min-width: 20px; text-align: center; flex-shrink: 0; }
+    .layer-row.on .layer-count { color: rgba(155,194,60,0.7); background: rgba(155,194,60,0.1); }
+    .layer-toggle { width: 24px; height: 13px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 7px; position: relative; flex-shrink: 0; transition: background 0.2s; }
+    .layer-toggle::after { content: ''; position: absolute; width: 9px; height: 9px; background: rgba(255,255,255,0.25); border-radius: 50%; top: 1px; left: 1px; transition: transform 0.2s, background 0.2s; }
+    .layer-row.on .layer-toggle { background: rgba(155,194,60,0.28); border-color: rgba(155,194,60,0.5); }
+    .layer-row.on .layer-toggle::after { transform: translateX(11px); background: #9bc23c; }
+
+    .panel-placeholder { font-size: 11px; color: rgba(255,255,255,0.2); padding: 8px 2px; font-style: italic; }
+
+    .panel-footer { margin-top: auto; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; border-top: 1px solid rgba(155,194,60,0.1); }
+    .panel-footer-logo { width: 60px; height: auto; filter: brightness(0) invert(1); opacity: 0.4; }
+    .panel-footer-tagline { font-size: 8px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(155,194,60,0.35); text-align: center; }
+
+    /* ════ MAP ════════════════════════════════════════════════ */
+    #map { flex: 1; }
+    .mapboxgl-ctrl-top-right { top: 10px; right: 10px; }
+    .mapboxgl-ctrl-bottom-right { bottom: 24px; right: 10px; }
+
+    /* ════ RIGHT PANEL ════════════════════════════════════════ */
+    #right-panel {
+      width: 290px; flex-shrink: 0;
+      background: #0d1b0d; border-left: 1px solid rgba(155,194,60,0.18);
+      display: flex; flex-direction: column; overflow: hidden; z-index: 10;
+    }
+    #tab-bar {
+      display: flex; flex-shrink: 0;
+      border-bottom: 1px solid rgba(155,194,60,0.2);
+      background: #0a1a0a;
+    }
+    .tab-btn {
+      flex: 1; padding: 11px 4px; font-family: 'Inter', sans-serif;
+      font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+      color: rgba(155,194,60,0.45); background: transparent;
+      border: none; border-bottom: 2px solid transparent;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .tab-btn:hover { color: rgba(155,194,60,0.75); }
+    .tab-btn.active { color: #9bc23c; border-bottom-color: #9bc23c; background: rgba(155,194,60,0.05); }
+    .tab-pane { display: none; flex: 1; overflow-y: auto; flex-direction: column; scrollbar-width: thin; scrollbar-color: rgba(155,194,60,0.3) transparent; }
+    .tab-pane::-webkit-scrollbar { width: 4px; }
+    .tab-pane::-webkit-scrollbar-thumb { background: rgba(155,194,60,0.3); border-radius: 2px; }
+    .tab-pane.active { display: flex; }
+
+    /* ── Shared right-panel form elements ── */
+    .rp-section { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .rp-label { font-size: 8.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(155,194,60,0.6); margin-bottom: 5px; display: block; }
+    .rp-input, .rp-select, .rp-textarea {
+      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 4px; padding: 6px 9px; color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 12px; outline: none; transition: border-color 0.15s;
+    }
+    .rp-input:focus, .rp-select:focus, .rp-textarea:focus { border-color: rgba(155,194,60,0.5); }
+    .rp-select option { background: #1a2a1a; }
+    .rp-textarea { resize: vertical; min-height: 54px; font-size: 11px; }
+    .rp-row { display: flex; gap: 7px; align-items: center; }
+    .rp-row .rp-input { flex: 1; }
+    .rp-hint { font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 3px; }
+    .rp-check-row { display: flex; align-items: center; gap: 8px; }
+    .rp-check-row label { font-size: 12px; color: rgba(255,255,255,0.6); cursor: pointer; }
+
+    .btn-primary {
+      background: #9bc23c; color: #fff; border: none; border-radius: 4px;
+      padding: 7px 14px; font-family: 'Inter', sans-serif; font-size: 11.5px;
+      font-weight: 700; cursor: pointer; transition: background 0.2s; white-space: nowrap;
+    }
+    .btn-primary:hover { background: #87ae28; }
+    .btn-outline {
+      background: transparent; color: rgba(155,194,60,0.75);
+      border: 1px solid rgba(155,194,60,0.35); border-radius: 4px;
+      padding: 6px 12px; font-family: 'Inter', sans-serif; font-size: 11px;
+      font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-outline:hover { background: rgba(155,194,60,0.1); border-color: rgba(155,194,60,0.6); }
+    .btn-danger {
+      background: transparent; color: rgba(225,112,85,0.7);
+      border: 1px solid rgba(225,112,85,0.3); border-radius: 4px;
+      padding: 5px 10px; font-family: 'Inter', sans-serif; font-size: 10.5px;
+      font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-danger:hover { background: rgba(225,112,85,0.1); border-color: rgba(225,112,85,0.6); }
+    .btn-sm { padding: 4px 9px; font-size: 10px; }
+    .btn-icon {
+      background: transparent; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 4px; padding: 5px 8px; color: rgba(255,255,255,0.4);
+      font-size: 12px; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-icon:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.8); }
+    .btn-icon.active { border-color: #9bc23c; color: #9bc23c; background: rgba(155,194,60,0.1); }
+
+    /* ── Experience list ── */
+    #exp-list { padding: 10px 12px; flex-direction: column; gap: 5px; display: flex; }
+    .exp-item {
+      border: 1px solid rgba(255,255,255,0.07); border-radius: 5px; overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .exp-item.selected { border-color: rgba(155,194,60,0.5); }
+    .exp-item-header {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .exp-item-header:hover { background: rgba(255,255,255,0.03); }
+    .exp-item.selected .exp-item-header { background: rgba(155,194,60,0.07); }
+    .exp-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(155,194,60,0.4); flex-shrink: 0; }
+    .exp-item.selected .exp-dot { background: #9bc23c; }
+    .exp-item-name { flex: 1; font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.7); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .exp-item.selected .exp-item-name { color: #fff; }
+    .exp-item-slug { font-size: 9px; color: rgba(255,255,255,0.25); }
+    .visibility-badge {
+      font-size: 8px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 3px;
+    }
+    .visibility-badge.public { background: rgba(155,194,60,0.15); color: rgba(155,194,60,0.8); }
+    .visibility-badge.draft { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.3); }
+    .exp-item-actions { display: none; gap: 6px; padding: 6px 10px 8px; border-top: 1px solid rgba(255,255,255,0.05); }
+    .exp-item.selected .exp-item-actions { display: flex; }
+
+    /* ── New / edit experience form ── */
+    #exp-form { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(155,194,60,0.04); display: none; flex-direction: column; gap: 10px; }
+    #exp-form.show { display: flex; }
+    #exp-form h3 { font-size: 11px; font-weight: 800; color: #9bc23c; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ── Layer cards ── */
+    #layer-manager-list { padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; }
+    .layer-card { border: 1px solid rgba(255,255,255,0.07); border-radius: 5px; overflow: hidden; }
+    .layer-card-header {
+      display: flex; align-items: center; gap: 7px; padding: 7px 9px;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .layer-card-header:hover { background: rgba(255,255,255,0.03); }
+    .layer-card-swatch { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    .layer-card-name { flex: 1; font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.75); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .layer-card-body { display: none; padding: 9px; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.15); flex-direction: column; gap: 8px; }
+    .layer-card.open .layer-card-body { display: flex; }
+    .style-row { display: flex; align-items: center; gap: 8px; }
+    .style-row label { font-size: 10px; color: rgba(255,255,255,0.4); flex-shrink: 0; }
+    input[type="color"] { width: 28px; height: 22px; border: 1px solid rgba(255,255,255,0.15); border-radius: 3px; cursor: pointer; padding: 1px; background: transparent; }
+    input[type="range"] { flex: 1; accent-color: #9bc23c; }
+    .opacity-val { font-size: 10px; color: rgba(255,255,255,0.4); width: 28px; text-align: right; }
+    .card-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+    #layer-manager-empty { padding: 20px 12px; font-size: 11px; color: rgba(255,255,255,0.25); text-align: center; font-style: italic; }
+
+    /* ── Add layer dropdown ── */
+    #add-layer-section { padding: 10px 12px; border-top: 1px solid rgba(255,255,255,0.05); }
+
+    /* ── Draw panel ── */
+    #draw-mode-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+    .draw-mode-btn {
+      flex: 1; min-width: 52px; padding: 8px 5px; font-family: 'Inter', sans-serif;
+      font-size: 10px; font-weight: 700; text-align: center;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 4px; color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.15s;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .draw-mode-btn i { font-size: 14px; }
+    .draw-mode-btn:hover { border-color: rgba(155,194,60,0.4); color: rgba(155,194,60,0.8); }
+    .draw-mode-btn.active { border-color: #9bc23c; color: #9bc23c; background: rgba(155,194,60,0.1); }
+    .draw-mode-btn.danger:hover { border-color: rgba(225,112,85,0.5); color: rgba(225,112,85,0.8); }
+    .draw-mode-btn.danger.active { border-color: #e17055; color: #e17055; background: rgba(225,112,85,0.1); }
+    #feature-attr-panel { display: none; flex-direction: column; gap: 9px; }
+    #feature-attr-panel.show { display: flex; }
+    .attr-title { font-size: 10px; font-weight: 800; color: rgba(155,194,60,0.7); letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ── Field management ── */
+    .field-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 4px; min-height: 16px; }
+    .field-item { display: flex; align-items: center; gap: 6px; padding: 4px 7px; background: rgba(0,0,0,0.2); border-radius: 3px; }
+    .field-item-info { flex: 1; min-width: 0; }
+    .field-item-name { font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.75); }
+    .field-item-meta { font-size: 9px; color: rgba(255,255,255,0.3); margin-top: 1px; }
+    .field-item-remove { background: transparent; border: none; color: rgba(225,112,85,0.4); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; flex-shrink: 0; }
+    .field-item-remove:hover { color: #e17055; }
+    .field-item-edit { background: transparent; border: none; color: rgba(74,144,217,0.45); cursor: pointer; font-size: 11px; line-height: 1; padding: 0 2px; flex-shrink: 0; }
+    .field-item-edit:hover { color: #4a90d9; }
+    .field-item.hidden-field { opacity: 0.5; }
+    .field-item-ctrl { background: transparent; border: none; color: rgba(255,255,255,0.35); cursor: pointer; font-size: 11px; line-height: 1; padding: 0 2px; flex-shrink: 0; }
+    .field-item-ctrl:hover { color: rgba(255,255,255,0.85); }
+    .field-item-ctrl:disabled { opacity: 0.2; cursor: default; }
+    .field-item-ctrl.on { color: #9bc23c; }
+    .field-reorder { display: flex; flex-direction: column; flex-shrink: 0; }
+    .field-reorder .field-item-ctrl { font-size: 8px; padding: 0; height: 9px; }
+    .field-src-badge { font-size: 7.5px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; padding: 1px 4px; border-radius: 3px; flex-shrink: 0; }
+    .field-src-badge.base { background: rgba(74,144,217,0.2); color: #5dade2; }
+    .field-src-badge.custom { background: rgba(155,194,60,0.2); color: #9bc23c; }
+    .add-field-form { display: none; flex-direction: column; gap: 5px; padding: 7px; background: rgba(0,0,0,0.25); border-radius: 4px; border: 1px solid rgba(155,194,60,0.15); margin-bottom: 4px; }
+
+    /* ── Status / toast ── */
+    #toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px);
+      background: #1a2a1a; border: 1px solid rgba(155,194,60,0.4);
+      border-radius: 6px; padding: 8px 18px; font-size: 12px; font-weight: 600;
+      color: rgba(255,255,255,0.8); z-index: 300; transition: transform 0.3s ease;
+      white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.error { border-color: rgba(225,112,85,0.5); color: #e17055; }
+
+    /* ════ LOADING ════════════════════════════════════════════ */
+    #loading-screen {
+      position: absolute; inset: 0; background: rgba(8,16,8,0.94); backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 50; gap: 14px; transition: opacity 0.5s ease;
+    }
+    #loading-screen.fade-out { opacity: 0; pointer-events: none; }
+    .loading-logo { height: 54px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; animation: logo-pulse 2s ease-in-out infinite; }
+    .loading-sub { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #9bc23c; }
+    @keyframes logo-pulse { 0%,100% { opacity:0.7; transform:scale(1); } 50% { opacity:1; transform:scale(1.04); } }
+
+    /* ════ POPUP ══════════════════════════════════════════════ */
+    .mapboxgl-popup-content { padding: 0 !important; border-radius: 8px !important; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,0.35) !important; min-width: 200px; font-family: 'Inter', sans-serif; }
+    .popup-header { background: linear-gradient(135deg,#162914,#1e3318); padding: 9px 12px 8px; border-bottom: 2px solid #9bc23c; }
+    .popup-feature-name { font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .popup-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; text-transform: uppercase; color: #fff; }
+    .popup-body { background: #fff; padding: 8px 12px 10px; }
+    .popup-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f2f2f2; gap: 8px; }
+    .popup-row:last-child { border-bottom: none; }
+    .popup-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #999; flex-shrink: 0; }
+    .popup-value { font-size: 11.5px; font-weight: 700; color: #1a1a1a; text-align: right; word-break: break-word; }
+    .popup-empty { font-size: 11px; color: #bbb; font-style: italic; }
+    .popup-edit-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 9px; padding: 6px; border: none; border-radius: 5px; background: #9bc23c; color: #14250f; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800; cursor: pointer; }
+    .popup-edit-btn:hover { background: #acd24c; }
+    .popup-btn-row { display: flex; gap: 6px; margin-top: 9px; }
+    .popup-btn-row .popup-edit-btn { flex: 1; width: auto; margin-top: 0; }
+    .popup-delete-btn { display: flex; align-items: center; justify-content: center; padding: 6px 11px; border: none; border-radius: 5px; background: #e74c3c; color: #fff; font-size: 11px; cursor: pointer; flex-shrink: 0; }
+    .popup-delete-btn:hover { background: #c0392b; }
+    .mapboxgl-popup-close-button { color: rgba(255,255,255,0.6) !important; font-size: 18px !important; padding: 5px 8px !important; top: 0 !important; right: 0 !important; }
+  </style>
+</head>
+<body>
+
+<!-- ══ LOGIN MODAL ═════════════════════════════════════════════ -->
+<div id="login-modal" class="show">
+  <div id="login-box">
+    <img src="https://apexadventurealliance.com/wp-content/uploads/2023/07/cropped-rope-logo-1.png" alt="Apex" />
+    <h2>Map Editor</h2>
+    <p>APEX ADVENTURE ALLIANCE</p>
+    <input class="login-input" type="email" id="login-email" placeholder="Email" autocomplete="email" />
+    <input class="login-input" type="password" id="login-password" placeholder="Password" autocomplete="current-password" />
+    <button id="login-btn">Sign In</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════ -->
+<header id="apex-header">
+  <img class="header-logo" src="https://apexadventurealliance.com/wp-content/uploads/2023/07/cropped-rope-logo-1.png" alt="Apex Adventure Alliance" />
+  <div class="header-divider"></div>
+  <div class="header-brand">
+    <span class="header-org">Apex Adventure Alliance</span>
+    <span class="header-title">Map Editor</span>
+  </div>
+  <div class="header-spacer"></div>
+  <span class="editor-badge"><i class="fa-solid fa-pen-ruler"></i> Editor</span>
+  <span id="exp-title-badge" class="empty">
+    <i class="fa-solid fa-layer-group"></i>
+    <span class="exp-badge-prefix">Editing</span>
+    <span class="exp-badge-label">No experience loaded</span>
+  </span>
+  <button id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+</header>
+
+<!-- ══ MAIN ════════════════════════════════════════════════════ -->
+<main id="map-wrapper">
+
+  <div id="loading-screen">
+    <img class="loading-logo" src="https://apexadventurealliance.com/wp-content/uploads/2023/07/cropped-rope-logo-1.png" alt="" />
+    <div class="loading-sub">Loading editor</div>
+  </div>
+
+  <!-- ── Left panel: layer visibility for selected experience ── -->
+  <aside id="left-panel">
+    <div class="panel-section">
+      <div class="panel-section-title">Layers<button id="toggle-all-layers" class="layer-toggle-all" title="Show / hide all layers"><i class="fa-solid fa-eye"></i> All</button></div>
+      <div id="left-layer-list">
+        <div class="panel-placeholder">Select an experience</div>
+      </div>
+    </div>
+    <div class="panel-footer">
+      <img class="panel-footer-logo" src="https://apexadventurealliance.com/wp-content/uploads/2025/04/ApexPrimaryLogoFinal-271x300.png" alt="" />
+      <div class="panel-footer-tagline">Editor Mode</div>
+    </div>
+  </aside>
+
+  <!-- ── Map ── -->
+  <div id="map"></div>
+
+  <!-- ── Right panel ── -->
+  <aside id="right-panel">
+    <div id="tab-bar">
+      <button class="tab-btn active" data-tab="experiences"><i class="fa-solid fa-map"></i> Exp</button>
+      <button class="tab-btn" data-tab="layers"><i class="fa-solid fa-layer-group"></i> Layers</button>
+      <button class="tab-btn" data-tab="draw"><i class="fa-solid fa-pen-nib"></i> Draw</button>
+    </div>
+
+    <!-- ── Tab 1: Experiences ── -->
+    <div id="tab-experiences" class="tab-pane active">
+      <div class="rp-section" style="padding-bottom:10px">
+        <button id="new-exp-btn" class="btn-primary" style="width:100%"><i class="fa-solid fa-plus"></i> New Experience</button>
+      </div>
+
+      <!-- Create/edit form -->
+      <div id="exp-form">
+        <h3 id="exp-form-title">New Experience</h3>
+        <div>
+          <label class="rp-label">Title</label>
+          <input class="rp-input" id="f-title" type="text" placeholder="Devils Lake Bouldering" />
+        </div>
+        <div>
+          <label class="rp-label">Slug (URL param)</label>
+          <input class="rp-input" id="f-slug" type="text" placeholder="devils-lake-bouldering" />
+          <div class="rp-hint">?experience=<span id="slug-preview">…</span></div>
+        </div>
+        <div>
+          <label class="rp-label">Basemap</label>
+          <select class="rp-select" id="f-basemap">
+            <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
+            <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite Streets</option>
+            <option value="mapbox://styles/mapbox/streets-v12">Streets</option>
+          </select>
+        </div>
+        <div>
+          <label class="rp-label">Initial View</label>
+          <div class="rp-row">
+            <input class="rp-input" id="f-lng" type="number" placeholder="Lng" step="0.001" style="font-size:11px" />
+            <input class="rp-input" id="f-lat" type="number" placeholder="Lat" step="0.001" style="font-size:11px" />
+            <input class="rp-input" id="f-zoom" type="number" placeholder="Zoom" step="0.5" min="1" max="20" style="width:62px;font-size:11px" />
+          </div>
+          <button class="btn-outline" style="width:100%;margin-top:5px;font-size:10.5px" id="capture-view-btn"><i class="fa-solid fa-crosshairs"></i> Capture Current Map View</button>
+        </div>
+        <div class="rp-check-row">
+          <input type="checkbox" id="f-public" checked />
+          <label for="f-public">Public (visible to embed users)</label>
+        </div>
+        <div class="rp-row">
+          <button class="btn-primary" id="exp-save-btn" style="flex:1">Save</button>
+          <button class="btn-outline" id="exp-cancel-btn">Cancel</button>
+        </div>
+        <div id="exp-form-error" style="font-size:11px;color:#e17055;min-height:14px"></div>
+      </div>
+
+      <!-- Experience list -->
+      <div id="exp-list">
+        <div style="padding:16px;font-size:11px;color:rgba(255,255,255,0.2);text-align:center;font-style:italic">Loading…</div>
+      </div>
+    </div>
+
+    <!-- ── Tab 2: Layers ── -->
+    <div id="tab-layers" class="tab-pane">
+      <div id="layer-manager-empty" style="padding:24px 12px;text-align:center;font-size:11px;color:rgba(255,255,255,0.25);font-style:italic">
+        Select an experience in the Experiences tab to manage its layers.
+      </div>
+      <div id="layer-manager-list" style="display:none"></div>
+      <div id="saved-filters-manager" style="display:none"></div>
+      <div id="add-layer-section" style="display:none">
+        <label class="rp-label">Add Template Layer</label>
+        <div class="rp-row">
+          <select class="rp-select" id="add-layer-select" style="flex:1"></select>
+          <button class="btn-primary btn-sm" id="add-layer-btn"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab 3: Draw ── -->
+    <div id="tab-draw" class="tab-pane">
+      <div class="rp-section">
+        <label class="rp-label">Target Layer</label>
+        <div class="rp-row">
+          <select class="rp-select" id="draw-target-select" style="flex:1">
+            <option value="">— select a layer —</option>
+          </select>
+        </div>
+        <div class="rp-row" style="margin-top:8px">
+          <input class="rp-input" id="new-layer-name" placeholder="New layer name…" style="flex:1;font-size:11px" />
+          <button class="btn-outline btn-sm" id="create-custom-layer-btn">Create</button>
+        </div>
+      </div>
+
+      <div class="rp-section">
+        <label class="rp-label">Draw Mode</label>
+        <div id="draw-mode-btns">
+          <button class="draw-mode-btn" data-mode="simple_select"><i class="fa-solid fa-arrow-pointer"></i>Select</button>
+          <button class="draw-mode-btn" data-mode="draw_point"><i class="fa-solid fa-circle-dot"></i>Point</button>
+          <button class="draw-mode-btn" data-mode="draw_line_string"><i class="fa-solid fa-minus"></i>Line</button>
+          <button class="draw-mode-btn" data-mode="draw_polygon"><i class="fa-solid fa-draw-polygon"></i>Polygon</button>
+          <button class="draw-mode-btn danger" id="delete-selected-btn"><i class="fa-solid fa-trash"></i>Delete</button>
+        </div>
+      </div>
+
+      <div class="rp-section" id="feature-attr-section">
+        <label class="rp-label">Selected Feature</label>
+        <div id="feature-attr-panel" class="show">
+          <div style="font-size:11px;color:rgba(255,255,255,0.25);font-style:italic">Draw or select a feature to edit its properties.</div>
+        </div>
+        <div id="feature-attr-form" style="display:none;flex-direction:column;gap:8px">
+          <div>
+            <label class="rp-label">Name</label>
+            <input class="rp-input" id="feat-name" type="text" placeholder="Feature name" />
+          </div>
+          <div id="dynamic-fields"></div>
+          <button class="btn-primary" id="save-feature-btn" style="width:100%"><i class="fa-solid fa-floppy-disk"></i> Save Feature</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiYnlhdGVzNDAiLCJhIjoiY21wNG53eDhkMGQ4aDJyb2xwaWMyYTJ6bCJ9.UixLEupbwuR2wKDum5b8DQ';
+
+  const db = supabase.createClient(
+    'https://lcenhesezodgrjrymngg.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjZW5oZXNlem9kZ3JqcnltbmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Mjk2MDksImV4cCI6MjA5NTAwNTYwOX0.HD9iIKp267i3t2csvLA68TBZ4ASDBL14xznlSQumn30'
+  );
+
+  // ══ State ════════════════════════════════════════════════════
+  let currentExperience = null;
+  let currentExpLayers = [];
+  let allTemplates = [];
+  let selectedDrawFeatureId = null;
+  const sourceToMapboxLayers = {};
+  const layerToSource = {};
+  const layerCache = {};
+  const layerMeta = {};
+  let interactionsRegistered = false;
+  let trailHoverId = null;
+  let editingExpId = null; // null = creating, uuid = editing
+  let currentDrawSchema = []; // field_schema for the active draw target layer
+
+  // ══ Toast ════════════════════════════════════════════════════
+  let toastTimer = null;
+  function toast(msg, isError = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show' + (isError ? ' error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+  }
+
+  // ══ Auth ═════════════════════════════════════════════════════
+  async function checkAuth() {
+    const { data: { session } } = await db.auth.getSession();
+    if (session) {
+      document.getElementById('login-modal').classList.remove('show');
+      return true;
+    }
+    return false;
+  }
+
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const pw = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = '';
+    if (!email || !pw) { errEl.textContent = 'Enter email and password.'; return; }
+    const { error } = await db.auth.signInWithPassword({ email, password: pw });
+    if (error) { errEl.textContent = error.message; return; }
+    document.getElementById('login-modal').classList.remove('show');
+    await init();
+  });
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-btn').click();
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await db.auth.signOut();
+    document.getElementById('login-modal').classList.add('show');
+  });
+
+  // ══ Map ══════════════════════════════════════════════════════
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/outdoors-v12',
+    center: [-89.73, 43.43],
+    zoom: 11,
+  });
+  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+  map.addControl(new mapboxgl.ScaleControl({ unit: 'imperial' }), 'bottom-right');
+
+  map.on('styleimagemissing', e => {
+    const size = 15;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    map.addImage(e.id, { width: size, height: size, data: ctx.getImageData(0, 0, size, size).data });
+  });
+
+  const draw = new MapboxDraw({
+    displayControlsDefault: false,
+    userProperties: true,
+  });
+  map.addControl(draw);
+
+  // ══ Map layer helpers ════════════════════════════════════════
+  function clearMapLayers() {
+    Object.keys(sourceToMapboxLayers).forEach(key => {
+      (sourceToMapboxLayers[key] || []).forEach(id => {
+        if (map.getLayer(id)) map.removeLayer(id);
+      });
+      if (map.getSource(key)) map.removeSource(key);
+      delete sourceToMapboxLayers[key];
+    });
+    Object.keys(layerToSource).forEach(k => delete layerToSource[k]);
+    Object.keys(layerMeta).forEach(k => delete layerMeta[k]);
+    interactionsRegistered = false;
+  }
+
+  function addLayerToMap(layerCfg) {
+    const key = layerCfg.source_key || layerCfg.template_slug;
+    const color = (layerCfg.style_overrides && layerCfg.style_overrides.color)
+      || (layerCfg.default_style && layerCfg.default_style.color)
+      || '#7f8c8d';
+    const geomType = layerCfg.geom_type;
+    const filter = layerCfg.filter_expr || null;
+    const firstSymbol = map.getStyle().layers.find(l => l.type === 'symbol')?.id;
+    const mapboxIds = [];
+
+    layerMeta[key] = { label: layerCfg.label, color, fields: layerCfg.field_schema || [], popup_template: layerCfg.popup_template || null, popup_css: layerCfg.popup_css || null };
+
+    if (map.getSource(key)) return;
+
+    if (key.startsWith('trails') || layerCfg.template_slug === 'trails') {
+      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, generateId: true });
+      const TC = ['match', ['get', 'highway'], 'footway', '#3498db', 'path', '#27ae60',
+        'track', '#e67e22', 'steps', '#9b59b6', 'cycleway', '#1abc9c', '#7f8c8d'];
+      map.addLayer({ id: key+'-glow', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': TC, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 12, 14, 20],
+          'line-blur': 9, 'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.4, 0] } });
+      map.addLayer({ id: key+'-case', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#fff', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 3.5, 14, 6.5], 'line-opacity': 0.5 } });
+      map.addLayer({ id: key+'-line', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': TC, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 14, 4] } });
+      mapboxIds.push(key+'-glow', key+'-case', key+'-line');
+    } else if (geomType === 'line') {
+      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      const spec = { id: key+'-line', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': color, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 14, 4], 'line-opacity': 0.9 } };
+      if (filter) spec.filter = filter;
+      if (layerCfg.template_slug === 'routes') {
+        spec.paint['line-color'] = ['coalesce', ['get', 'colour'], color];
+        spec.paint['line-dasharray'] = [4, 2];
+      }
+      if (layerCfg.template_slug === 'barriers') { spec.filter = ['==', '$type', 'LineString']; }
+      map.addLayer(spec);
+      mapboxIds.push(key+'-line');
+    } else if (geomType === 'point') {
+      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      const dsIcon = layerCfg.default_style && layerCfg.default_style.icon;
+      const POI_TYPE = ['coalesce', ['get', 'amenity'], ['get', 'tourism'], ['get', 'leisure'], ['get', 'natural'], ''];
+      const iconImage = dsIcon
+        ? dsIcon
+        : key === 'pois'
+          ? ['match', POI_TYPE,
+              'parking', 'parking', 'viewpoint', 'viewpoint',
+              'camp_site', 'campsite', 'picnic_site', 'picnic-site',
+              'shelter', 'shelter', 'toilets', 'toilets',
+              'drinking_water', 'drinking-water', 'restaurant', 'restaurant',
+              'cafe', 'cafe', 'information', 'information',
+              'peak', 'mountain', 'waterfall', 'waterfall',
+              'swimming_pool', 'swimming', 'bench', 'picnic-site', 'marker']
+          : null;
+      if (iconImage) {
+        const circleColor = (key === 'pois' && !dsIcon)
+          ? ['match', POI_TYPE,
+              'parking', '#4a90d9', 'viewpoint', '#e67e22', 'camp_site', '#27ae60',
+              'picnic_site', '#00b894', 'shelter', '#e17055', 'toilets', '#636e72',
+              'drinking_water', '#3498db', 'restaurant', '#e84393', 'cafe', '#e84393',
+              'information', '#3498db', 'peak', '#8e44ad', color]
+          : color;
+        const circleSpec = { id: key+'-circle', type: 'circle', source: key,
+          paint: { 'circle-color': circleColor,
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 7, 14, 11],
+            'circle-stroke-width': 2, 'circle-stroke-color': '#fff', 'circle-opacity': 0.92 } };
+        if (filter) circleSpec.filter = filter;
+        map.addLayer(circleSpec);
+        const iconSpec = { id: key+'-icon', type: 'symbol', source: key,
+          layout: {
+            'icon-image': iconImage,
+            'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.55, 14, 0.85],
+            'icon-allow-overlap': false,
+            'text-field': ['step', ['zoom'], '', 14, ['coalesce', ['get', 'name'], '']],
+            'text-size': 11, 'text-offset': [0, 1.5],
+            'text-anchor': 'top', 'text-optional': true, 'text-max-width': 8,
+          },
+          paint: { 'icon-color': '#ffffff',
+            'text-color': '#333', 'text-halo-color': '#fff', 'text-halo-width': 1.5 } };
+        if (filter) iconSpec.filter = filter;
+        map.addLayer(iconSpec);
+        mapboxIds.push(key+'-circle', key+'-icon');
+      } else {
+        const spec = { id: key+'-circle', type: 'circle', source: key,
+          paint: { 'circle-color': color, 'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 7],
+            'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff', 'circle-opacity': 0.92 } };
+        if (filter) spec.filter = filter;
+        map.addLayer(spec);
+        mapboxIds.push(key+'-circle');
+      }
+    } else {
+      // polygon or mixed
+      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      const fillF = filter ? ['all', ['==', '$type', 'Polygon'], filter] : ['==', '$type', 'Polygon'];
+      map.addLayer({ id: key+'-fill', type: 'fill', source: key, filter: fillF,
+        paint: { 'fill-color': color, 'fill-opacity': 0.3 } }, firstSymbol);
+      map.addLayer({ id: key+'-outline', type: 'line', source: key, filter: fillF,
+        paint: { 'line-color': color, 'line-width': 1, 'line-opacity': 0.65 } }, firstSymbol);
+      mapboxIds.push(key+'-fill', key+'-outline');
+      if (geomType === 'mixed') {
+        const lineF = filter ? ['all', ['==', '$type', 'LineString'], filter] : ['==', '$type', 'LineString'];
+        const ptF = filter ? ['all', ['==', '$type', 'Point'], filter] : ['==', '$type', 'Point'];
+        map.addLayer({ id: key+'-line', type: 'line', source: key, filter: lineF,
+          paint: { 'line-color': color, 'line-width': 1.5 } });
+        map.addLayer({ id: key+'-circle', type: 'circle', source: key, filter: ptF,
+          paint: { 'circle-color': color, 'circle-radius': 5, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' } });
+        mapboxIds.push(key+'-line', key+'-circle');
+      }
+    }
+
+    sourceToMapboxLayers[key] = mapboxIds;
+    mapboxIds.forEach(id => { layerToSource[id] = key; });
+    const vis = (layerCfg.visible_by_default !== false) ? 'visible' : 'none';
+    mapboxIds.forEach(id => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis); });
+  }
+
+  function setLayerVisible(sourceKey, visible) {
+    const val = visible ? 'visible' : 'none';
+    (sourceToMapboxLayers[sourceKey] || []).forEach(id => {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', val);
+    });
+  }
+
+  // ── Popup helpers ───────────────────────────────────────────
+  const SKIP_KEYS = new Set(['_osm_type', '_osm_id', 'wikidata', 'wikipedia', 'type', 'name', 'id', 'photos', 'custom_data', '_draw_id']);
+  const SKIP_PFX = ['tiger:', 'gnis:', 'source', 'is_in:', 'addr:'];
+  const SKIP_SFX = [':wikidata', ':wikipedia', ':reviewed', ':note'];
+  function fmtKey(k) { return k.replace(/[_:]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
+  function shouldSkip(k) {
+    if (SKIP_KEYS.has(k)) return true;
+    if (SKIP_PFX.some(p => k.startsWith(p))) return true;
+    if (SKIP_SFX.some(s => k.endsWith(s))) return true;
+    return false;
+  }
+  function rowHTML(label, val) {
+    return `<div class="popup-row"><span class="popup-label">${label}</span><span class="popup-value">${String(val).replace(/_/g,' ')}</span></div>`;
+  }
+
+  // ── Custom popup template helpers ─────────────────────────────
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  // Merge custom_data over base props so {{ grade }} works either way; always expose name + photos[].
+  function buildCtx(props) {
+    let cd = {};
+    try { const raw = props.custom_data; cd = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : {}; } catch {}
+    let photos = props.photos;
+    if (typeof photos === 'string') { try { photos = JSON.parse(photos); } catch { photos = []; } }
+    if (!Array.isArray(photos)) photos = [];
+    return { ...props, ...cd, name: props.name || cd.name || '', photos };
+  }
+  // Render {{#each photos}}, {{#if field}}, and {{ field }} tokens against ctx (values escaped).
+  function renderPopupTemplate(template, ctx) {
+    let out = String(template);
+    out = out.replace(/\{\{\s*#each\s+(\w+)\s*\}\}([\s\S]*?)\{\{\s*\/each\s*\}\}/g, (m, key, inner) => {
+      const arr = Array.isArray(ctx[key]) ? ctx[key] : [];
+      return arr.map(item => inner.replace(/\{\{\s*this\s*\}\}/g, escapeHtml(item))).join('');
+    });
+    out = out.replace(/\{\{\s*#if\s+(\w+)\s*\}\}([\s\S]*?)\{\{\s*\/if\s*\}\}/g, (m, key, inner) => {
+      const v = ctx[key];
+      const has = v != null && !(Array.isArray(v) ? v.length === 0 : String(v).trim() === '');
+      return has ? inner : '';
+    });
+    out = out.replace(/\{\{\s*(\w+)\s*\}\}/g, (m, key) => {
+      const v = ctx[key];
+      if (v == null || Array.isArray(v)) return '';
+      return escapeHtml(v);
+    });
+    return out;
+  }
+  // Scope author CSS to the popup wrapper so it can't bleed into other Mapbox popups.
+  // NOTE: simple rules only — @media / @keyframes headers are left untouched (their inner
+  // rules won't be scoped), which is acceptable for popup styling.
+  function scopePopupCss(css, scopeSel) {
+    scopeSel = scopeSel || '.apex-popup-custom';
+    return String(css).replace(/([^{}]+)\{([^{}]*)\}/g, (m, sel, body) => {
+      const s = sel.trim();
+      if (s.startsWith('@')) return m;
+      const scoped = s.split(',').map(part => `${scopeSel} ${part.trim()}`).join(', ');
+      return `${scoped}{${body}}`;
+    });
+  }
+
+  function buildPopupHTML(props, sourceKey) {
+    const cfg = layerMeta[sourceKey] || { label: 'Feature', color: '#7f8c8d' };
+    if (cfg.popup_template && cfg.popup_template.trim()) {
+      const body = renderPopupTemplate(cfg.popup_template, buildCtx(props));
+      const style = cfg.popup_css ? `<style>${scopePopupCss(cfg.popup_css)}</style>` : '';
+      return `${style}<div class="apex-popup-custom">${body}
+        <div class="popup-btn-row">
+          <button class="popup-edit-btn"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="popup-delete-btn" title="Delete feature"><i class="fa-solid fa-trash"></i></button>
+        </div></div>`;
+    }
+    const name = props.name || cfg.label;
+    const fields = cfg.fields || [];
+    let rows;
+    if (fields.length) {
+      // Configured layer: show only visible fields, in the configured order.
+      let cd = {};
+      try { const raw = props.custom_data; cd = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : {}; } catch {}
+      rows = fields
+        .filter(f => !f.hidden)
+        .map(f => [f.label, f.base ? props[f.name] : cd[f.name]])
+        .filter(([, v]) => v != null && String(v).trim() !== '')
+        .map(([label, v]) => rowHTML(label, v))
+        .join('');
+    } else {
+      // Unconfigured: auto-list raw attributes (legacy behavior).
+      rows = Object.entries(props)
+        .filter(([k, v]) => !shouldSkip(k) && v != null && String(v).trim() !== '')
+        .slice(0, 8)
+        .map(([k, v]) => rowHTML(fmtKey(k), v))
+        .join('');
+    }
+    return `<div class="popup-header"><div class="popup-feature-name">${name}</div><span class="popup-badge" style="background:${cfg.color}">${cfg.label}</span></div>
+      <div class="popup-body">${rows || '<div class="popup-empty">No attributes</div>'}
+        <div class="popup-btn-row">
+          <button class="popup-edit-btn"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="popup-delete-btn" title="Delete feature"><i class="fa-solid fa-trash"></i></button>
+        </div></div>`;
+  }
+
+  function registerInteractions() {
+    if (interactionsRegistered) return;
+    interactionsRegistered = true;
+    map.on('mousemove', 'trails-line', e => {
+      map.getCanvas().style.cursor = 'pointer';
+      if (trailHoverId !== null) map.setFeatureState({ source: 'trails', id: trailHoverId }, { hover: false });
+      trailHoverId = e.features[0].id;
+      map.setFeatureState({ source: 'trails', id: trailHoverId }, { hover: true });
+    });
+    map.on('mouseleave', 'trails-line', () => {
+      map.getCanvas().style.cursor = '';
+      if (trailHoverId !== null) { map.setFeatureState({ source: 'trails', id: trailHoverId }, { hover: false }); trailHoverId = null; }
+    });
+    Object.keys(layerToSource).forEach(lid => {
+      if (lid.endsWith('-glow') || lid.endsWith('-case')) return;
+      map.on('mouseenter', lid, () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', lid, () => { map.getCanvas().style.cursor = ''; });
+      if (!lid.endsWith('-outline')) {
+        map.on('click', lid, e => {
+          if (e.originalEvent._popupHandled) return;
+          const feature = e.features[0];
+          const sourceKey = layerToSource[lid];
+          const popup = new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '270px' })
+            .setLngLat(e.lngLat).setHTML(buildPopupHTML(feature.properties, sourceKey)).addTo(map);
+          const editBtn = popup.getElement().querySelector('.popup-edit-btn');
+          if (editBtn) editBtn.addEventListener('click', () => {
+            popup.remove();
+            beginFeatureEdit(feature, sourceKey);
+          });
+          const delBtn = popup.getElement().querySelector('.popup-delete-btn');
+          if (delBtn) delBtn.addEventListener('click', async () => {
+            const nm = feature.properties.name || 'this feature';
+            if (!confirm(`Delete "${nm}"? This cannot be undone.`)) return;
+            popup.remove();
+            if (await applyFeatureDeletion(feature, sourceKey)) toast('Feature deleted');
+          });
+          e.originalEvent._popupHandled = true;
+        });
+      }
+    });
+  }
+
+  async function loadLayerData(layers) {
+    await Promise.allSettled(layers.map(async lyr => {
+      const key = lyr.source_key || lyr.template_slug;
+      if (!layerCache[key]) {
+        const { data } = await db.rpc('get_layer_geojson', { p_source: key });
+        if (data) layerCache[key] = data;
+      }
+      const src = map.getSource(key);
+      if (src && layerCache[key]) {
+        src.setData(layerCache[key]);
+        const countEl = document.getElementById('count-' + key);
+        if (countEl) countEl.textContent = layerCache[key].features.length;
+      }
+    }));
+  }
+
+  // ══ Render experience on map ═════════════════════════════════
+  async function renderExperience(exp, expLayers) {
+    clearMapLayers();
+    trailHoverId = null;
+    if (!map.isStyleLoaded()) {
+      await new Promise(r => map.once('style.load', r));
+    }
+    // Normalize layer config shape from experience_layers join
+    const normalized = expLayers.map(el => ({
+      source_key: el.template_slug,
+      template_slug: el.template_slug,
+      label: el.layer_templates.label,
+      geom_type: el.layer_templates.geom_type,
+      layer_group: el.layer_templates.layer_group,
+      default_style: el.layer_templates.default_style,
+      field_schema: el.layer_templates.field_schema || [],
+      popup_template: el.layer_templates.popup_template || null,
+      popup_css: el.layer_templates.popup_css || null,
+      style_overrides: el.style_overrides || {},
+      filter_expr: el.filter_expr,
+      visible_by_default: el.visible_by_default,
+    }));
+    normalized.forEach(l => addLayerToMap(l));
+    registerInteractions();
+    await loadLayerData(normalized);
+    buildLeftPanel(normalized);
+  }
+
+  function buildLeftPanel(layers) {
+    const list = document.getElementById('left-layer-list');
+    list.innerHTML = '';
+    let currentGroup = null;
+    layers.forEach(l => {
+      const key = l.source_key || l.template_slug;
+      if (l.layer_group !== currentGroup) {
+        currentGroup = l.layer_group;
+        const g = document.createElement('div');
+        g.className = 'layer-group-label';
+        g.textContent = currentGroup;
+        list.appendChild(g);
+      }
+      const color = (l.style_overrides && l.style_overrides.color) || (l.default_style && l.default_style.color) || '#7f8c8d';
+      const isOn = l.visible_by_default !== false;
+      const row = document.createElement('div');
+      row.className = 'layer-row' + (isOn ? ' on' : '');
+      row.dataset.source = key;
+      row.innerHTML = `<div class="layer-swatch" style="background:${color}"></div>
+        <span class="layer-name">${l.label}</span>
+        <span class="layer-count" id="count-${key}">—</span>
+        <div class="layer-toggle"></div>`;
+      row.addEventListener('click', () => {
+        const nowOn = row.classList.toggle('on');
+        setLayerVisible(key, nowOn);
+      });
+      list.appendChild(row);
+    });
+  }
+
+  // Show all layers if any are hidden; otherwise hide all. Reuses each
+  // row's click handler so map visibility stays in sync.
+  document.getElementById('toggle-all-layers').addEventListener('click', () => {
+    const rows = [...document.querySelectorAll('#left-layer-list .layer-row')];
+    if (!rows.length) return;
+    const turnOn = rows.some(r => !r.classList.contains('on'));
+    rows.forEach(r => { if (r.classList.contains('on') !== turnOn) r.click(); });
+  });
+
+  // ══ Experiences Tab ══════════════════════════════════════════
+  async function loadExperiences() {
+    const { data, error } = await db.from('experiences').select('*').order('created_at');
+    if (error) { toast('Failed to load experiences', true); return; }
+    renderExpList(data);
+  }
+
+  function renderExpList(experiences) {
+    const list = document.getElementById('exp-list');
+    list.innerHTML = '';
+    if (!experiences.length) {
+      list.innerHTML = '<div style="padding:16px;font-size:11px;color:rgba(255,255,255,0.25);text-align:center;font-style:italic">No experiences yet. Create one above.</div>';
+      return;
+    }
+    experiences.forEach(exp => {
+      const item = document.createElement('div');
+      item.className = 'exp-item' + (currentExperience && currentExperience.id === exp.id ? ' selected' : '');
+      item.dataset.id = exp.id;
+      item.innerHTML = `
+        <div class="exp-item-header">
+          <div class="exp-dot"></div>
+          <div style="flex:1;min-width:0">
+            <div class="exp-item-name">${exp.title}</div>
+            <div class="exp-item-slug">${exp.slug}</div>
+          </div>
+          <span class="visibility-badge ${exp.is_public ? 'public' : 'draft'}">${exp.is_public ? 'Public' : 'Draft'}</span>
+        </div>
+        <div class="exp-item-actions">
+          <button class="btn-outline btn-sm exp-select-btn">Load</button>
+          <button class="btn-outline btn-sm exp-edit-btn"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="btn-danger btn-sm exp-delete-btn"><i class="fa-solid fa-trash"></i></button>
+        </div>`;
+      item.querySelector('.exp-item-header').addEventListener('click', () => toggleExpSelect(item, exp));
+      item.querySelector('.exp-select-btn').addEventListener('click', e => { e.stopPropagation(); selectExperience(exp); });
+      item.querySelector('.exp-edit-btn').addEventListener('click', e => { e.stopPropagation(); openExpForm(exp); });
+      item.querySelector('.exp-delete-btn').addEventListener('click', e => { e.stopPropagation(); deleteExperience(exp); });
+      list.appendChild(item);
+    });
+  }
+
+  function toggleExpSelect(item, exp) {
+    document.querySelectorAll('.exp-item').forEach(i => i.classList.remove('selected'));
+    item.classList.add('selected');
+  }
+
+  async function selectExperience(exp) {
+    currentExperience = exp;
+    (() => {
+      const badge = document.getElementById('exp-title-badge');
+      badge.classList.remove('empty');
+      badge.querySelector('.exp-badge-label').textContent = exp.title;
+    })();
+    toggleExpSelect(document.querySelector(`.exp-item[data-id="${exp.id}"]`), exp);
+
+    // Load experience_layers with template join
+    const { data: layers, error } = await db.from('experience_layers')
+      .select('*, layer_templates(*)')
+      .eq('experience_id', exp.id)
+      .order('sort_order');
+    if (error) { toast('Failed to load layers', true); return; }
+    currentExpLayers = layers;
+
+    await renderExperience(exp, layers);
+    renderLayerManager(layers);
+    renderSavedFilters();
+    showLayerManager(true);
+
+    // Switch to layers tab
+    switchTab('layers');
+  }
+
+  // ── Experience form ─────────────────────────────────────────
+  function openExpForm(existing = null) {
+    editingExpId = existing ? existing.id : null;
+    const form = document.getElementById('exp-form');
+    document.getElementById('exp-form-title').textContent = existing ? 'Edit Experience' : 'New Experience';
+    document.getElementById('f-title').value = existing ? existing.title : '';
+    document.getElementById('f-slug').value = existing ? existing.slug : '';
+    document.getElementById('slug-preview').textContent = existing ? existing.slug : '…';
+    document.getElementById('f-basemap').value = existing ? existing.basemap : 'mapbox://styles/mapbox/outdoors-v12';
+    document.getElementById('f-public').checked = existing ? existing.is_public : true;
+    const center = existing ? existing.initial_center : [-89.73, 43.43];
+    document.getElementById('f-lng').value = Array.isArray(center) ? center[0] : center.lng || -89.73;
+    document.getElementById('f-lat').value = Array.isArray(center) ? center[1] : center.lat || 43.43;
+    document.getElementById('f-zoom').value = existing ? existing.initial_zoom : 11;
+    document.getElementById('exp-form-error').textContent = '';
+    form.classList.add('show');
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  document.getElementById('new-exp-btn').addEventListener('click', () => openExpForm());
+  document.getElementById('exp-cancel-btn').addEventListener('click', () => {
+    document.getElementById('exp-form').classList.remove('show');
+  });
+  document.getElementById('f-title').addEventListener('input', e => {
+    const slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (!editingExpId) document.getElementById('f-slug').value = slug;
+    document.getElementById('slug-preview').textContent = slug || '…';
+  });
+  document.getElementById('f-slug').addEventListener('input', e => {
+    document.getElementById('slug-preview').textContent = e.target.value || '…';
+  });
+  document.getElementById('capture-view-btn').addEventListener('click', () => {
+    const center = map.getCenter();
+    document.getElementById('f-lng').value = center.lng.toFixed(5);
+    document.getElementById('f-lat').value = center.lat.toFixed(5);
+    document.getElementById('f-zoom').value = map.getZoom().toFixed(1);
+    toast('Captured current map view');
+  });
+
+  document.getElementById('exp-save-btn').addEventListener('click', async () => {
+    const errEl = document.getElementById('exp-form-error');
+    const title = document.getElementById('f-title').value.trim();
+    const slug = document.getElementById('f-slug').value.trim();
+    const lng = parseFloat(document.getElementById('f-lng').value);
+    const lat = parseFloat(document.getElementById('f-lat').value);
+    const zoom = parseFloat(document.getElementById('f-zoom').value);
+    if (!title || !slug) { errEl.textContent = 'Title and slug are required.'; return; }
+    if (isNaN(lng) || isNaN(lat) || isNaN(zoom)) { errEl.textContent = 'Enter valid lng, lat, and zoom.'; return; }
+    const payload = {
+      title, slug,
+      basemap: document.getElementById('f-basemap').value,
+      is_public: document.getElementById('f-public').checked,
+      initial_center: [lng, lat],
+      initial_zoom: zoom,
+    };
+    let error;
+    if (editingExpId) {
+      ({ error } = await db.from('experiences').update(payload).eq('id', editingExpId));
+    } else {
+      ({ error } = await db.from('experiences').insert(payload));
+    }
+    if (error) { errEl.textContent = error.message; return; }
+    document.getElementById('exp-form').classList.remove('show');
+    toast(editingExpId ? 'Experience updated' : 'Experience created');
+    await loadExperiences();
+  });
+
+  async function deleteExperience(exp) {
+    if (!confirm(`Delete "${exp.title}"? This cannot be undone.`)) return;
+    const { error } = await db.from('experiences').delete().eq('id', exp.id);
+    if (error) { toast(error.message, true); return; }
+    if (currentExperience && currentExperience.id === exp.id) {
+      currentExperience = null;
+      (() => {
+        const badge = document.getElementById('exp-title-badge');
+        badge.classList.add('empty');
+        badge.querySelector('.exp-badge-label').textContent = 'No experience loaded';
+      })();
+      clearMapLayers();
+      document.getElementById('left-layer-list').innerHTML = '<div class="panel-placeholder">Select an experience</div>';
+      showLayerManager(false);
+    }
+    toast('Experience deleted');
+    await loadExperiences();
+  }
+
+  // ══ Layers Tab ═══════════════════════════════════════════════
+  function showLayerManager(show) {
+    document.getElementById('layer-manager-empty').style.display = show ? 'none' : 'block';
+    document.getElementById('layer-manager-list').style.display = show ? 'flex' : 'none';
+    document.getElementById('saved-filters-manager').style.display = show ? 'block' : 'none';
+    document.getElementById('add-layer-section').style.display = show ? 'block' : 'none';
+  }
+
+  // ══ Saved filter presets (experience.saved_filters) ══════════
+  const FILTER_OPS = [
+    { op: 'exists',   label: 'has any value', noVal: true },
+    { op: 'absent',   label: 'is empty',      noVal: true },
+    { op: '<',        label: '<' },
+    { op: '<=',       label: '≤' },
+    { op: '>',        label: '>' },
+    { op: '>=',       label: '≥' },
+    { op: '==',       label: '=' },
+    { op: '!=',       label: '≠' },
+    { op: 'contains', label: 'contains' },
+  ];
+  let sfEditingId = null;  // id of the preset being edited, or null when adding new
+
+  function genFilterId() {
+    try { return crypto.randomUUID(); }
+    catch { return 'f_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  }
+  // Field names available for a layer: configured field_schema + keys seen in its data.
+  function editorLayerFieldNames(slug) {
+    const names = new Set();
+    const el = currentExpLayers.find(l => l.template_slug === slug);
+    const fs = (el && el.layer_templates && el.layer_templates.field_schema) || [];
+    fs.forEach(f => { if (f.name) names.add(f.name); });
+    const gj = layerCache[slug];
+    if (gj && gj.features) {
+      const INTERNAL = new Set(['id', '_draw_id', 'photos', 'custom_data']);
+      gj.features.slice(0, 400).forEach(f => Object.keys(f.properties || {}).forEach(k => {
+        if (!INTERNAL.has(k)) names.add(k);
+      }));
+    }
+    return [...names].sort();
+  }
+  function summarizeFilter(f) {
+    const parts = (f.conditions || []).map(c => {
+      const m = FILTER_OPS.find(o => o.op === c.op);
+      const lbl = m ? m.label : c.op;
+      return (m && m.noVal) ? `${c.field} ${lbl}` : `${c.field} ${lbl} ${c.value}`;
+    });
+    return parts.join(f.match === 'any' ? '  OR  ' : '  AND  ') || 'no conditions';
+  }
+
+  async function persistSavedFilters(filters) {
+    const { error } = await db.from('experiences')
+      .update({ saved_filters: filters }).eq('id', currentExperience.id);
+    if (error) { toast(error.message, true); return false; }
+    currentExperience.saved_filters = filters;
+    return true;
+  }
+
+  function sfConditionRowHTML(fieldNames, cond) {
+    const c = cond || { field: fieldNames[0] || '', op: 'exists', value: '' };
+    const fieldOpts = fieldNames.map(n => `<option value="${n}" ${n === c.field ? 'selected' : ''}>${n}</option>`).join('');
+    const opOpts = FILTER_OPS.map(o => `<option value="${o.op}" ${o.op === c.op ? 'selected' : ''}>${o.label}</option>`).join('');
+    const noVal = (FILTER_OPS.find(o => o.op === c.op) || {}).noVal;
+    return `<div class="sf-cond-row" style="display:flex;gap:5px;margin-top:5px;align-items:center">
+      <select class="rp-select sf-cond-field" style="flex:1.3;min-width:0;font-size:11px">${fieldOpts}</select>
+      <select class="rp-select sf-cond-op" style="flex:0.9;min-width:0;font-size:11px">${opOpts}</select>
+      <input class="rp-input sf-cond-val" placeholder="value" value="${(c.value != null ? String(c.value) : '').replace(/"/g, '&quot;')}" style="flex:1;min-width:0;font-size:11px;display:${noVal ? 'none' : ''}" />
+      <button class="sf-cond-del" title="Remove" style="flex:0 0 auto;width:24px;height:24px;border-radius:5px;cursor:pointer;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4)">×</button>
+    </div>`;
+  }
+  function wireSfRow(row) {
+    const opSel = row.querySelector('.sf-cond-op');
+    const valInput = row.querySelector('.sf-cond-val');
+    const sync = () => {
+      const m = FILTER_OPS.find(o => o.op === opSel.value);
+      valInput.style.display = (m && m.noVal) ? 'none' : '';
+    };
+    opSel.addEventListener('change', sync);
+    row.querySelector('.sf-cond-del').addEventListener('click', () => row.remove());
+  }
+  function sfAddConditionRow(slug, cond) {
+    const box = document.getElementById('sf-conditions');
+    box.insertAdjacentHTML('beforeend', sfConditionRowHTML(editorLayerFieldNames(slug), cond));
+    wireSfRow(box.lastElementChild);
+  }
+
+  function renderSavedFilters() {
+    const wrap = document.getElementById('saved-filters-manager');
+    const filters = currentExperience.saved_filters || [];
+    const layerOpts = currentExpLayers
+      .map(l => `<option value="${l.template_slug}">${l.layer_templates.label}</option>`).join('');
+
+    wrap.innerHTML = `
+      <div style="border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:11px;margin-top:10px;background:rgba(255,255,255,0.02)">
+        <div class="rp-label" style="margin-bottom:6px">Saved Filters
+          <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">— shown as buttons on the public map</span>
+        </div>
+        <div id="sf-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:9px"></div>
+        <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:9px">
+          <div id="sf-form-title" class="rp-label" style="margin-bottom:5px">New Filter</div>
+          <input class="rp-input" id="sf-label" placeholder="Label (e.g. Under $50/night)" style="font-size:11px;margin-bottom:5px" />
+          <div class="rp-row" style="gap:5px">
+            <input class="rp-input" id="sf-icon" placeholder="Icon, optional (e.g. fa-dollar-sign)" style="flex:1;font-size:11px" />
+            <select class="rp-select" id="sf-target" style="flex:1;font-size:11px">${layerOpts}</select>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center;margin-top:6px">
+            <span class="rp-label" style="margin:0">Match</span>
+            <select class="rp-select" id="sf-match" style="width:auto;flex:0 0 auto;font-size:11px">
+              <option value="all">All conditions (AND)</option>
+              <option value="any">Any condition (OR)</option>
+            </select>
+          </div>
+          <div id="sf-conditions"></div>
+          <button class="btn-outline btn-sm" id="sf-add-cond" style="margin-top:6px"><i class="fa-solid fa-plus"></i> Condition</button>
+          <div class="rp-row" style="gap:5px;margin-top:7px">
+            <button class="btn-primary btn-sm" id="sf-save" style="flex:1"><i class="fa-solid fa-floppy-disk"></i> Save Filter</button>
+            <button class="btn-outline btn-sm" id="sf-cancel" style="display:none">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+
+    // Existing presets list
+    const listEl = document.getElementById('sf-list');
+    if (!filters.length) {
+      listEl.innerHTML = '<div style="font-size:10.5px;color:rgba(255,255,255,0.25);font-style:italic">No saved filters yet.</div>';
+    } else {
+      filters.forEach(f => {
+        const tmplLabel = (currentExpLayers.find(l => l.template_slug === f.target) || {}).layer_templates;
+        const targetName = tmplLabel ? tmplLabel.label : f.target;
+        const item = document.createElement('div');
+        item.style.cssText = 'display:flex;gap:6px;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.03)';
+        item.innerHTML = `
+          <div style="min-width:0">
+            <div style="font-size:11.5px;font-weight:700;color:rgba(255,255,255,0.85)">${f.icon ? `<i class="fa-solid ${f.icon}" style="margin-right:5px;color:#9bc23c"></i>` : ''}${f.label}</div>
+            <div style="font-size:9.5px;color:rgba(255,255,255,0.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${targetName} · ${summarizeFilter(f)}</div>
+          </div>
+          <div style="display:flex;gap:4px;flex:0 0 auto">
+            <button class="btn-outline btn-sm sf-edit" data-id="${f.id}">Edit</button>
+            <button class="btn-danger btn-sm sf-del" data-id="${f.id}">×</button>
+          </div>`;
+        listEl.appendChild(item);
+      });
+    }
+
+    // Wire form
+    const targetSel = document.getElementById('sf-target');
+    const resetForm = () => {
+      sfEditingId = null;
+      document.getElementById('sf-form-title').textContent = 'New Filter';
+      document.getElementById('sf-label').value = '';
+      document.getElementById('sf-icon').value = '';
+      document.getElementById('sf-match').value = 'all';
+      if (currentExpLayers.length) targetSel.value = currentExpLayers[0].template_slug;
+      document.getElementById('sf-conditions').innerHTML = '';
+      sfAddConditionRow(targetSel.value);
+      document.getElementById('sf-cancel').style.display = 'none';
+    };
+    targetSel.onchange = () => { document.getElementById('sf-conditions').innerHTML = ''; sfAddConditionRow(targetSel.value); };
+    document.getElementById('sf-add-cond').onclick = () => sfAddConditionRow(targetSel.value);
+    document.getElementById('sf-cancel').onclick = resetForm;
+
+    document.getElementById('sf-save').onclick = async () => {
+      const label = document.getElementById('sf-label').value.trim();
+      if (!label) { toast('Enter a filter label', true); return; }
+      const target = targetSel.value;
+      if (!target) { toast('Choose a target layer', true); return; }
+      const conditions = [...document.querySelectorAll('#sf-conditions .sf-cond-row')].map(row => {
+        const op = row.querySelector('.sf-cond-op').value;
+        const noVal = (FILTER_OPS.find(o => o.op === op) || {}).noVal;
+        const value = row.querySelector('.sf-cond-val').value.trim();
+        return { field: row.querySelector('.sf-cond-field').value, op, value: noVal ? '' : value };
+      }).filter(c => c.field);
+      if (!conditions.length) { toast('Add at least one condition', true); return; }
+      const preset = {
+        id: sfEditingId || genFilterId(),
+        label,
+        icon: document.getElementById('sf-icon').value.trim() || null,
+        target,
+        match: document.getElementById('sf-match').value,
+        conditions,
+      };
+      const next = (currentExperience.saved_filters || []).slice();
+      const idx = next.findIndex(x => x.id === preset.id);
+      if (idx >= 0) next[idx] = preset; else next.push(preset);
+      if (await persistSavedFilters(next)) {
+        toast(`Filter "${label}" saved`);
+        renderSavedFilters();
+      }
+    };
+
+    document.querySelectorAll('#sf-list .sf-edit').forEach(btn => {
+      btn.onclick = () => {
+        const f = (currentExperience.saved_filters || []).find(x => x.id === btn.dataset.id);
+        if (!f) return;
+        sfEditingId = f.id;
+        document.getElementById('sf-form-title').textContent = 'Edit Filter';
+        document.getElementById('sf-label').value = f.label;
+        document.getElementById('sf-icon').value = f.icon || '';
+        targetSel.value = f.target;
+        document.getElementById('sf-match').value = f.match || 'all';
+        const box = document.getElementById('sf-conditions');
+        box.innerHTML = '';
+        (f.conditions && f.conditions.length ? f.conditions : [null]).forEach(c => sfAddConditionRow(f.target, c));
+        document.getElementById('sf-cancel').style.display = '';
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+    });
+    document.querySelectorAll('#sf-list .sf-del').forEach(btn => {
+      btn.onclick = async () => {
+        const f = (currentExperience.saved_filters || []).find(x => x.id === btn.dataset.id);
+        if (!f || !confirm(`Delete filter "${f.label}"?`)) return;
+        const next = (currentExperience.saved_filters || []).filter(x => x.id !== btn.dataset.id);
+        if (await persistSavedFilters(next)) { toast('Filter deleted'); renderSavedFilters(); }
+      };
+    });
+
+    resetForm();
+  }
+
+  function renderLayerManager(layers) {
+    const list = document.getElementById('layer-manager-list');
+    list.innerHTML = '';
+    layers.forEach(el => {
+      const tmpl = el.layer_templates;
+      const color = (el.style_overrides && el.style_overrides.color) || (tmpl.default_style && tmpl.default_style.color) || '#7f8c8d';
+      const opacity = (el.style_overrides && el.style_overrides.opacity != null) ? el.style_overrides.opacity : 1;
+      const card = document.createElement('div');
+      card.className = 'layer-card';
+      card.dataset.id = el.id;
+      card.innerHTML = `
+        <div class="layer-card-header">
+          <div class="layer-card-swatch" style="background:${color}${tmpl.geom_type==='point'?';border-radius:50%':''}"></div>
+          <span class="layer-card-name">${tmpl.label}</span>
+          <i class="fa-solid fa-chevron-down" style="color:rgba(255,255,255,0.3);font-size:10px;flex-shrink:0"></i>
+        </div>
+        <div class="layer-card-body">
+          <div class="style-row">
+            <label>Color</label>
+            <input type="color" class="card-color" value="${color}" />
+            <label>Opacity</label>
+            <input type="range" class="card-opacity" min="0" max="1" step="0.05" value="${opacity}" />
+            <span class="opacity-val">${Math.round(opacity*100)}%</span>
+          </div>
+          <div>
+            <label class="rp-label" style="margin-bottom:3px">Filter Expression (JSON)</label>
+            <textarea class="rp-textarea card-filter" rows="2" placeholder='e.g. ["==","highway","path"]'>${el.filter_expr ? JSON.stringify(el.filter_expr) : ''}</textarea>
+          </div>
+          <div class="rp-check-row">
+            <input type="checkbox" class="card-visible" ${el.visible_by_default ? 'checked' : ''} />
+            <label>Visible by default</label>
+          </div>
+          <div class="card-actions">
+            <button class="btn-outline btn-sm card-save-btn"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+            <button class="btn-outline btn-sm card-duplicate-btn" style="border-color:rgba(74,144,217,0.4);color:#4a90d9"><i class="fa-solid fa-copy"></i> Duplicate</button>
+            <button class="btn-danger btn-sm card-remove-btn"><i class="fa-solid fa-xmark"></i> Remove</button>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">
+            <div class="rp-label" style="margin-bottom:4px">Fields <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">— order &amp; visibility drive the popup</span></div>
+            <div class="field-list"></div>
+            <div class="add-field-form">
+              <input class="rp-input af-label-input" placeholder="Label (e.g. Grade)" style="font-size:11px" />
+              <div class="rp-row">
+                <input class="rp-input af-name-input" placeholder="key (e.g. grade)" style="flex:1;font-size:11px" />
+                <select class="rp-select af-type-input" style="width:78px;font-size:11px">
+                  <option value="text">Text</option>
+                  <option value="number">Number</option>
+                  <option value="select">Select</option>
+                </select>
+              </div>
+              <input class="rp-input af-options-input" placeholder="Options: Good, Fair, Poor" style="display:none;font-size:11px" />
+              <div class="rp-row" style="gap:5px">
+                <button class="btn-primary btn-sm af-confirm-btn" style="flex:1">Add</button>
+                <button class="btn-outline btn-sm af-cancel-btn">Cancel</button>
+              </div>
+            </div>
+            <div class="add-base-form" style="display:none;gap:5px;margin-top:5px">
+              <div class="rp-row" style="gap:5px">
+                <select class="rp-select af-base-select" style="flex:1;font-size:11px"></select>
+                <button class="btn-primary btn-sm af-base-confirm-btn">Add</button>
+                <button class="btn-outline btn-sm af-base-cancel-btn">×</button>
+              </div>
+            </div>
+            <div class="rp-row" style="margin-top:5px;gap:5px">
+              <button class="btn-outline btn-sm add-field-btn" style="flex:1"><i class="fa-solid fa-plus"></i> Custom</button>
+              <button class="btn-outline btn-sm add-base-btn" style="flex:1"><i class="fa-solid fa-database"></i> OSM Field</button>
+              <button class="btn-primary btn-sm save-fields-btn" style="flex:1"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+            </div>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">
+            <div class="rp-label" style="margin-bottom:4px">Custom Popup <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">— HTML + CSS override the default popup</span></div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.35);line-height:1.5;margin-bottom:5px">
+              Tokens: <code>{{ name }}</code>${(tmpl.field_schema || []).map(f => ` <code>{{ ${f.name} }}</code>`).join('')}.
+              Use <code>{{#if field}}…{{/if}}</code> and <code>{{#each photos}}&lt;img src="{{ this }}"&gt;{{/each}}</code>. Values are escaped.
+            </div>
+            <textarea class="rp-textarea card-popup-html" rows="4" placeholder="<h3>{{ name }}</h3>" style="font-family:monospace;font-size:11px">${(tmpl.popup_template || '').replace(/</g, '&lt;')}</textarea>
+            <label class="rp-label" style="margin:6px 0 3px">Popup CSS</label>
+            <textarea class="rp-textarea card-popup-css" rows="3" placeholder=".g { color:#9bc23c }" style="font-family:monospace;font-size:11px">${(tmpl.popup_css || '').replace(/</g, '&lt;')}</textarea>
+            <button class="btn-primary btn-sm save-popup-btn" style="margin-top:5px;width:100%"><i class="fa-solid fa-floppy-disk"></i> Save Popup</button>
+          </div>
+        </div>`;
+
+      // Toggle expand
+      card.querySelector('.layer-card-header').addEventListener('click', () => {
+        card.classList.toggle('open');
+      });
+
+      // Opacity display
+      const opacityInput = card.querySelector('.card-opacity');
+      const opacityVal = card.querySelector('.opacity-val');
+      opacityInput.addEventListener('input', () => { opacityVal.textContent = Math.round(opacityInput.value * 100) + '%'; });
+
+      // Save style/filter/visibility
+      card.querySelector('.card-save-btn').addEventListener('click', async () => {
+        const colorVal = card.querySelector('.card-color').value;
+        const opacVal = parseFloat(card.querySelector('.card-opacity').value);
+        const filterRaw = card.querySelector('.card-filter').value.trim();
+        const visibleVal = card.querySelector('.card-visible').checked;
+        let filterExpr = null;
+        if (filterRaw) {
+          try { filterExpr = JSON.parse(filterRaw); }
+          catch { toast('Invalid JSON in filter expression', true); return; }
+        }
+        const { error } = await db.from('experience_layers').update({
+          style_overrides: { color: colorVal, opacity: opacVal },
+          filter_expr: filterExpr,
+          visible_by_default: visibleVal,
+        }).eq('id', el.id);
+        if (error) { toast(error.message, true); return; }
+        toast('Layer saved');
+        // Update live map paint
+        const key = el.template_slug;
+        (sourceToMapboxLayers[key] || []).forEach(lid => {
+          if (!map.getLayer(lid)) return;
+          if (lid.endsWith('-fill')) map.setPaintProperty(lid, 'fill-color', colorVal);
+          if (lid.endsWith('-fill')) map.setPaintProperty(lid, 'fill-opacity', opacVal * 0.3);
+          if (lid.endsWith('-outline')) map.setPaintProperty(lid, 'line-color', colorVal);
+          if (lid.endsWith('-circle')) map.setPaintProperty(lid, 'circle-color', colorVal);
+        });
+        setLayerVisible(key, visibleVal);
+        if (layerMeta[key]) layerMeta[key].color = colorVal;
+        // Refresh the cache and reload if experience re-selected
+        el.style_overrides = { color: colorVal, opacity: opacVal };
+        el.filter_expr = filterExpr;
+        el.visible_by_default = visibleVal;
+      });
+
+      // Duplicate into a new, independent custom layer
+      card.querySelector('.card-duplicate-btn').addEventListener('click', async () => {
+        if (!confirm(`Duplicate "${tmpl.label}"? This creates an independent copy — edits to it won't affect the original.`)) return;
+        const { error } = await db.rpc('duplicate_experience_layer', { p_experience_layer_id: el.id });
+        if (error) { toast(error.message, true); return; }
+        toast(`Duplicated "${tmpl.label}"`);
+        await refreshTemplates();
+        await selectExperience(currentExperience);
+      });
+
+      // Remove from experience
+      card.querySelector('.card-remove-btn').addEventListener('click', async () => {
+        if (!confirm(`Remove "${tmpl.label}" from this experience?`)) return;
+        const { error } = await db.from('experience_layers').delete().eq('id', el.id);
+        if (error) { toast(error.message, true); return; }
+        toast('Layer removed');
+        await selectExperience(currentExperience);
+      });
+
+      setupFieldManagement(card, tmpl, tmpl.field_schema || []);
+
+      // Save custom popup HTML/CSS to the layer template
+      card.querySelector('.save-popup-btn').addEventListener('click', async () => {
+        const popup_template = card.querySelector('.card-popup-html').value;
+        const popup_css = card.querySelector('.card-popup-css').value;
+        const { error } = await db.from('layer_templates')
+          .update({ popup_template, popup_css })
+          .eq('slug', tmpl.slug);
+        if (error) { toast(error.message, true); return; }
+        // Keep caches in sync so the next feature click reflects the change immediately
+        const cached = allTemplates.find(t => t.slug === tmpl.slug);
+        if (cached) { cached.popup_template = popup_template; cached.popup_css = popup_css; }
+        tmpl.popup_template = popup_template;
+        tmpl.popup_css = popup_css;
+        if (layerMeta[tmpl.slug]) {
+          layerMeta[tmpl.slug].popup_template = popup_template;
+          layerMeta[tmpl.slug].popup_css = popup_css;
+        }
+        toast(`Popup saved for "${tmpl.label}"`);
+      });
+
+      list.appendChild(card);
+    });
+
+    // Populate "Add Layer" dropdown with templates not yet in this experience
+    const usedSlugs = new Set(layers.map(l => l.template_slug));
+    const addSelect = document.getElementById('add-layer-select');
+    addSelect.innerHTML = '<option value="">— choose template —</option>';
+    [...allTemplates].sort((a, b) => a.label.localeCompare(b.label)).forEach(t => {
+      if (!usedSlugs.has(t.slug)) {
+        const o = document.createElement('option');
+        o.value = t.slug;
+        o.textContent = `${t.label} (${t.slug})`;
+        addSelect.appendChild(o);
+      }
+    });
+  }
+
+  document.getElementById('add-layer-btn').addEventListener('click', async () => {
+    const slug = document.getElementById('add-layer-select').value;
+    if (!slug || !currentExperience) return;
+    const maxOrder = currentExpLayers.reduce((m, l) => Math.max(m, l.sort_order), -1);
+    const { error } = await db.from('experience_layers').insert({
+      experience_id: currentExperience.id,
+      template_slug: slug,
+      visible_by_default: true,
+      sort_order: maxOrder + 1,
+    });
+    if (error) { toast(error.message, true); return; }
+    toast(`Added ${slug}`);
+    delete layerCache[slug]; // force reload
+    await selectExperience(currentExperience);
+  });
+
+  // ══ Draw Tab ═════════════════════════════════════════════════
+  async function loadCustomLayers() {
+    const { data } = await db.from('layer_templates').select('*').order('label');
+    const sel = document.getElementById('draw-target-select');
+    sel.innerHTML = '<option value="">— select a layer —</option>';
+    (data || []).forEach(t => {
+      const o = document.createElement('option');
+      o.value = t.slug;
+      o.textContent = t.is_custom ? `${t.label} (custom)` : t.label;
+      sel.appendChild(o);
+    });
+  }
+
+  // Point the Draw tab at a layer: load its field schema + render the form.
+  async function selectDrawTarget(slug) {
+    document.getElementById('draw-target-select').value = slug || '';
+    currentDrawSchema = [];
+    hideFeatureForm();
+    if (!slug) { renderDynamicFields([]); return; }
+    // Prefer allTemplates cache, fall back to DB for freshly created layers
+    const cached = allTemplates.find(t => t.slug === slug);
+    if (cached) {
+      currentDrawSchema = cached.field_schema || [];
+    } else {
+      const { data } = await db.from('layer_templates').select('field_schema').eq('slug', slug).single();
+      currentDrawSchema = (data && data.field_schema) || [];
+    }
+    renderDynamicFields(currentDrawSchema);
+  }
+  document.getElementById('draw-target-select').addEventListener('change', e => selectDrawTarget(e.target.value));
+
+  // Load a feature (drawn or imported) into the editor straight from its popup.
+  async function beginFeatureEdit(feature, sourceKey) {
+    await selectDrawTarget(sourceKey);
+    switchTab('draw');
+    // Stable identity: DB row id for imported features, else existing draw id.
+    const stableId = String(feature.properties.id || feature.properties._draw_id || '');
+    const drawFeature = {
+      type: 'Feature',
+      geometry: feature.geometry,
+      properties: { ...feature.properties },
+    };
+    if (stableId) {
+      drawFeature.id = stableId;
+      try { draw.delete(stableId); } catch {} // drop any stale copy already in draw
+    }
+    const ids = draw.add(drawFeature);
+    const drawId = ids[0];
+    draw.changeMode('simple_select', { featureIds: [drawId] });
+    showFeatureForm(draw.get(drawId));
+    toast('Editing feature — adjust geometry or fields, then Save');
+  }
+
+  document.getElementById('create-custom-layer-btn').addEventListener('click', async () => {
+    const name = document.getElementById('new-layer-name').value.trim();
+    if (!name) { toast('Enter a layer name', true); return; }
+    const slug = 'custom_' + name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    const { error } = await db.from('layer_templates').insert({
+      slug, label: name, geom_type: 'mixed', layer_group: 'Custom', is_custom: true,
+      default_style: { color: '#9bc23c' },
+    });
+    if (error && error.code !== '23505') { toast(error.message, true); return; }
+    document.getElementById('new-layer-name').value = '';
+    await loadCustomLayers();
+    document.getElementById('draw-target-select').value = slug;
+    toast(`Custom layer "${name}" created`);
+  });
+
+  // Draw mode buttons
+  let activeDrawMode = null;
+  document.querySelectorAll('.draw-mode-btn[data-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      document.querySelectorAll('.draw-mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+      if (activeDrawMode === mode) {
+        activeDrawMode = null;
+        draw.changeMode('simple_select');
+      } else {
+        btn.classList.add('active');
+        activeDrawMode = mode;
+        draw.changeMode(mode);
+      }
+    });
+  });
+
+  // Shared deletion: optimistically drop the feature from the map immediately,
+  // then persist via the security-definer RPC; restore on failure. Matches on the
+  // DB row id (imported features) or _draw_id (drawn ones). No confirm here —
+  // callers confirm so multi-select deletes only prompt once.
+  async function applyFeatureDeletion(feature, sourceKey) {
+    const props = feature.properties || {};
+    const key = String(props.id || props._draw_id || '');
+    if (!sourceKey || !key) { toast('Cannot identify this feature', true); return false; }
+
+    const cached = layerCache[sourceKey];
+    let removed = null, idx = -1;
+    if (cached && cached.features) {
+      idx = cached.features.findIndex(f => {
+        const p = f.properties || {};
+        return String(p.id || p._draw_id || '') === key;
+      });
+      if (idx !== -1) { removed = cached.features[idx]; cached.features.splice(idx, 1); }
+    }
+    const src = map.getSource(sourceKey);
+    if (src && cached) src.setData(cached);
+    try { draw.delete(key); } catch {}
+    if (selectedDrawFeatureId != null && String(selectedDrawFeatureId) === key) hideFeatureForm();
+
+    const { error } = await db.rpc('delete_feature_by_id', { p_source: sourceKey, p_key: key });
+    if (error) {
+      // Reconcile — put the feature back where it was.
+      if (removed && cached) {
+        cached.features.splice(idx < 0 ? cached.features.length : idx, 0, removed);
+        if (src) src.setData(cached);
+      }
+      toast('Delete failed: ' + error.message, true);
+      return false;
+    }
+    return true;
+  }
+
+  document.getElementById('delete-selected-btn').addEventListener('click', async () => {
+    const selected = draw.getSelected();
+    if (!selected.features.length) { toast('Select a feature first', true); return; }
+    const n = selected.features.length;
+    if (!confirm(n === 1 ? 'Delete this feature? This cannot be undone.'
+                         : `Delete ${n} features? This cannot be undone.`)) return;
+    const source = document.getElementById('draw-target-select').value;
+    let ok = 0;
+    for (const f of selected.features) {
+      if (await applyFeatureDeletion(f, source)) ok++;
+    }
+    hideFeatureForm();
+    if (ok) toast(ok === 1 ? 'Feature deleted' : `${ok} features deleted`);
+  });
+
+  // Draw events
+  map.on('draw.create', handleDrawCreate);
+  map.on('draw.update', handleDrawUpdate);
+  map.on('draw.selectionchange', handleDrawSelection);
+
+  async function handleDrawCreate(e) {
+    const source = document.getElementById('draw-target-select').value;
+    if (!source) { toast('Select a target layer in the Draw tab first', true); return; }
+    for (const feature of e.features) {
+      feature.properties._draw_id = feature.id;
+      await db.rpc('upsert_drawn_feature', { p_source: source, p_feature: feature });
+    }
+    delete layerCache[source];
+    await refreshCustomSource(source);
+    toast('Feature saved');
+    showFeatureForm(e.features[0]);
+  }
+
+  async function handleDrawUpdate(e) {
+    const source = document.getElementById('draw-target-select').value;
+    if (!source) return;
+    for (const feature of e.features) {
+      feature.properties._draw_id = feature.id;
+      await db.rpc('upsert_drawn_feature', { p_source: source, p_feature: feature });
+    }
+    delete layerCache[source];
+    await refreshCustomSource(source);
+    toast('Feature updated');
+  }
+
+  function handleDrawSelection(e) {
+    if (e.features.length) {
+      showFeatureForm(e.features[0]);
+    } else {
+      hideFeatureForm();
+    }
+  }
+
+  function showFeatureForm(feature) {
+    selectedDrawFeatureId = feature.id;
+    document.getElementById('feature-attr-panel').style.display = 'none';
+    const form = document.getElementById('feature-attr-form');
+    form.style.display = 'flex';
+    document.getElementById('feat-name').value = feature.properties.name || '';
+    let cd = {};
+    try {
+      const raw = feature.properties.custom_data;
+      cd = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : {};
+    } catch {}
+    // Populate rendered fields: base fields from top-level properties, custom from custom_data
+    document.querySelectorAll('#dynamic-fields .feat-custom-field').forEach(input => {
+      const key = input.dataset.field;
+      const val = input.dataset.base ? feature.properties[key] : cd[key];
+      input.value = (val != null) ? val : '';
+    });
+  }
+
+  function hideFeatureForm() {
+    selectedDrawFeatureId = null;
+    document.getElementById('feature-attr-panel').style.display = '';
+    document.getElementById('feature-attr-form').style.display = 'none';
+  }
+
+  // ── Field schema management (layer cards) ────────────────────
+  function setupFieldManagement(card, tmpl, initialSchema) {
+    let schema = JSON.parse(JSON.stringify(initialSchema));
+    let editingIdx = null; // null = adding a new field; otherwise editing schema[editingIdx]
+    const fieldList = card.querySelector('.field-list');
+    const addForm = card.querySelector('.add-field-form');
+    const afLabelInput = card.querySelector('.af-label-input');
+    const afNameInput  = card.querySelector('.af-name-input');
+    const afTypeInput  = card.querySelector('.af-type-input');
+    const afOptInput   = card.querySelector('.af-options-input');
+    const afConfirmBtn = card.querySelector('.af-confirm-btn');
+    const addBaseForm  = card.querySelector('.add-base-form');
+    const afBaseSelect = card.querySelector('.af-base-select');
+
+    function resetForm() {
+      addForm.style.display = 'none';
+      addBaseForm.style.display = 'none';
+      editingIdx = null;
+      afLabelInput.value = ''; afNameInput.value = ''; afOptInput.value = '';
+      afNameInput.readOnly = false;
+      afConfirmBtn.textContent = 'Add';
+      afOptInput.style.display = 'none';
+      delete afNameInput.dataset.userEdited;
+    }
+
+    function openEditForm(idx) {
+      const field = schema[idx];
+      editingIdx = idx;
+      afLabelInput.value = field.label;
+      afNameInput.value = field.name;
+      afNameInput.readOnly = true; // key is locked — it maps to stored feature data
+      afNameInput.dataset.userEdited = '1';
+      afTypeInput.value = field.type;
+      afOptInput.style.display = field.type === 'select' ? '' : 'none';
+      afOptInput.value = (field.options || []).join(', ');
+      afConfirmBtn.textContent = 'Save';
+      addForm.style.display = 'flex';
+      afLabelInput.focus();
+    }
+
+    function renderList() {
+      fieldList.innerHTML = '';
+      if (!schema.length) {
+        fieldList.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,0.25);font-style:italic">No fields configured — popup shows raw attributes</div>';
+        return;
+      }
+      schema.forEach((field, idx) => {
+        const meta = field.type === 'select'
+          ? `select · ${(field.options || []).join(', ')}`
+          : field.type;
+        const isBase = !!field.base;
+        const hidden = !!field.hidden;
+        const item = document.createElement('div');
+        item.className = 'field-item' + (hidden ? ' hidden-field' : '');
+        item.innerHTML = `
+          <div class="field-reorder">
+            <button class="field-item-ctrl fm-up" title="Move up" ${idx === 0 ? 'disabled' : ''}><i class="fa-solid fa-chevron-up"></i></button>
+            <button class="field-item-ctrl fm-down" title="Move down" ${idx === schema.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-chevron-down"></i></button>
+          </div>
+          <span class="field-src-badge ${isBase ? 'base' : 'custom'}">${isBase ? 'OSM' : 'Custom'}</span>
+          <div class="field-item-info">
+            <div class="field-item-name">${field.label}</div>
+            <div class="field-item-meta">${field.name} · ${meta}</div>
+          </div>
+          <button class="field-item-ctrl fm-hide ${hidden ? '' : 'on'}" title="${hidden ? 'Hidden in popup — click to show' : 'Shown in popup — click to hide'}"><i class="fa-solid fa-${hidden ? 'eye-slash' : 'eye'}"></i></button>
+          <button class="field-item-edit" title="Edit"><i class="fa-solid fa-pen"></i></button>
+          <button class="field-item-remove" title="Remove">×</button>`;
+        item.querySelector('.fm-up').addEventListener('click', () => {
+          if (idx === 0) return;
+          [schema[idx - 1], schema[idx]] = [schema[idx], schema[idx - 1]];
+          if (editingIdx !== null) resetForm();
+          renderList();
+        });
+        item.querySelector('.fm-down').addEventListener('click', () => {
+          if (idx === schema.length - 1) return;
+          [schema[idx + 1], schema[idx]] = [schema[idx], schema[idx + 1]];
+          if (editingIdx !== null) resetForm();
+          renderList();
+        });
+        item.querySelector('.fm-hide').addEventListener('click', () => {
+          field.hidden = !field.hidden;
+          renderList();
+        });
+        item.querySelector('.field-item-edit').addEventListener('click', () => openEditForm(idx));
+        item.querySelector('.field-item-remove').addEventListener('click', () => {
+          schema.splice(idx, 1);
+          if (editingIdx === idx) resetForm();
+          renderList();
+        });
+        fieldList.appendChild(item);
+      });
+    }
+    renderList();
+
+    // Show/hide options input for select type
+    afTypeInput.addEventListener('change', () => {
+      afOptInput.style.display = afTypeInput.value === 'select' ? '' : 'none';
+    });
+
+    // Auto-generate key from label (only when adding a new field)
+    afLabelInput.addEventListener('input', () => {
+      if (editingIdx === null && !afNameInput.dataset.userEdited) {
+        afNameInput.value = afLabelInput.value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      }
+    });
+    afNameInput.addEventListener('input', () => { afNameInput.dataset.userEdited = '1'; });
+
+    card.querySelector('.add-field-btn').addEventListener('click', () => {
+      resetForm();
+      addForm.style.display = 'flex';
+      afLabelInput.focus();
+    });
+    card.querySelector('.af-cancel-btn').addEventListener('click', resetForm);
+    afConfirmBtn.addEventListener('click', () => {
+      const label = afLabelInput.value.trim();
+      const name  = afNameInput.value.trim().replace(/[^a-z0-9_]/g, '');
+      if (!label || !name) { toast('Label and key are required', true); return; }
+      // Duplicate-key check ignores the field currently being edited
+      if (schema.find((f, i) => f.name === name && i !== editingIdx)) { toast(`Field "${name}" already exists`, true); return; }
+      const field = { name, label, type: afTypeInput.value };
+      if (field.type === 'select') {
+        field.options = afOptInput.value.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      if (editingIdx === null) {
+        // Preserve base/hidden flags when editing; new fields are custom
+        schema.push(field);
+      } else {
+        field.base = schema[editingIdx].base;
+        field.hidden = schema[editingIdx].hidden;
+        schema[editingIdx] = field;
+      }
+      renderList();
+      resetForm();
+    });
+
+    // ── Add a base OSM field (from keys discovered in the layer's data) ──
+    function discoverBaseKeys() {
+      const gj = layerCache[tmpl.slug];
+      const keys = new Set();
+      if (gj && gj.features) {
+        gj.features.forEach(f => Object.keys(f.properties || {}).forEach(k => keys.add(k)));
+      }
+      const INTERNAL = new Set(['id', '_draw_id', 'photos', 'custom_data', 'name']);
+      const used = new Set(schema.map(f => f.name));
+      return [...keys].filter(k => !INTERNAL.has(k) && !shouldSkip(k) && !used.has(k)).sort();
+    }
+
+    card.querySelector('.add-base-btn').addEventListener('click', () => {
+      resetForm();
+      const keys = discoverBaseKeys();
+      afBaseSelect.innerHTML = keys.length
+        ? keys.map(k => `<option value="${k}">${k}</option>`).join('')
+        : '<option value="">(no unused fields found in this layer\'s data)</option>';
+      addBaseForm.style.display = 'flex';
+    });
+    card.querySelector('.af-base-cancel-btn').addEventListener('click', resetForm);
+    card.querySelector('.af-base-confirm-btn').addEventListener('click', () => {
+      const key = afBaseSelect.value;
+      if (!key) { toast('No field available to add', true); return; }
+      if (schema.find(f => f.name === key)) { toast(`Field "${key}" already added`, true); return; }
+      schema.push({ name: key, label: fmtKey(key), type: 'text', base: true });
+      renderList();
+      resetForm();
+    });
+
+    card.querySelector('.save-fields-btn').addEventListener('click', async () => {
+      const saved = JSON.parse(JSON.stringify(schema));
+      const { error } = await db.from('layer_templates')
+        .update({ field_schema: saved })
+        .eq('slug', tmpl.slug);
+      if (error) { toast(error.message, true); return; }
+      // Keep caches in sync so popups + draw form reflect changes immediately
+      const cached = allTemplates.find(t => t.slug === tmpl.slug);
+      if (cached) cached.field_schema = saved;
+      tmpl.field_schema = saved;
+      if (layerMeta[tmpl.slug]) layerMeta[tmpl.slug].fields = saved;
+      if (document.getElementById('draw-target-select').value === tmpl.slug) {
+        currentDrawSchema = saved;
+        renderDynamicFields(saved);
+      }
+      toast(`Fields saved for "${tmpl.label}"`);
+    });
+  }
+
+  // ── Dynamic draw form rendering ──────────────────────────────
+  function renderDynamicFields(schema) {
+    const container = document.getElementById('dynamic-fields');
+    container.innerHTML = '';
+    if (!schema.length) {
+      // Legacy fallback: show description textarea when no schema defined
+      const div = document.createElement('div');
+      div.innerHTML = `<label class="rp-label">Description</label>
+        <textarea class="rp-textarea feat-custom-field" data-field="apex_description"
+          placeholder="Notes, climbing description, beta…" rows="3"></textarea>`;
+      container.appendChild(div);
+      return;
+    }
+    schema.forEach(field => {
+      const div = document.createElement('div');
+      const baseAttr = field.base ? ' data-base="1"' : '';
+      const tag = field.base ? '<span class="field-src-badge base" style="margin-left:5px">OSM</span>' : '';
+      if (field.type === 'select') {
+        div.innerHTML = `<label class="rp-label">${field.label}${tag}</label>
+          <select class="rp-select feat-custom-field" data-field="${field.name}"${baseAttr}>
+            <option value="">—</option>
+            ${(field.options || []).map(o => `<option value="${o}">${o}</option>`).join('')}
+          </select>`;
+      } else {
+        div.innerHTML = `<label class="rp-label">${field.label}${tag}</label>
+          <input class="rp-input feat-custom-field" type="${field.type}"
+            data-field="${field.name}"${baseAttr} placeholder="${field.label}" />`;
+      }
+      container.appendChild(div);
+    });
+  }
+
+  document.getElementById('save-feature-btn').addEventListener('click', async () => {
+    if (!selectedDrawFeatureId) return;
+    const source = document.getElementById('draw-target-select').value;
+    if (!source) { toast('Select a target layer first', true); return; }
+    const name = document.getElementById('feat-name').value.trim();
+    const feature = draw.get(selectedDrawFeatureId);
+    if (!feature) return;
+    // Collect field values: base fields → top-level properties, custom → custom_data
+    const customData = {};
+    document.querySelectorAll('#dynamic-fields .feat-custom-field').forEach(input => {
+      const val = input.value.trim();
+      const key = input.dataset.field;
+      const coerced = input.type === 'number' ? Number(val) : val;
+      if (input.dataset.base) {
+        if (val) feature.properties[key] = coerced;
+        else delete feature.properties[key];
+      } else if (val) {
+        customData[key] = coerced;
+      }
+    });
+    feature.properties.name = name;
+    feature.properties._draw_id = feature.id;
+    feature.properties.custom_data = JSON.stringify(customData);
+    draw.setFeatureProperty(feature.id, 'name', name);
+    await db.rpc('upsert_drawn_feature', { p_source: source, p_feature: feature });
+    delete layerCache[source];
+    await refreshCustomSource(source);
+    toast('Feature saved');
+  });
+
+  async function refreshCustomSource(sourceKey) {
+    const { data } = await db.rpc('get_layer_geojson', { p_source: sourceKey });
+    if (data) {
+      layerCache[sourceKey] = data;
+      const src = map.getSource(sourceKey);
+      if (src) src.setData(data);
+    }
+  }
+
+  // ══ Tab switching ════════════════════════════════════════════
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  }
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Basemap rebuild after style change
+  map.on('style.load', () => {
+    if (!currentExperience || !currentExpLayers.length) return;
+    interactionsRegistered = false;
+    Object.keys(sourceToMapboxLayers).forEach(k => delete sourceToMapboxLayers[k]);
+    Object.keys(layerToSource).forEach(k => delete layerToSource[k]);
+    const normalized = currentExpLayers.map(el => ({
+      source_key: el.template_slug,
+      template_slug: el.template_slug,
+      label: el.layer_templates.label,
+      geom_type: el.layer_templates.geom_type,
+      layer_group: el.layer_templates.layer_group,
+      default_style: el.layer_templates.default_style,
+      field_schema: el.layer_templates.field_schema || [],
+      popup_template: el.layer_templates.popup_template || null,
+      popup_css: el.layer_templates.popup_css || null,
+      style_overrides: el.style_overrides || {},
+      filter_expr: el.filter_expr,
+      visible_by_default: el.visible_by_default,
+    }));
+    normalized.forEach(l => addLayerToMap(l));
+    registerInteractions();
+    normalized.forEach(l => {
+      const key = l.source_key;
+      const src = map.getSource(key);
+      if (src && layerCache[key]) src.setData(layerCache[key]);
+    });
+  });
+
+  // Reload the layer_templates cache + draw-target dropdown (e.g. after a duplicate).
+  async function refreshTemplates() {
+    const { data: templates } = await db.from('layer_templates').select('*').order('sort_order');
+    allTemplates = templates || [];
+    await loadCustomLayers();
+  }
+
+  // ══ Bootstrap ════════════════════════════════════════════════
+  async function init() {
+    // Load all templates for the add-layer dropdown
+    await refreshTemplates();
+    renderDynamicFields([]); // show legacy description field until a draw target is selected
+
+    await loadExperiences();
+
+    const el = document.getElementById('loading-screen');
+    el.classList.add('fade-out');
+    setTimeout(() => el.remove(), 600);
+  }
+
+  map.on('load', async () => {
+    const authed = await checkAuth();
+    if (!authed) {
+      const el = document.getElementById('loading-screen');
+      el.classList.add('fade-out');
+      setTimeout(() => el.remove(), 600);
+    } else {
+      await init();
+    }
+  });
+</script>
+</body>
+</html>

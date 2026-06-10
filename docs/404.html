@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apex Adventure Alliance — Page not found</title>
+  <style>
+    body { background: #0a140a; color: rgba(255,255,255,0.6); font-family: 'Inter', sans-serif, Arial;
+           display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+  </style>
+  <script>
+    // Send strays to the site root. On project Pages (user.github.io/repo/…)
+    // the root is the first path segment; on a custom domain it's "/".
+    const root = location.hostname.endsWith('github.io')
+      ? '/' + (location.pathname.split('/')[1] || '') + '/'
+      : '/';
+    location.replace(root);
+  </script>
+</head>
+<body>Redirecting to the map…</body>
+</html>

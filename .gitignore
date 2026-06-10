@@ -1,0 +1,12 @@
+# Environments & tooling
+.venv/
+node_modules/
+__pycache__/
+.idea/
+*.pyc
+
+# Local artifacts
+verify_map.png
+
+# Raw OSM extracts — large; regenerate with fetch_osm.py
+osm_data_files/
