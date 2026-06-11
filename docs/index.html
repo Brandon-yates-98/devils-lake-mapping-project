@@ -526,6 +526,25 @@
       flex: 1; text-align: center; font-size: 10.5px; color: #777;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+    .pcl-head-count { font-weight: 600; letter-spacing: 0; text-transform: none; color: #aab; }
+
+    /* ─── Climbing popup styling ─── */
+    .climb-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 7px; }
+    .climb-type-pill {
+      font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+      padding: 2px 8px; border-radius: 9px;
+      background: #eef4e2; color: #557a1f; border: 1px solid #d9e6c2;
+    }
+    .climb-stat { font-size: 11px; font-weight: 600; color: #666; display: inline-flex; align-items: center; gap: 4px; }
+    .climb-stat i { font-size: 10px; color: #9bc23c; }
+    .climb-fa { font-size: 10.5px; color: #888; margin: -2px 0 6px; display: flex; align-items: center; gap: 5px; }
+    .climb-fa i { font-size: 9px; color: #bbb; }
+    .climb-desc {
+      font-size: 11.5px; color: #444; line-height: 1.55;
+      border-left: 3px solid #d9e6c2; padding: 2px 0 2px 8px;
+      margin-bottom: 7px; max-height: 110px; overflow-y: auto;
+      white-space: pre-wrap;
+    }
 
     /* ─── On-map basemap switcher (traditional tile thumbnail) ─── */
     #basemap-switcher {
@@ -1552,11 +1571,37 @@
       customData = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : {};
     } catch {}
 
+    // Climbing sources get purpose-built styling (grade chip, type pills,
+    // stats, description) instead of generic label/value rows — the keys
+    // rendered here are suppressed from the row sections below.
+    const isClimb = sourceKey === 'climbing_routes' || sourceKey === 'climbing_boulders';
+    let climbStatsHTML = '';
+    if (isClimb) {
+      const g = props.grade || '';
+      const types = String(props.route_type || '').split('/').map(t => t.trim()).filter(Boolean);
+      const parts = [];
+      if (g) parts.push(`<span class="pcl-grade ${gradeBucketClass(g)}">${escapeHtml(g)}</span>`);
+      types.forEach(t => parts.push(`<span class="climb-type-pill">${escapeHtml(t)}</span>`));
+      if (props.length_ft) parts.push(`<span class="climb-stat"><i class="fa-solid fa-ruler-vertical"></i> ${escapeHtml(String(props.length_ft))} ft</span>`);
+      climbStatsHTML = `
+        ${parts.length ? `<div class="climb-stats">${parts.join('')}</div>` : ''}
+        ${props.fa ? `<div class="climb-fa"><i class="fa-solid fa-flag-checkered"></i> FA ${escapeHtml(String(props.fa))}</div>` : ''}
+        ${customData.description ? `<div class="climb-desc">${escapeHtml(String(customData.description))}</div>` : ''}`;
+      ['grade', 'route_type', 'length_ft', 'fa', 'description', 'area_name', 'area_id', 'area_path', 'depth']
+        .forEach(k => skipInRows.add(k));
+    } else if (sourceKey === 'climbing_areas') {
+      ['climb_count', 'depth', 'area_id', 'parent_id', 'area_path', 'description'].forEach(k => skipInRows.add(k));
+      if (customData.description) {
+        climbStatsHTML = `<div class="climb-desc">${escapeHtml(String(customData.description))}</div>`;
+      }
+    }
+
     // Custom fields: render using field_schema labels if defined, else fall back to apex_description
     const fieldSchema = cfg.field_schema || [];
     let customHTML = '';
     if (fieldSchema.length) {
       const fieldRows = fieldSchema
+        .filter(f => !skipInRows.has(f.name))
         .map(f => {
           // check custom_data first, then direct properties (e.g. climbing routes store grade/fa as props)
           const val = customData[f.name] != null ? customData[f.name] : props[f.name];
@@ -1600,9 +1645,15 @@
       const climbs = ak ? climbsForArea(ak) : [];
       if (ak && climbs.length) {
         climbAssocHTML = `<button class="popup-area-climbs-btn" data-area-key="${escapeHtml(ak)}"><i class="fa-solid fa-mountain-sun"></i> Filter map to ${climbs.length} climb${climbs.length === 1 ? '' : 's'}</button>`;
+        const nRoutes = climbs.filter(c => c.src === 'climbing_routes').length;
+        const nBoulders = climbs.length - nRoutes;
+        const breakdown = [
+          nRoutes ? `${nRoutes} route${nRoutes === 1 ? '' : 's'}` : '',
+          nBoulders ? `${nBoulders} boulder${nBoulders === 1 ? '' : 's'}` : '',
+        ].filter(Boolean).join(' · ');
         const CAP = 60;
         climbListHTML = `
-          <div class="pcl-head">Climbs here</div>
+          <div class="pcl-head">Climbs here <span class="pcl-head-count">${breakdown}</span></div>
           <div class="popup-climb-list">
             ${climbs.slice(0, CAP).map(({ f, src }) => {
               const p = f.properties;
@@ -1641,9 +1692,10 @@
       </div>
       <div class="popup-body">
         ${climbNavHTML}
+        ${climbStatsHTML}
         ${photosHTML}
         ${customHTML}
-        ${rows || (!customHTML && !photosHTML ? '<div class="popup-empty">No additional attributes</div>' : '')}
+        ${rows || (!customHTML && !photosHTML && !climbStatsHTML && !climbListHTML ? '<div class="popup-empty">No additional attributes</div>' : '')}
         ${climbListHTML}
         ${climbAssocHTML}
         ${customData.openbeta_id && sourceKey.startsWith('climbing_')

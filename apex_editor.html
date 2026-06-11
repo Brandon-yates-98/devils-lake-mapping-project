@@ -154,6 +154,57 @@
     }
     .photo-thumb .pt-del:hover { background: #e35d5d; }
     .photo-upload-status { font-size: 9.5px; color: rgba(255,255,255,0.4); margin-top: 4px; min-height: 12px; }
+
+    /* ─── Default-visibility pin (public map default) ─── */
+    .layer-default-pin {
+      flex: 0 0 auto; width: 18px; height: 18px; padding: 0;
+      border: none; background: none; cursor: pointer;
+      color: rgba(255,255,255,0.18); font-size: 10px;
+      transition: color 0.15s, transform 0.1s;
+    }
+    .layer-default-pin:hover { color: rgba(255,215,80,0.7); transform: scale(1.15); }
+    .layer-default-pin.on { color: #e8c34a; }
+
+    /* ─── Public popup preview ─── */
+    .popup-preview-row {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.55);
+      padding: 4px 2px 8px; cursor: pointer; user-select: none;
+    }
+    .popup-preview-row input { accent-color: #9bc23c; cursor: pointer; }
+    .popup-preview-row i { color: rgba(155,194,60,0.6); font-size: 10px; }
+    .preview-note {
+      font-size: 9px; color: #aaa; font-style: italic;
+      padding: 6px 8px 2px; border-top: 1px dashed #e5e5e5; margin-top: 6px;
+    }
+    .preview-note i { color: #9bc23c; margin-right: 3px; }
+
+    /* Climbing popup styling + photos (match the public map) */
+    .climb-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 7px; }
+    .pcl-grade { flex: 0 0 auto; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 9px; color: #fff; }
+    .g-easy { background: #27ae60; } .g-mod { background: #2980d9; }
+    .g-hard { background: #e67e22; } .g-proj { background: #c0392b; } .g-none { background: #a8b0b3; }
+    .climb-type-pill {
+      font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+      padding: 2px 8px; border-radius: 9px;
+      background: #eef4e2; color: #557a1f; border: 1px solid #d9e6c2;
+    }
+    .climb-stat { font-size: 11px; font-weight: 600; color: #666; display: inline-flex; align-items: center; gap: 4px; }
+    .climb-stat i { font-size: 10px; color: #9bc23c; }
+    .climb-fa { font-size: 10.5px; color: #888; margin: -2px 0 6px; display: flex; align-items: center; gap: 5px; }
+    .climb-fa i { font-size: 9px; color: #bbb; }
+    .climb-desc {
+      font-size: 11.5px; color: #444; line-height: 1.55;
+      border-left: 3px solid #d9e6c2; padding: 2px 0 2px 8px;
+      margin-bottom: 7px; max-height: 110px; overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .popup-photos {
+      display: flex; gap: 5px; overflow-x: auto;
+      margin: 2px 0 6px; padding-bottom: 3px;
+    }
+    .popup-photos a { flex: 0 0 auto; }
+    .popup-photos img { height: 76px; border-radius: 6px; display: block; }
     .layer-group-label {
       font-size: 7px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase;
       color: rgba(155,194,60,0.4); padding: 8px 2px 3px;
@@ -438,6 +489,10 @@
   <aside id="left-panel">
     <div class="panel-section">
       <div class="panel-section-title">Layers<button id="toggle-all-layers" class="layer-toggle-all" title="Show / hide all layers"><i class="fa-solid fa-eye"></i> All</button></div>
+      <label class="popup-preview-row" title="Render popups exactly as visitors see them — editing buttons hidden">
+        <input type="checkbox" id="popup-preview-toggle" />
+        <i class="fa-solid fa-eye"></i> Preview public popups
+      </label>
       <div id="left-layer-list">
         <div class="panel-placeholder">Select an experience</div>
       </div>
@@ -918,6 +973,76 @@
         </div></div>`;
   }
 
+  // ── Public popup preview ──────────────────────────────────────
+  // Mirrors the public map's default popup (climbing styling, photos, schema
+  // fields) so editors can see what visitors get. Cross-feature navigation
+  // (climb lists, prev/next) only renders on the live map.
+  function ydsRank(g) {
+    const m = String(g).match(/^5\.(\d+)([a-dA-D]?)/);
+    if (!m) return -1;
+    return parseInt(m[1]) * 4 + (m[2] ? m[2].toLowerCase().charCodeAt(0) - 97 : 0);
+  }
+  function vRank(g) { const m = String(g).match(/^[Vv](\d+)/); return m ? parseInt(m[1]) : -1; }
+  function gradeBucketClass(grade) {
+    if (!grade) return 'g-none';
+    const r = ydsRank(grade), v = vRank(grade);
+    if ((r >= 0 && r <= 32) || (v >= 0 && v <= 3)) return 'g-easy';
+    if ((r >= 36 && r <= 43) || (v >= 4 && v <= 6)) return 'g-mod';
+    if ((r >= 44 && r <= 47) || (v >= 7 && v <= 9)) return 'g-hard';
+    if (r >= 48 || v >= 10) return 'g-proj';
+    return 'g-none';
+  }
+
+  function buildPublicPopupHTML(props, sourceKey) {
+    const cfg = layerMeta[sourceKey] || { label: 'Feature', color: '#7f8c8d' };
+    const note = '<div class="preview-note"><i class="fa-solid fa-eye"></i> Public preview — climb lists & navigation render on the live map</div>';
+    if (cfg.popup_template && cfg.popup_template.trim()) {
+      const body = renderPopupTemplate(cfg.popup_template, buildCtx(props));
+      const style = cfg.popup_css ? `<style>${scopePopupCss(cfg.popup_css)}</style>` : '';
+      return `${style}<div class="apex-popup-custom">${body}</div>${note}`;
+    }
+    let cd = {};
+    try { const raw = props.custom_data; cd = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : {}; } catch {}
+    const name = props.name || cfg.label;
+    const isClimb = sourceKey === 'climbing_routes' || sourceKey === 'climbing_boulders';
+    const skip = new Set(['grade', 'route_type', 'length_ft', 'fa', 'description',
+      'area_name', 'area_id', 'area_path', 'depth', 'climb_count', 'parent_id']);
+
+    let statsHTML = '';
+    if (isClimb) {
+      const g = props.grade || '';
+      const types = String(props.route_type || '').split('/').map(t => t.trim()).filter(Boolean);
+      const parts = [];
+      if (g) parts.push(`<span class="pcl-grade ${gradeBucketClass(g)}">${g}</span>`);
+      types.forEach(t => parts.push(`<span class="climb-type-pill">${t}</span>`));
+      if (props.length_ft) parts.push(`<span class="climb-stat"><i class="fa-solid fa-ruler-vertical"></i> ${props.length_ft} ft</span>`);
+      statsHTML = `
+        ${parts.length ? `<div class="climb-stats">${parts.join('')}</div>` : ''}
+        ${props.fa ? `<div class="climb-fa"><i class="fa-solid fa-flag-checkered"></i> FA ${props.fa}</div>` : ''}
+        ${cd.description ? `<div class="climb-desc">${cd.description}</div>` : ''}`;
+    } else if (sourceKey === 'climbing_areas' && cd.description) {
+      statsHTML = `<div class="climb-desc">${cd.description}</div>`;
+    }
+
+    let photos = props.photos;
+    if (typeof photos === 'string') { try { photos = JSON.parse(photos); } catch { photos = []; } }
+    if (!Array.isArray(photos)) photos = [];
+    const photosHTML = photos.length
+      ? `<div class="popup-photos">${photos.slice(0, 12).map(u => `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" loading="lazy" alt="" /></a>`).join('')}</div>`
+      : '';
+
+    const isClimbing = isClimb || sourceKey === 'climbing_areas';
+    const rows = (cfg.fields || [])
+      .filter(f => !f.hidden && !(isClimbing && skip.has(f.name)))
+      .map(f => [f.label, f.base ? props[f.name] : cd[f.name]])
+      .filter(([, v]) => v != null && String(v).trim() !== '')
+      .map(([label, v]) => rowHTML(label, v))
+      .join('');
+
+    return `<div class="popup-header"><div class="popup-feature-name">${name}</div><span class="popup-badge" style="background:${cfg.color}">${cfg.label}</span></div>
+      <div class="popup-body">${statsHTML}${photosHTML}${rows || (!statsHTML && !photosHTML ? '<div class="popup-empty">No attributes</div>' : '')}${note}</div>`;
+  }
+
   function registerInteractions() {
     if (interactionsRegistered) return;
     interactionsRegistered = true;
@@ -940,8 +1065,11 @@
           if (e.originalEvent._popupHandled) return;
           const feature = e.features[0];
           const sourceKey = layerToSource[lid];
-          const popup = new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '270px' })
-            .setLngLat(e.lngLat).setHTML(buildPopupHTML(feature.properties, sourceKey)).addTo(map);
+          const preview = document.getElementById('popup-preview-toggle').checked;
+          const popup = new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: preview ? '290px' : '270px' })
+            .setLngLat(e.lngLat)
+            .setHTML((preview ? buildPublicPopupHTML : buildPopupHTML)(feature.properties, sourceKey))
+            .addTo(map);
           const editBtn = popup.getElement().querySelector('.popup-edit-btn');
           if (editBtn) editBtn.addEventListener('click', () => {
             popup.remove();
@@ -985,6 +1113,7 @@
     }
     // Normalize layer config shape from experience_layers join
     const normalized = expLayers.map(el => ({
+      id: el.id,   // experience_layers row id — used by the default-visibility pin
       source_key: el.template_slug,
       template_slug: el.template_slug,
       label: el.layer_templates.label,
@@ -1025,10 +1154,32 @@
       row.innerHTML = `<div class="layer-swatch" style="background:${color}"></div>
         <span class="layer-name">${l.label}</span>
         <span class="layer-count" id="count-${key}">—</span>
+        <button class="layer-default-pin${l.visible_by_default ? ' on' : ''}" title="Shown by default on the public map — click to toggle"><i class="fa-solid fa-star"></i></button>
         <div class="layer-toggle"></div>`;
       row.addEventListener('click', () => {
         const nowOn = row.classList.toggle('on');
         setLayerVisible(key, nowOn);
+      });
+      // Default visibility pin: persists experience_layers.visible_by_default
+      // (what the PUBLIC map shows on load) — independent of the session toggle.
+      const pin = row.querySelector('.layer-default-pin');
+      pin.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (!l.id) { toast('Reload the experience to edit defaults', true); return; }
+        const newVal = !pin.classList.contains('on');
+        pin.classList.toggle('on', newVal);
+        const { error } = await db.from('experience_layers')
+          .update({ visible_by_default: newVal }).eq('id', l.id);
+        if (error) {
+          pin.classList.toggle('on', !newVal);
+          toast('Failed to save default: ' + error.message, true);
+          return;
+        }
+        l.visible_by_default = newVal;
+        // keep the layer-manager card checkbox in sync if it's rendered
+        const cardCheck = document.querySelector(`.layer-card[data-id="${l.id}"] .card-visible`);
+        if (cardCheck) cardCheck.checked = newVal;
+        toast(`"${l.label}" ${newVal ? 'shown' : 'hidden'} by default on the public map`);
       });
       list.appendChild(row);
     });
