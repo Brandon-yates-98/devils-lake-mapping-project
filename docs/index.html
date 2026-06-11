@@ -914,11 +914,12 @@
   let trailHoverId = null;
   let interactionsRegistered = false;
 
-  const CLIMBING_SOURCES = ['climbing_routes', 'climbing_boulders', 'climbing_areas', 'climbing_sectors'];
+  const CLIMBING_SOURCES = ['climbing_routes', 'climbing_boulders', 'climbing_areas',
+    'climbing_route_sectors', 'climbing_boulder_sectors'];
   const CLIMB_SOURCES = ['climbing_routes', 'climbing_boulders'];   // climbs only (no areas/sectors)
   // Sources whose features ARE areas (marker points + computed boundary
   // polygons share the same area_id/area_path association).
-  const AREA_SOURCES = new Set(['climbing_areas', 'climbing_sectors']);
+  const AREA_SOURCES = new Set(['climbing_areas', 'climbing_route_sectors', 'climbing_boulder_sectors']);
   const climbFilter = { search: '', area: 'all', types: new Set(), grade: 'all' };
 
   // ── OpenBeta area ↔ climbs association ────────────────────────
