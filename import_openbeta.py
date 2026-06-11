@@ -242,24 +242,31 @@ def fetch_climb_mp_ids(rows):
     walls = sorted({r['area_id'] for r in rows if not r.get('mp_id')})
     print(f"\nFetching Mountain Project ids directly from {len(walls)} walls …")
     mp = {}
+    failed = 0
     for i, wall in enumerate(walls):
-        try:
-            d = gql(MP_WALL_Q, {'uuid': wall})
-            for c in ((d.get('area') or {}).get('climbs') or []):
-                mid = (c.get('metadata') or {}).get('mp_id')
-                if mid:
-                    mp[c['uuid']] = mid
-        except Exception as e:
-            print(f"  [WARN] mp_id fetch failed for wall {wall}: {e}")
+        for attempt in (1, 2, 3):
+            try:
+                d = gql(MP_WALL_Q, {'uuid': wall})
+                for c in ((d.get('area') or {}).get('climbs') or []):
+                    mid = (c.get('metadata') or {}).get('mp_id')
+                    if mid:
+                        mp[c['uuid']] = mid
+                break
+            except Exception as e:
+                if attempt == 3:
+                    failed += 1
+                    print(f"  [WARN] mp_id fetch failed for wall {wall}: {e}")
+                else:
+                    time.sleep(2.0 * attempt)   # back off and retry
+        time.sleep(0.15)                        # be polite to the API
         if (i + 1) % 50 == 0:
             print(f"    {i + 1}/{len(walls)} walls …")
-            time.sleep(0.3)
     n = 0
     for r in rows:
         if not r.get('mp_id') and r['uuid'] in mp:
             r['mp_id'] = mp[r['uuid']]
             n += 1
-    print(f"  mp_id found for {n} climbs")
+    print(f"  mp_id found for {n} climbs ({failed} walls failed)")
 
 def main():
     print("Fetching Devil's Lake area children …")
