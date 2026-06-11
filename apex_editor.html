@@ -1006,7 +1006,7 @@
     const name = props.name || cfg.label;
     const isClimb = sourceKey === 'climbing_routes' || sourceKey === 'climbing_boulders';
     const skip = new Set(['grade', 'route_type', 'length_ft', 'fa', 'description',
-      'area_name', 'area_id', 'area_path', 'depth', 'climb_count', 'parent_id']);
+      'area_name', 'area_id', 'area_path', 'depth', 'climb_count', 'parent_id', 'height', 'mp_id', '_draw_id']);
 
     let statsHTML = '';
     if (isClimb) {

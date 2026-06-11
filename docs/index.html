@@ -466,6 +466,10 @@
     }
     .popup-ob-link:hover { color: #c0392b; }
     .popup-ob-link i { font-size: 9px; }
+    /* External link row: OpenBeta + Mountain Project side by side */
+    .popup-ext-links { display: flex; gap: 14px; }
+    .popup-mp-link { color: #1a7bb9 !important; }
+    .popup-mp-link:hover { color: #135e8e !important; }
     /* ── OpenBeta area association ── */
     .popup-area-climbs-btn {
       display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -1061,7 +1065,7 @@
   }
 
   // ── Popup helpers (unchanged from original) ──────────────────
-  const SKIP_KEYS = new Set(['_osm_type', '_osm_id', 'wikidata', 'wikipedia', 'type', 'name', 'id', 'photos', 'custom_data']);
+  const SKIP_KEYS = new Set(['_osm_type', '_osm_id', 'wikidata', 'wikipedia', 'type', 'name', 'id', 'photos', 'custom_data', '_draw_id']);
   const SKIP_PREFIXES = ['tiger:', 'gnis:', 'source', 'is_in:', 'addr:'];
   const SKIP_SUFFIXES = [':wikidata', ':wikipedia', ':reviewed', ':note'];
 
@@ -1666,10 +1670,10 @@
         ${parts.length ? `<div class="climb-stats">${parts.join('')}</div>` : ''}
         ${props.fa ? `<div class="climb-fa"><i class="fa-solid fa-flag-checkered"></i> FA ${escapeHtml(String(props.fa))}</div>` : ''}
         ${customData.description ? `<div class="climb-desc">${escapeHtml(String(customData.description))}</div>` : ''}`;
-      ['grade', 'route_type', 'length_ft', 'fa', 'description', 'area_name', 'area_id', 'area_path', 'depth']
+      ['grade', 'route_type', 'length_ft', 'fa', 'description', 'area_name', 'area_id', 'area_path', 'depth', 'height', 'mp_id']
         .forEach(k => skipInRows.add(k));
     } else if (isAreaSrc) {
-      ['climb_count', 'depth', 'area_id', 'parent_id', 'area_path', 'description'].forEach(k => skipInRows.add(k));
+      ['climb_count', 'depth', 'area_id', 'parent_id', 'area_path', 'description', 'height', 'mp_id'].forEach(k => skipInRows.add(k));
       if (customData.description) {
         climbStatsHTML = `<div class="climb-desc">${escapeHtml(String(customData.description))}</div>`;
       }
@@ -1781,11 +1785,15 @@
         ${rows || (!customHTML && !photosHTML && !climbStatsHTML && !climbListHTML ? '<div class="popup-empty">No additional attributes</div>' : '')}
         ${climbListHTML}
         ${climbAssocHTML}
-        ${customData.openbeta_id && sourceKey.startsWith('climbing_')
-          ? `<a href="${isAreaSrc
-              ? 'https://openbeta.io/areas/' + customData.openbeta_id
-              : 'https://openbeta.io/climbs/' + customData.openbeta_id
-            }" target="_blank" rel="noopener" class="popup-ob-link"><i class="fa-solid fa-arrow-up-right-from-square"></i> View on OpenBeta</a>`
+        ${sourceKey.startsWith('climbing_') && (customData.openbeta_id || customData.mp_id)
+          ? `<div class="popup-ext-links">
+              ${customData.openbeta_id ? `<a href="${isAreaSrc
+                  ? 'https://openbeta.io/areas/' + customData.openbeta_id
+                  : 'https://openbeta.io/climbs/' + customData.openbeta_id
+                }" target="_blank" rel="noopener" class="popup-ob-link"><i class="fa-solid fa-arrow-up-right-from-square"></i> OpenBeta</a>` : ''}
+              ${customData.mp_id ? `<a href="https://www.mountainproject.com/${isAreaSrc ? 'area' : 'route'}/${escapeHtml(String(customData.mp_id))}"
+                target="_blank" rel="noopener" class="popup-ob-link popup-mp-link"><i class="fa-solid fa-arrow-up-right-from-square"></i> Mountain Project</a>` : ''}
+            </div>`
           : ''}
         <button class="popup-directions-btn"><i class="fa-solid fa-route"></i> Directions</button>
       </div>`;

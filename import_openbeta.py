@@ -58,24 +58,24 @@ CLIMB_FRAG = '''
       uuid name fa length
       grades { yds vscale }
       type { trad sport bouldering tr aid alpine mixed }
-      metadata { lat lng }
+      metadata { lat lng mp_id }
       content { description }'''
 
 FULL_AREA_Q = '''query($uuid: ID!) {
   area(uuid: $uuid) {
-    uuid area_name totalClimbs metadata { lat lng }
+    uuid area_name totalClimbs metadata { lat lng mp_id }
     climbs {''' + CLIMB_FRAG + '''}
     children {
-      uuid area_name metadata { lat lng }
+      uuid area_name metadata { lat lng mp_id }
       climbs {''' + CLIMB_FRAG + '''}
       children {
-        uuid area_name metadata { lat lng }
+        uuid area_name metadata { lat lng mp_id }
         climbs {''' + CLIMB_FRAG + '''}
         children {
-          uuid area_name metadata { lat lng }
+          uuid area_name metadata { lat lng mp_id }
           climbs {''' + CLIMB_FRAG + '''}
           children {
-            uuid area_name metadata { lat lng }
+            uuid area_name metadata { lat lng mp_id }
             climbs {''' + CLIMB_FRAG + '''}
           }
         }
@@ -128,6 +128,7 @@ def collect_from_area(area, parent_lat=None, parent_lng=None, ancestry=None, dep
             'parent_id': parent_id,
             'path': path,
             'depth': depth,
+            'mp_id': (area.get('metadata') or {}).get('mp_id') or '',
         })
 
     for c in (area.get('climbs') or []):
@@ -154,6 +155,7 @@ def collect_from_area(area, parent_lat=None, parent_lng=None, ancestry=None, dep
             'area_id':   uuid,             # immediate parent area
             'area_path': climb_path,       # full area chain (root → parent)
             'description': desc,
+            'mp_id':     (c.get('metadata') or {}).get('mp_id') or '',
         }
         if ctype == 'boulder':
             boulders_out.append(row)
@@ -186,10 +188,11 @@ def make_route_feature(row):
             'area_path':   row['area_path'],        # root → parent uuid chain (jsonb array)
             # upsert_drawn_feature reads custom_data as props->>'custom_data' cast to jsonb
             # so it must be a JSON string embedded in the properties object
-            'custom_data': json.dumps({
+            'custom_data': json.dumps({k: v for k, v in {
                 'description': row['description'],
                 'openbeta_id': row['uuid'],
-            }),
+                'mp_id': row.get('mp_id'),
+            }.items() if v}),
         }
     }
 
@@ -205,7 +208,10 @@ def make_area_feature(row):
             'area_path':   row.get('path', []),     # ancestor uuid chain (jsonb array)
             'depth':       row.get('depth', 0),
             'climb_count': row.get('climb_count', 0),
-            'custom_data': json.dumps({'openbeta_id': row['uuid']}),
+            'custom_data': json.dumps({k: v for k, v in {
+                'openbeta_id': row['uuid'],
+                'mp_id': row.get('mp_id'),
+            }.items() if v}),
         }
     }
 

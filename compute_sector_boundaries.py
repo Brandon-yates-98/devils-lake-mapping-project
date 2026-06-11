@@ -133,6 +133,15 @@ def main():
         # stray boulders (and vice versa), but the group identity is clear.
         nr, nb = route_n.get(aid, 0), boulder_n.get(aid, 0)
         source = "climbing_boulder_sectors" if nb >= nr else "climbing_route_sectors"
+        cd = {"openbeta_id": aid}
+        acd = meta.get("custom_data") or {}
+        if isinstance(acd, str):
+            try:
+                acd = json.loads(acd)
+            except ValueError:
+                acd = {}
+        if acd.get("mp_id"):
+            cd["mp_id"] = acd["mp_id"]   # Mountain Project area link (after re-import)
         features.append({
             "type": "Feature",
             "source": source,
@@ -146,7 +155,7 @@ def main():
                 "depth": meta.get("depth") or 0,
                 "climb_count": len(coords),
             },
-            "custom_data": {"openbeta_id": aid},
+            "custom_data": cd,
         })
         print(f"  [{source.split('_')[1]:<7}] {meta.get('name'):<50} routes={nr:>4} boulders={nb:>4}")
     print(f"sector groups with boundaries: {len(features)}")
