@@ -2207,9 +2207,24 @@
           } });
         addBadgeLayer(key+'-badge-routes', routeF, 'dl-carabiner@#e74c3c', '#e74c3c');
         addBadgeLayer(key+'-badge-boulders', boulderF, 'dl-boulder@#e67e22', '#e67e22');
+        // wall names under the leaf badges at high zoom — separate layers
+        // (the badge's text slot carries the corner count) with collision
+        // detection on, so dense walls drop labels instead of overlapping
+        const addNameLayer = (id, typeF) => map.addLayer({
+          id, type: 'symbol', source: key, minzoom: 15,
+          filter: guards(typeF),
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': 11, 'text-offset': [0, 1.1],
+            'text-anchor': 'top', 'text-max-width': 8,
+          },
+          paint: { 'text-color': '#333', 'text-halo-color': '#fff', 'text-halo-width': 1.5 } });
+        addNameLayer(key+'-name-routes', routeF);
+        addNameLayer(key+'-name-boulders', boulderF);
         // badge ids first: click handlers bind in this order, so a leaf badge
         // wins over the hull beneath it
         mapboxIds.push(key+'-badge-routes', key+'-badge-boulders',
+          key+'-name-routes', key+'-name-boulders',
           `${HULL_SRC}-fill-routes`, `${HULL_SRC}-line-routes`, `${HULL_SRC}-label-routes`,
           `${HULL_SRC}-fill-boulders`, `${HULL_SRC}-line-boulders`, `${HULL_SRC}-label-boulders`);
       } else {
@@ -2586,9 +2601,11 @@
   // parent areas) shows while either badge family is on.
   const areaTypeVis = { routes: true, boulders: true, counts: true };
   const AREA_FAMILY_LAYERS = {
-    routes: ['climbing_areas-badge-routes', 'climbing_area_hulls-fill-routes',
+    routes: ['climbing_areas-badge-routes', 'climbing_areas-name-routes',
+             'climbing_area_hulls-fill-routes',
              'climbing_area_hulls-line-routes', 'climbing_area_hulls-label-routes'],
-    boulders: ['climbing_areas-badge-boulders', 'climbing_area_hulls-fill-boulders',
+    boulders: ['climbing_areas-badge-boulders', 'climbing_areas-name-boulders',
+               'climbing_area_hulls-fill-boulders',
                'climbing_area_hulls-line-boulders', 'climbing_area_hulls-label-boulders'],
   };
   function syncAreaLayers() {
