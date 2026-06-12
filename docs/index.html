@@ -2080,7 +2080,7 @@
           // rim ≈ 1px·size → ring radius 8.5·size)
           const ringSpec = { id: key+'-circle', type: 'circle', source: key,
             paint: { 'circle-color': '#eaf6ec',
-              'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3.83, 14, 6.38] } };
+              'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 5.93, 14, 9.37] } };
           if (filter) ringSpec.filter = filter;
           map.addLayer(ringSpec);
           mapboxIds.push(key+'-circle');
@@ -2092,9 +2092,9 @@
           layout: {
             'icon-image': baked ? iconImage + '@' + color : iconImage,
             // baked: disc radius is 30/64 of the image → 7.5px logical at
-            // size 1; sized to match the old circle layer (4.5px → 7.5px)
+            // size 1; sized to match the editor's markers (7px → 11px)
             'icon-size': baked || selfBadge
-              ? ['interpolate', ['linear'], ['zoom'], 10, 0.6 * iconScale, 14, 1.0 * iconScale]
+              ? ['interpolate', ['linear'], ['zoom'], 10, 0.93 * iconScale, 14, 1.47 * iconScale]
               : ['interpolate', ['linear'], ['zoom'], 10, 0.65, 14, 0.98],
             'icon-allow-overlap': true,
             'icon-ignore-placement': true,
