@@ -932,6 +932,12 @@
   // filters is only re-evaluated at integer zoom levels. Routes run four
   // levels later than boulders so their bigger hulls stay up longer.
   const BAND_START = { routes: [0, 16, 17, 18, 19], boulders: [0, 12, 13, 14, 15] };
+  // Areas whose climbs span geographically unrelated walls — a convex hull
+  // overreaches, so they render as a single point badge (subtree count)
+  // during their band instead.
+  const HULL_AS_POINT = new Set([
+    '91a11925-3112-55e9-b5a7-40f4afabb9c4', // Linkups, Contrivances, Oddities and Triflings
+  ]);
   const HULL_TEXT_WITH_COUNT = ['concat', ['get', 'name'], ' · ', ['to-string', ['get', '_climbs']]];
   const HULL_TEXT_PLAIN = ['get', 'name'];
   // Sources whose features ARE areas (marker points + computed boundary
@@ -2777,6 +2783,20 @@
     const pathByArea = {};
     areas.features.forEach(f => {
       const p = f.properties;
+      pathByArea[p.area_id] = p.area_path;
+      if (HULL_AS_POINT.has(p.area_id)) {
+        // hull-less parent: a point badge with its subtree's counts,
+        // shown only during its band (descendants take over deeper)
+        const sc = subtree[p.area_id] || { routes: 0, boulders: 0 };
+        p._routes = sc.routes;
+        p._boulders = sc.boulders;
+        p._climbs = sc.routes + sc.boulders;
+        const band = bandOf(sc);
+        const d = Math.min(p.depth || 0, band.length - 2);
+        p._minz = band[d];
+        p._maxz = band[d + 1];
+        return;
+      }
       const c = direct[p.area_id] || { routes: 0, boulders: 0 };
       p._routes = c.routes;
       p._boulders = c.boulders;
@@ -2784,10 +2804,10 @@
       // leaf badges enter at their depth's band and stay (no _maxz)
       const band = bandOf(c);
       p._minz = band[Math.min(p.depth || 0, band.length - 1)];
-      pathByArea[p.area_id] = p.area_path;
     });
     // hulls carry their subtree's counts and live only in their depth's band
     const hulls = layerCache['climbing_area_hulls'];
+    if (hulls) hulls.features = hulls.features.filter(f => !HULL_AS_POINT.has(f.properties.area_id));
     if (hulls) hulls.features.forEach(f => {
       const p = f.properties;
       const c = subtree[p.area_id] || { routes: 0, boulders: 0 };
