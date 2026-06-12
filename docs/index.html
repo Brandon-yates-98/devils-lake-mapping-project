@@ -921,6 +921,9 @@
   const CLIMBING_SOURCES = ['climbing_routes', 'climbing_boulders', 'climbing_areas',
     'climbing_route_sectors', 'climbing_boulder_sectors'];
   const CLIMB_SOURCES = ['climbing_routes', 'climbing_boulders'];   // climbs only (no areas/sectors)
+  // Climbs inherit their wall's GPS, so points stack exactly — these sources
+  // cluster, and a stack renders as one disc with a count badge.
+  const CLUSTERED_SOURCES = new Set(CLIMB_SOURCES);
   // Sources whose features ARE areas (marker points + computed boundary
   // polygons share the same area_id/area_path association).
   const AREA_SOURCES = new Set(['climbing_areas', 'climbing_route_sectors', 'climbing_boulder_sectors']);
@@ -2028,7 +2031,13 @@
       map.addLayer(spec);
       mapboxIds.push(key+'-line');
     } else if (geomType === 'point') {
-      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      const clustered = CLUSTERED_SOURCES.has(key);
+      map.addSource(key, clustered
+        // clusterMaxZoom == maxzoom keeps identical-coordinate stacks
+        // clustered at every display zoom (they can never separate)
+        ? { type: 'geojson', data: { type: 'FeatureCollection', features: [] },
+            cluster: true, clusterRadius: 30, maxzoom: 19, clusterMaxZoom: 19 }
+        : { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       // icon: from default_style (subtype POIs, climbing areas, etc.)
       //       or derived via match for the legacy consolidated 'pois' source
       const dsIcon = layerCfg.default_style && layerCfg.default_style.icon;
@@ -2104,9 +2113,30 @@
           },
           paint: { 'icon-color': '#ffffff',
             'text-color': '#333', 'text-halo-color': '#fff', 'text-halo-width': 1.5 } };
-        if (filter) iconSpec.filter = filter;
+        if (clustered) {
+          const unclustered = ['!', ['has', 'point_count']];
+          iconSpec.filter = filter ? ['all', unclustered, filter] : unclustered;
+        } else if (filter) iconSpec.filter = filter;
         map.addLayer(iconSpec);
         mapboxIds.push(key+'-icon');
+        if (clustered) {
+          // a stack renders as one disc with a count — same styling family
+          // as the baked single markers (layer color, tinted rim)
+          const rim = dsIcon === 'dl-carabiner' ? '#ffe9e6'
+            : dsIcon === 'dl-boulder' ? '#fff1e5' : '#ffffff';
+          map.addLayer({ id: key+'-cluster', type: 'circle', source: key,
+            filter: ['has', 'point_count'],
+            paint: { 'circle-color': color,
+              'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 8, 14, 12],
+              'circle-stroke-width': 1.5, 'circle-stroke-color': rim } });
+          map.addLayer({ id: key+'-cluster-count', type: 'symbol', source: key,
+            filter: ['has', 'point_count'],
+            layout: { 'text-field': ['get', 'point_count_abbreviated'],
+              'text-size': ['interpolate', ['linear'], ['zoom'], 10, 10, 14, 12],
+              'text-allow-overlap': true },
+            paint: { 'text-color': '#ffffff' } });
+          mapboxIds.push(key+'-cluster', key+'-cluster-count');
+        }
       } else {
         const spec = { id: key+'-circle', type: 'circle', source: key,
           paint: { 'circle-color': color,
@@ -2183,7 +2213,16 @@
       else if (base) combined = ['all', base, ...extra];
       else combined = extra.length === 1 ? extra[0] : ['all', ...extra];
       (sourceToMapboxLayers[src] || []).forEach(id => {
-        if (map.getLayer(id)) map.setFilter(id, combined);
+        if (!map.getLayer(id)) return;
+        // cluster layers aggregate the source as-is — feature-property
+        // filters don't apply to them (clusters carry no feature props)
+        if (id.endsWith('-cluster') || id.endsWith('-cluster-count')) return;
+        let f = combined;
+        if (id.endsWith('-icon') && CLUSTERED_SOURCES.has(src)) {
+          const unclustered = ['!', ['has', 'point_count']];
+          f = combined ? ['all', unclustered, combined] : unclustered;
+        }
+        map.setFilter(id, f);
       });
     });
     const anyActive = activePresetIds.size > 0 || !!(adhocFilter && adhocFilter.expr);
@@ -2462,14 +2501,67 @@
       map.on('mouseleave', lid, () => { map.getCanvas().style.cursor = ''; });
     });
 
+    // Cluster badges open a list of the stacked climbs instead of a
+    // single-feature popup.
     Object.keys(layerToSource).forEach(lid => {
-      if (lid.endsWith('-glow') || lid.endsWith('-case') || lid.endsWith('-outline')) return;
+      if (!lid.endsWith('-cluster')) return;
+      const srcKey = layerToSource[lid];
+      map.on('click', lid, (e) => {
+        if (e.originalEvent._popupHandled) return;
+        e.originalEvent._popupHandled = true;
+        const c = e.features[0];
+        map.getSource(srcKey).getClusterLeaves(c.properties.cluster_id, 1000, 0, (err, leaves) => {
+          if (!err && leaves && leaves.length) {
+            openClusterPopup(leaves, srcKey, c.geometry.coordinates);
+          }
+        });
+      });
+    });
+
+    Object.keys(layerToSource).forEach(lid => {
+      if (lid.endsWith('-glow') || lid.endsWith('-case') || lid.endsWith('-outline')
+        || lid.endsWith('-cluster') || lid.endsWith('-cluster-count')) return;
       map.on('click', lid, (e) => {
         if (e.originalEvent._popupHandled) return;
         openFeaturePopup(e.features[0], layerToSource[lid], e.lngLat);
         e.originalEvent._popupHandled = true;
       });
     });
+  }
+
+  // Popup listing every climb stacked under a cluster badge. Rows reuse the
+  // area-popup climb list styling; clicking one flies to that climb's own
+  // popup (which carries the prev/next wall steppers).
+  function openClusterPopup(leaves, sourceKey, lngLat) {
+    const climbs = leaves.map(f => ({ f, src: sourceKey })).sort(byClimbName);
+    const walls = new Set(climbs.map(({ f }) => f.properties.area_name).filter(Boolean));
+    const title = walls.size === 1 ? [...walls][0]
+      : sourceKey === 'climbing_boulders' ? 'Boulder problems here' : 'Climbs here';
+    const CAP = 60;
+    const rows = climbs.slice(0, CAP).map(({ f, src }) => {
+      const p = f.properties;
+      const g = p.grade || '';
+      return `<button class="pcl-row" data-fsrc="${src}" data-fid="${escapeHtml(String(p.id))}">
+        <i class="fa-solid ${CLIMB_TYPE_ICON[src] || 'fa-location-dot'}"></i>
+        <span class="pcl-name">${escapeHtml(p.name || '(unnamed)')}</span>
+        <span class="pcl-grade ${gradeBucketClass(g)}">${escapeHtml(g) || '—'}</span>
+      </button>`;
+    }).join('');
+    const html = `
+      <div class="pcl-head">${escapeHtml(title)} <span class="pcl-head-count">${climbs.length} climb${climbs.length === 1 ? '' : 's'}</span></div>
+      <div class="popup-climb-list">${rows}
+        ${climbs.length > CAP ? `<div class="pcl-more">+ ${climbs.length - CAP} more — zoom in or use the climbing filters</div>` : ''}
+      </div>`;
+    const popup = new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '290px' })
+      .setLngLat(lngLat).setHTML(html).addTo(map);
+    popup.getElement().querySelectorAll('.pcl-row').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const { fsrc, fid } = btn.dataset;
+        popup.remove();
+        flyToClimb(fsrc, fid);
+      });
+    });
+    return popup;
   }
 
   // Open a feature popup and wire its interactive parts. Used by map clicks
