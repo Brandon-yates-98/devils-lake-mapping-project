@@ -900,13 +900,15 @@
           map.addLayer(circleSpec);
           mapboxIds.push(key+'-circle');
         }
+        // route markers (carabiner) are dense — drawn 25% smaller
+        const iconScale = dsIcon === 'apex-carabiner' ? 0.75 : 1;
         const iconSpec = { id: key+'-icon', type: 'symbol', source: key,
           layout: {
             'icon-image': baked ? iconImage + '@' + color : iconImage,
             // baked: disc radius is 30/64 of the image → 7.5px logical at
             // size 1; sized to match the old circle layer (7px → 11px)
             'icon-size': baked
-              ? ['interpolate', ['linear'], ['zoom'], 10, 0.93, 14, 1.47]
+              ? ['interpolate', ['linear'], ['zoom'], 10, 0.93 * iconScale, 14, 1.47 * iconScale]
               : ['interpolate', ['linear'], ['zoom'], 10, 0.55, 14, 0.85],
             'icon-allow-overlap': true,
             'icon-ignore-placement': true,
