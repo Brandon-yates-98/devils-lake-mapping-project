@@ -924,6 +924,9 @@
   // Climbs inherit their wall's GPS, so points stack exactly — these sources
   // cluster, and a stack renders as one disc with a count badge.
   const CLUSTERED_SOURCES = new Set(CLIMB_SOURCES);
+  // Areas that directly own climbs render as count badges (counts injected
+  // into the cached features by enrichAreaBadges).
+  const AREA_BADGE_FILTER = ['>', ['coalesce', ['get', '_climbs'], 0], 0];
   // Sources whose features ARE areas (marker points + computed boundary
   // polygons share the same area_id/area_path association).
   const AREA_SOURCES = new Set(['climbing_areas', 'climbing_route_sectors', 'climbing_boulder_sectors']);
@@ -2145,6 +2148,23 @@
         if (filter) spec.filter = filter;
         map.addLayer(spec);
         mapboxIds.push(key+'-circle');
+        if (key === 'climbing_areas') {
+          // Areas-as-markers: leaf areas that directly own climbs read as a
+          // count badge (same family as the climb cluster badges). Counts
+          // come from enrichAreaBadges(), baked into the cached features.
+          map.addLayer({ id: key+'-badge', type: 'circle', source: key,
+            filter: filter ? ['all', AREA_BADGE_FILTER, filter] : AREA_BADGE_FILTER,
+            paint: { 'circle-color': color,
+              'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 8, 14, 12],
+              'circle-stroke-width': 1.5, 'circle-stroke-color': '#f3ecf9' } });
+          map.addLayer({ id: key+'-badge-count', type: 'symbol', source: key,
+            filter: filter ? ['all', AREA_BADGE_FILTER, filter] : AREA_BADGE_FILTER,
+            layout: { 'text-field': ['to-string', ['get', '_climbs']],
+              'text-size': ['interpolate', ['linear'], ['zoom'], 10, 10, 14, 12],
+              'text-allow-overlap': true },
+            paint: { 'text-color': '#ffffff' } });
+          mapboxIds.push(key+'-badge', key+'-badge-count');
+        }
       }
     } else {
       // polygon or mixed — add fill, outline, and circle sub-layers
@@ -2221,6 +2241,8 @@
         if (id.endsWith('-icon') && CLUSTERED_SOURCES.has(src)) {
           const unclustered = ['!', ['has', 'point_count']];
           f = combined ? ['all', unclustered, combined] : unclustered;
+        } else if (id.endsWith('-badge') || id.endsWith('-badge-count')) {
+          f = combined ? ['all', AREA_BADGE_FILTER, combined] : AREA_BADGE_FILTER;
         }
         map.setFilter(id, f);
       });
@@ -2648,6 +2670,32 @@
     openFeaturePopup(f, src, coords);
   }
 
+  // Direct climb counts per area, baked into the cached area features so
+  // every setData path (initial load, style switch, filters) carries them.
+  // The DB's climb_count is the subtree rollup; badges want only the climbs
+  // sitting on this exact marker.
+  function enrichAreaBadges() {
+    const areas = layerCache['climbing_areas'];
+    if (!areas) return;
+    const counts = {};
+    CLIMB_SOURCES.forEach(src => {
+      (layerCache[src] || { features: [] }).features.forEach(f => {
+        const k = f.properties.area_id;
+        if (!k) return;
+        const c = counts[k] = counts[k] || { routes: 0, boulders: 0 };
+        if (src === 'climbing_routes') c.routes++; else c.boulders++;
+      });
+    });
+    areas.features.forEach(f => {
+      const c = counts[f.properties.area_id] || { routes: 0, boulders: 0 };
+      f.properties._routes = c.routes;
+      f.properties._boulders = c.boulders;
+      f.properties._climbs = c.routes + c.boulders;
+    });
+    const src = map.getSource('climbing_areas');
+    if (src) src.setData(areas);
+  }
+
   // ── Data loading ─────────────────────────────────────────────
   async function loadLayerData(layers) {
     let totalFeatures = 0;
@@ -2770,6 +2818,7 @@
     registerInteractions();
     setupClimbingFilterListeners();
     const total = await loadLayerData(layers);
+    enrichAreaBadges();
     initClimbingFilters(layers);
     initCampFilter(layers);
     initFeatureFilters(layers);
