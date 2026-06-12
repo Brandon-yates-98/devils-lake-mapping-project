@@ -5,9 +5,13 @@ and all Apex references were removed from `docs/` (visible branding, logos,
 PWA identity, and internal identifiers). This folder preserves everything
 needed to put the Apex branding back.
 
-The editor (`apex_editor.html`) intentionally kept its Apex branding — only
-its shared internal identifiers (glyph ids, popup CSS class) were renamed to
-stay compatible with the public map and the database.
+The editor (`apex_editor.html`) was rebranded as well: its `<title>`
+(`Map Editor — Apex Adventure Alliance`), login modal (rope-logo +
+`APEX ADVENTURE ALLIANCE`), header (`#apex-header`, rope-logo,
+`Apex Adventure Alliance` org line), loading logo, and sidebar footer logo
+(`ApexPrimaryLogoFinal-271x300.png`) all match the public-map changes in the
+tables below — the editor now points its logo slots at
+`docs/icons/logo-mark.png` (relative path from the repo root).
 
 ## What changed (new → old)
 
@@ -85,8 +89,8 @@ must match the `drawMapGlyph()` branch names in both HTML files.)
   `osm_geometries` rows; both the popup renderer and the editor's edit form
   read/write it. Renaming it is a data migration touching the importers
   (`import_openbeta.py` etc.), not a branding change.
-- `apex_editor.html` — file name and its own Apex page branding (internal
-  tool, not part of the public map).
+- `apex_editor.html` — the file name itself (renaming it would break
+  bookmarks/launch habits; its page branding IS rebranded).
 - Historical migration files under `migrations/` mention apex glyph names in
   comments; they document history and were not rewritten.
 - The git repo name/folder `Apex_Web_Maps`.

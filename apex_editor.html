@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Map Editor — Apex Adventure Alliance</title>
+  <title>Map Editor — Devil's Lake Community Map</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet" />
@@ -48,14 +48,14 @@
     #login-error { font-size: 11px; color: #e17055; text-align: center; min-height: 16px; }
 
     /* ════ HEADER ═════════════════════════════════════════════ */
-    #apex-header {
+    #site-header {
       height: 54px; flex-shrink: 0;
       background: linear-gradient(135deg, #0a1a0a 0%, #162914 50%, #1e3318 100%);
       border-bottom: 3px solid #9bc23c;
       display: flex; align-items: center; padding: 0 16px; gap: 12px;
       z-index: 100; box-shadow: 0 2px 16px rgba(0,0,0,0.5); position: relative;
     }
-    #apex-header::after {
+    #site-header::after {
       content: ''; position: absolute; bottom: -3px; left: 0; right: 0;
       height: 1px; background: linear-gradient(90deg, transparent, rgba(155,194,60,0.6), transparent);
     }
@@ -449,9 +449,9 @@
 <!-- ══ LOGIN MODAL ═════════════════════════════════════════════ -->
 <div id="login-modal" class="show">
   <div id="login-box">
-    <img src="https://apexadventurealliance.com/wp-content/uploads/2023/07/cropped-rope-logo-1.png" alt="Apex" />
+    <img src="docs/icons/logo-mark.png" alt="Devil's Lake Community Map" />
     <h2>Map Editor</h2>
-    <p>APEX ADVENTURE ALLIANCE</p>
+    <p>DEVIL'S LAKE COMMUNITY MAP</p>
     <input class="login-input" type="email" id="login-email" placeholder="Email" autocomplete="email" />
     <input class="login-input" type="password" id="login-password" placeholder="Password" autocomplete="current-password" />
     <button id="login-btn">Sign In</button>
@@ -460,11 +460,11 @@
 </div>
 
 <!-- ══ HEADER ══════════════════════════════════════════════════ -->
-<header id="apex-header">
-  <img class="header-logo" src="https://apexadventurealliance.com/wp-content/uploads/2023/07/cropped-rope-logo-1.png" alt="Apex Adventure Alliance" />
+<header id="site-header">
+  <img class="header-logo" src="docs/icons/logo-mark.png" alt="Devil's Lake Community Map" />
   <div class="header-divider"></div>
   <div class="header-brand">
-    <span class="header-org">Apex Adventure Alliance</span>
+    <span class="header-org">Devil's Lake Community Map</span>
     <span class="header-title">Map Editor</span>
   </div>
   <div class="header-spacer"></div>
@@ -481,7 +481,7 @@
 <main id="map-wrapper">
 
   <div id="loading-screen">
-    <img class="loading-logo" src="https://apexadventurealliance.com/wp-content/uploads/2023/07/cropped-rope-logo-1.png" alt="" />
+    <img class="loading-logo" src="docs/icons/logo-mark.png" alt="" />
     <div class="loading-sub">Loading editor</div>
   </div>
 
@@ -503,7 +503,7 @@
       <div id="storage-label" class="storage-label">checking…</div>
     </div>
     <div class="panel-footer">
-      <img class="panel-footer-logo" src="https://apexadventurealliance.com/wp-content/uploads/2025/04/ApexPrimaryLogoFinal-271x300.png" alt="" />
+      <img class="panel-footer-logo" src="docs/icons/logo-mark.png" alt="" />
       <div class="panel-footer-tagline">Editor Mode</div>
     </div>
   </aside>
