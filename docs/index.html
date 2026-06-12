@@ -1834,8 +1834,14 @@
     style: usedOfflineStyle ? OFFLINE_STYLE : 'mapbox://styles/mapbox/outdoors-v12',
     center: [-89.73, 43.43],
     zoom: 11,
-    customAttribution: '© <a href="https://openbeta.io" target="_blank" rel="noopener">OpenBeta</a> contributors (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>)',
+    attributionControl: false,
   });
+  // Compact (ⓘ button) attribution — basemap credits flow in from the active
+  // style/source; data + icon credits ride along as customAttribution.
+  map.addControl(new mapboxgl.AttributionControl({
+    compact: true,
+    customAttribution: '© <a href="https://openbeta.io" target="_blank" rel="noopener">OpenBeta</a> contributors (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) | <a href="https://www.flaticon.com/free-icons/carabiner" title="carabiner icons" target="_blank" rel="noopener">Carabiner icon by narak0rn — Flaticon</a>',
+  }));
 
   // If the remote style fails before anything has loaded (offline, blocked
   // token, flaky signal), swap to the local fallback so the app still boots.
@@ -1899,7 +1905,29 @@
     canvas.width = S; canvas.height = S;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
-    if (id === 'apex-boulder') {
+    if (id === 'apex-carabiner') {
+      // tilted pear-shaped ring (small nose circle + big basket circle joined
+      // by their outer tangents) with a slit erased across the upper-right
+      // limb for the gate. Sized against the GPU's bilinear minification of
+      // the 64px atlas image: at 16px logical anything thinner than ~2.5px
+      // smears, so the ring is bold and the openings are kept wide.
+      ctx.translate(32, 32); ctx.rotate(-25 * Math.PI / 180); ctx.translate(-32, -32);
+      const aR = -0.243, aL = -2.898; // tangent-point angles on both circles
+      ctx.beginPath();
+      ctx.arc(32, 42, 16, aR, aL + 2 * Math.PI); // basket, through the bottom
+      ctx.arc(32, 15, 9.5, aL, aR);              // nose, through the top
+      ctx.closePath();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 10;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(58.9, 21.8);
+      ctx.lineTo(29.8, 29.0);
+      ctx.stroke();
+    } else if (id === 'apex-boulder') {
       // rounded freestanding rock with a crack
       ctx.beginPath();
       ctx.moveTo(10, 46);
@@ -2018,7 +2046,7 @@
           : color;
         const circleSpec = { id: key+'-circle', type: 'circle', source: key,
           paint: { 'circle-color': circleColor, 'circle-radius': circleR,
-            'circle-stroke-width': 2, 'circle-stroke-color': '#fff', 'circle-opacity': 0.92 } };
+            'circle-stroke-width': 1, 'circle-stroke-color': '#fff', 'circle-opacity': 0.92 } };
         if (filter) circleSpec.filter = filter;
         map.addLayer(circleSpec);
         const iconSpec = { id: key+'-icon', type: 'symbol', source: key,
