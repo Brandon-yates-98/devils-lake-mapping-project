@@ -751,19 +751,13 @@
       ctx.lineTo(29.8, 29.0);
       ctx.stroke();
     } else if (name === 'dl-boulder') {
-      ctx.beginPath();
-      ctx.moveTo(10, 46);
-      ctx.bezierCurveTo(5, 30, 16, 15, 32, 13);
-      ctx.bezierCurveTo(48, 11, 59, 26, 56, 41);
-      ctx.bezierCurveTo(54, 49, 46, 53, 34, 53);
-      ctx.bezierCurveTo(22, 53, 12, 53, 10, 46);
-      ctx.fill();
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.lineWidth = 3.5;
-      ctx.beginPath();
-      ctx.moveTo(31, 14);
-      ctx.quadraticCurveTo(36, 30, 28, 52);
-      ctx.stroke();
+      // boulder silhouette traced from Icons/noun-rock-5301957.svg (rock by
+      // Brad, Noun Project) — solid shape, survives atlas minification.
+      // Path lives in a 24x30 viewBox; scaled and centered into the disc.
+      ctx.translate(32 - 12.29 * 3, 32 - 12.08 * 3);
+      ctx.scale(3, 3);
+      ctx.fillStyle = '#fff1e5'; // very light orangish white, like the routes' tint
+      ctx.fill(new Path2D('M14.9496 10.6282L12.4098 7.48376L10.8376 7L9.74914 8.2094L9.38632 10.6282L9.74914 12.2004L7.93504 13.2889L7.33034 15.2239L6 16.6752V17.159H18.5778V16.4333L18.2149 14.6192L16.8846 13.5308L16.6427 11.4748L14.9496 10.6282Z'));
     } else if (name === 'dl-cliff') {
       ctx.beginPath();
       ctx.moveTo(13, 54);
@@ -792,7 +786,8 @@
     const octx = out.getContext('2d');
     octx.fillStyle = tint;
     octx.beginPath(); octx.arc(32, 32, 30, 0, Math.PI * 2); octx.fill();
-    octx.strokeStyle = name === 'dl-carabiner' ? '#ffe9e6' : '#ffffff';
+    octx.strokeStyle = name === 'dl-carabiner' ? '#ffe9e6'
+      : name === 'dl-boulder' ? '#fff1e5' : '#ffffff';
     octx.lineWidth = 4;
     octx.beginPath(); octx.arc(32, 32, 28, 0, Math.PI * 2); octx.stroke();
     octx.drawImage(canvas, 0, 0);
@@ -915,9 +910,9 @@
           map.addLayer(ringSpec);
           mapboxIds.push(key+'-circle');
         }
-        // route markers (carabiner) are dense — drawn 25% smaller; the
-        // campsite badge matches them
-        const iconScale = dsIcon === 'dl-carabiner' || selfBadge ? 0.75 : 1;
+        // climbing markers are dense — drawn 25% smaller; the campsite
+        // badge matches them
+        const iconScale = baked || selfBadge ? 0.75 : 1;
         const iconSpec = { id: key+'-icon', type: 'symbol', source: key,
           layout: {
             'icon-image': baked ? iconImage + '@' + color : iconImage,
