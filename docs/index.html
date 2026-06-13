@@ -563,7 +563,15 @@
     .g-hard { background: #e67e22; }
     .g-proj { background: #c0392b; }
     .g-none { background: #a8b0b3; }
-    .pcl-more { font-size: 10.5px; color: #999; padding: 6px 8px; font-style: italic; }
+    .pcl-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin: 2px 0 5px; }
+    .pcl-sort { display: flex; gap: 3px; margin-right: 5px; padding-right: 6px; border-right: 1px solid #e8e8e8; }
+    .pcl-tool {
+      border: 1px solid #ddd; background: #fff; border-radius: 9px;
+      font-size: 9px; font-weight: 700; color: #888; padding: 2.5px 7px;
+      cursor: pointer; font-family: inherit; line-height: 1.2;
+    }
+    .pcl-tool:hover { border-color: #9bc23c; color: #6c8c2e; }
+    .pcl-tool.active { background: #9bc23c; border-color: #9bc23c; color: #fff; }
     .pcl-nav { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
     .pcl-step {
       width: 26px; height: 22px; flex: 0 0 auto;
@@ -772,13 +780,11 @@
         <span class="cf-chip" data-type="boulder">Boulder</span>
       </div>
 
-      <div class="cf-label">Route Grade</div>
-      <div id="cf-grades" class="cf-chips">
-        <span class="cf-chip active" data-bucket="all">All</span>
-        <span class="cf-chip" data-bucket="easy">&le;5.8</span>
-        <span class="cf-chip" data-bucket="mod">5.9&ndash;5.10</span>
-        <span class="cf-chip" data-bucket="hard">5.11</span>
-        <span class="cf-chip" data-bucket="proj">5.12+</span>
+      <div class="cf-label">Route Grade <span id="cf-rrange-val" class="cf-vrange-val">Any</span></div>
+      <div class="cf-vrange">
+        <div id="cf-rrange-fill" class="cf-vrange-fill"></div>
+        <input type="range" id="cf-rmin" min="0" max="13" step="1" value="0" aria-label="Minimum route grade" />
+        <input type="range" id="cf-rmax" min="0" max="13" step="1" value="13" aria-label="Maximum route grade" />
       </div>
 
       <div class="cf-label">Boulder Grade <span id="cf-vrange-val" class="cf-vrange-val">Any</span></div>
@@ -971,8 +977,18 @@
   // Sources whose features ARE areas (markers + hull polygons share the
   // same area_id/area_path association).
   const AREA_SOURCES = new Set(['climbing_areas', 'climbing_area_hulls']);
-  const V_TOP = 13; // slider ceiling — top of range means "no upper cap"
-  const climbFilter = { search: '', area: 'all', types: new Set(), grade: 'all', vmin: 0, vmax: V_TOP };
+  // Slider ceilings — top of range means "no upper cap" (V13+/5.13+).
+  const V_TOP = 13;
+  const R_TOP = 13;
+  const climbFilter = { search: '', area: 'all', types: new Set(),
+    rmin: 0, rmax: R_TOP, vmin: 0, vmax: V_TOP };
+  // Popup grade pills are shortcuts into the same slider ranges — one shared
+  // filter state between the sidebar and the popups.
+  const R_BUCKETS = { all: [0, R_TOP], easy: [0, 8], mod: [9, 10], hard: [11, 11], proj: [12, R_TOP] };
+  const V_BUCKETS = { all: [0, V_TOP], easy: [0, 3], mod: [4, 6], hard: [7, 9], proj: [10, V_TOP] };
+  const bucketForRange = (m, lo, hi) =>
+    Object.keys(m).find(k => m[k][0] === lo && m[k][1] === hi) || null;
+  const sliderSetters = {};  // 'r'/'v' → (lo, hi) => … registered by wireGradeRange
 
   // ── OpenBeta area ↔ climbs association ────────────────────────
   // climbFilter.area holds an "area key": the area's OpenBeta uuid (new imports)
@@ -1213,38 +1229,57 @@
     if (bucket === 'proj') return r >= 48 || v >= 10;
     return true;
   }
-  // Family-specific bucket tests for FILTERING: a route grade filter applies
-  // only to routes, a boulder grade filter only to boulders, and ungraded
-  // climbs match only 'all'.
-  function ydsInBucket(grade, bucket) {
-    if (bucket === 'all') return true;
-    const r = ydsRank(grade);
-    if (bucket === 'easy') return r >= 0 && r <= 32;
-    if (bucket === 'mod')  return r >= 36 && r <= 43;
-    if (bucket === 'hard') return r >= 44 && r <= 47;
-    if (bucket === 'proj') return r >= 48;
-    return true;
-  }
+  // Family-specific range tests for FILTERING (a route grade range applies
+  // only to routes, the V range only to boulders). The full range matches
+  // everything, including ungraded climbs; a narrowed range excludes them.
   function vRangeLabel(lo, hi) {
     if (lo === 0 && hi === V_TOP) return 'Any';
     if (hi === V_TOP) return `V${lo}+`;
     if (lo === hi) return `V${lo}`;
     return `V${lo}–V${hi}`;
   }
-  // V-grade range test for the boulder slider; the full range matches
-  // everything (including ungraded problems).
+  function rRangeLabel(lo, hi) {
+    if (lo === 0 && hi === R_TOP) return 'Any';
+    if (hi === R_TOP) return `5.${lo}+`;
+    if (lo === hi) return `5.${lo}`;
+    return `5.${lo}–5.${hi}`;
+  }
   function vInRange(grade, lo, hi) {
     if (lo === 0 && hi === V_TOP) return true;
     const v = vRank(grade);
     return v >= lo && (hi === V_TOP || v <= hi);
   }
+  function ydsInRange(grade, lo, hi) {
+    if (lo === 0 && hi === R_TOP) return true;
+    const r = ydsRank(grade);
+    if (r < 0) return false;
+    const major = Math.floor(r / 4);   // 5.<major><letter>
+    return major >= lo && (hi === R_TOP || major <= hi);
+  }
 
   // ── Climbing filter apply ─────────────────────────────────────
+  // Does a climb pass the sidebar's climb-level filters (search / type /
+  // grade)? The area criterion stays separate — popups define their own
+  // area scope. Each grade filter constrains only its own family.
+  function climbMatchesFilter(p, srcKey) {
+    const { search, types, rmin, rmax, vmin, vmax } = climbFilter;
+    if (search && !(p.name || '').toLowerCase().includes(search.toLowerCase())) return false;
+    if (types.size > 0) {
+      const rt = (p.route_type || '').toLowerCase();
+      const matched = [...types].some(t =>
+        rt === t || rt.startsWith(t + '/') || rt.endsWith('/' + t) || rt.includes('/' + t + '/')
+      );
+      if (!matched) return false;
+    }
+    return srcKey === 'climbing_boulders'
+      ? vInRange(p.grade || '', vmin, vmax)
+      : ydsInRange(p.grade || '', rmin, rmax);
+  }
+
   function applyClimbingFilters() {
-    const { search, area, types, grade, vmin, vmax } = climbFilter;
-    const searchLow = search.toLowerCase();
+    const { search, area, types, rmin, rmax, vmin, vmax } = climbFilter;
     const hasFilter = search || area !== 'all' || types.size > 0
-      || grade !== 'all' || vmin > 0 || vmax < V_TOP;
+      || rmin > 0 || rmax < R_TOP || vmin > 0 || vmax < V_TOP;
     let climbTotal = 0;   // matching routes + boulders — the results
 
     // Climbs have no map layers — filtering them recomputes the area badge
@@ -1253,23 +1288,9 @@
     CLIMB_SOURCES.forEach(srcKey => {
       const cached = layerCache[srcKey];
       if (!cached) return;
-      const isBoulderSrc = srcKey === 'climbing_boulders';
-      const filtered = !hasFilter ? cached.features : cached.features.filter(f => {
-        const p = f.properties;
-        if (search && !(p.name || '').toLowerCase().includes(searchLow)) return false;
-        if (area !== 'all' && !inArea(p, false, area)) return false;
-        if (types.size > 0) {
-          const rt = (p.route_type || '').toLowerCase();
-          const matched = [...types].some(t =>
-            rt === t || rt.startsWith(t + '/') || rt.endsWith('/' + t) || rt.includes('/' + t + '/')
-          );
-          if (!matched) return false;
-        }
-        // each grade filter constrains only its own family
-        if (isBoulderSrc ? !vInRange(p.grade || '', vmin, vmax)
-                         : !ydsInBucket(p.grade || '', grade)) return false;
-        return true;
-      });
+      const filtered = !hasFilter ? cached.features : cached.features.filter(f =>
+        climbMatchesFilter(f.properties, srcKey)
+        && (area === 'all' || inArea(f.properties, false, area)));
       filteredClimbs[srcKey] = filtered;
       climbTotal += filtered.length;
     });
@@ -1311,15 +1332,16 @@
   function updateClimbFilterChip(total) {
     const chip = document.getElementById('climb-filter-chip');
     if (!chip) return;
-    const { search, area, types, grade, vmin, vmax } = climbFilter;
+    const { search, area, types, rmin, rmax, vmin, vmax } = climbFilter;
+    const rActive = rmin > 0 || rmax < R_TOP;
     const vActive = vmin > 0 || vmax < V_TOP;
-    const active = search || area !== 'all' || types.size > 0 || grade !== 'all' || vActive;
+    const active = search || area !== 'all' || types.size > 0 || rActive || vActive;
     if (!active) { chip.style.display = 'none'; return; }
     const parts = [];
     if (area !== 'all') parts.push((climbAreaNodes[canonicalAreaKey(area)] || {}).name || 'this area');
     if (search) parts.push(`"${search}"`);
     if (types.size) parts.push([...types].join('/'));
-    if (grade !== 'all') parts.push(grade);
+    if (rActive) parts.push(rRangeLabel(rmin, rmax));
     if (vActive) parts.push(vRangeLabel(vmin, vmax));
     document.getElementById('cfc-label').textContent =
       `${total != null ? total + ' climbs' : 'Filtered'} · ${parts.join(' · ')}`;
@@ -1712,49 +1734,46 @@
         applyClimbingFilters();
       });
     });
-    document.querySelectorAll('#cf-grades .cf-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        document.querySelectorAll('#cf-grades .cf-chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        climbFilter.grade = chip.dataset.bucket;
+    // Grade ranges: two overlaid sliders per family, handles can't cross.
+    // Returns a reset function.
+    function wireGradeRange(prefix, top, keyLo, keyHi, label) {
+      const minEl = document.getElementById(`cf-${prefix}min`);
+      const maxEl = document.getElementById(`cf-${prefix}max`);
+      function sync(fromMin) {
+        let lo = Number(minEl.value), hi = Number(maxEl.value);
+        if (lo > hi) {
+          if (fromMin) { hi = lo; maxEl.value = lo; }
+          else { lo = hi; minEl.value = hi; }
+        }
+        climbFilter[keyLo] = lo;
+        climbFilter[keyHi] = hi;
+        const valEl = document.getElementById(`cf-${prefix}range-val`);
+        if (valEl) valEl.textContent = label(lo, hi);
+        const fill = document.getElementById(`cf-${prefix}range-fill`);
+        if (fill) {
+          fill.style.left = (lo / top * 100) + '%';
+          fill.style.right = (100 - hi / top * 100) + '%';
+        }
         applyClimbingFilters();
-      });
-    });
-    // boulder V-grade range: two overlaid sliders, handles can't cross
-    const vminEl = document.getElementById('cf-vmin');
-    const vmaxEl = document.getElementById('cf-vmax');
-    function syncVRange(fromMin) {
-      let lo = Number(vminEl.value), hi = Number(vmaxEl.value);
-      if (lo > hi) {
-        if (fromMin) { hi = lo; vmaxEl.value = lo; }
-        else { lo = hi; vminEl.value = hi; }
       }
-      climbFilter.vmin = lo;
-      climbFilter.vmax = hi;
-      const valEl = document.getElementById('cf-vrange-val');
-      if (valEl) valEl.textContent = vRangeLabel(lo, hi);
-      const fill = document.getElementById('cf-vrange-fill');
-      if (fill) {
-        fill.style.left = (lo / V_TOP * 100) + '%';
-        fill.style.right = (100 - hi / V_TOP * 100) + '%';
-      }
-      applyClimbingFilters();
+      minEl.addEventListener('input', () => sync(true));
+      maxEl.addEventListener('input', () => sync(false));
+      // popups drive the same range through this setter
+      sliderSetters[prefix] = (lo, hi) => { minEl.value = lo; maxEl.value = hi; sync(true); };
+      return () => { minEl.value = 0; maxEl.value = top; sync(true); };
     }
-    vminEl.addEventListener('input', () => syncVRange(true));
-    vmaxEl.addEventListener('input', () => syncVRange(false));
+    const resetRRange = wireGradeRange('r', R_TOP, 'rmin', 'rmax', rRangeLabel);
+    const resetVRange = wireGradeRange('v', V_TOP, 'vmin', 'vmax', vRangeLabel);
     document.getElementById('cf-reset').addEventListener('click', () => {
       climbFilter.search = ''; climbFilter.area = 'all';
-      climbFilter.types.clear(); climbFilter.grade = 'all';
+      climbFilter.types.clear();
       input.value = '';
       clearBtn.style.display = 'none';
       closeSuggestions();
       document.getElementById('cf-area').value = 'all';
       document.querySelectorAll('#cf-types .cf-chip').forEach(c => c.classList.remove('active'));
-      document.querySelectorAll('#cf-grades .cf-chip').forEach(c => c.classList.remove('active'));
-      document.querySelector('#cf-grades .cf-chip[data-bucket="all"]').classList.add('active');
-      vminEl.value = 0;
-      vmaxEl.value = V_TOP;
-      syncVRange(true); // also resets vmin/vmax state + label and re-applies
+      resetRRange();
+      resetVRange(); // each sync re-applies the filters
     });
   }
 
@@ -1858,7 +1877,10 @@
     let climbNavHTML = '';
     if (isAreaSrc) {
       const ak = areaKeyOf(props);
-      const climbs = ak ? climbsForArea(ak) : [];
+      // the list respects the sidebar's climb filters (search/type/grade) —
+      // same subset the area's badge count reflects
+      const climbs = (ak ? climbsForArea(ak) : [])
+        .filter(({ f, src }) => climbMatchesFilter(f.properties, src));
       if (ak && climbs.length) {
         // Without the areas layer the button can only zoom — label it so.
         const canShowClimbs = !!map.getSource('climbing_areas');
@@ -1869,20 +1891,45 @@
         const nRoutes = climbs.filter(c => c.src === 'climbing_routes').length;
         const headLabel = nRoutes === climbs.length ? 'Routes'
           : nRoutes === 0 ? 'Boulders' : 'Climbs';
-        const CAP = 60;
+        const family = nRoutes === climbs.length ? 'routes'
+          : nRoutes === 0 ? 'boulders' : 'mixed';
+        const gradePills = family === 'routes'
+          ? [['easy', '≤5.8'], ['mod', '5.9–5.10'], ['hard', '5.11'], ['proj', '5.12+']]
+          : family === 'boulders'
+            ? [['easy', 'V0–V3'], ['mod', 'V4–V6'], ['hard', 'V7–V9'], ['proj', 'V10+']]
+            : [['easy', 'Easy'], ['mod', 'Moderate'], ['hard', 'Hard'], ['proj', 'Project']];
+        // the active pill mirrors the sidebar's slider state (null = a
+        // custom range no pill represents)
+        const rB = bucketForRange(R_BUCKETS, climbFilter.rmin, climbFilter.rmax);
+        const vB = bucketForRange(V_BUCKETS, climbFilter.vmin, climbFilter.vmax);
+        // mixed walls: if only one family is narrowed, that bucket reads as
+        // the active one
+        const curBucket = family === 'routes' ? rB : family === 'boulders' ? vB
+          : rB === vB ? rB : rB === 'all' ? vB : vB === 'all' ? rB : null;
         climbListHTML = `
           <div class="pcl-head">${headLabel} <span class="pcl-head-count">${climbs.length}</span></div>
+          <div class="pcl-tools" data-family="${family}">
+            <div class="pcl-sort">
+              <button class="pcl-tool active" data-sort="alpha" title="Sort alphabetically">A–Z</button>
+              <button class="pcl-tool" data-sort="grade" title="Sort by grade">Grade</button>
+            </div>
+            ${[['all', 'All'], ...gradePills].map(([k, label]) =>
+              `<button class="pcl-tool${k === curBucket ? ' active' : ''}" data-gbucket="${k}">${label}</button>`).join('')}
+          </div>
           <div class="popup-climb-list">
-            ${climbs.slice(0, CAP).map(({ f, src }) => {
+            ${climbs.map(({ f, src }) => {
               const p = f.properties;
               const g = p.grade || '';
-              return `<button class="pcl-row" data-fsrc="${src}" data-fid="${escapeHtml(String(p.id))}">
+              const r = ydsRank(g), v = vRank(g);
+              const rank = r >= 0 ? r : v >= 0 ? 100 + v : 9999; // ungraded sort last
+              return `<button class="pcl-row" data-fsrc="${src}" data-fid="${escapeHtml(String(p.id))}"
+                data-gb="${gradeBucketClass(g).slice(2)}" data-rank="${rank}"
+                data-cname="${escapeHtml((p.name || '').toLowerCase())}">
                 <i class="fa-solid ${CLIMB_TYPE_ICON[src] || 'fa-location-dot'}"></i>
                 <span class="pcl-name">${escapeHtml(p.name || '(unnamed)')}</span>
                 <span class="pcl-grade ${gradeBucketClass(g)}">${escapeHtml(g) || '—'}</span>
               </button>`;
             }).join('')}
-            ${climbs.length > CAP ? `<div class="pcl-more">+ ${climbs.length - CAP} more — use the filter button above</div>` : ''}
           </div>`;
       }
     } else if (sourceKey === 'climbing_routes' || sourceKey === 'climbing_boulders') {
@@ -2786,29 +2833,70 @@
       .setLngLat(lngLat)
       .setHTML(buildPopupHTML(feature.properties, sourceKey))
       .addTo(map);
-    const el = popup.getElement();
-    const dirBtn = el.querySelector('.popup-directions-btn');
-    if (dirBtn) dirBtn.addEventListener('click', () => {
-      const dest = featureCentroid(feature.geometry)
-        || (Array.isArray(lngLat) ? lngLat : [lngLat.lng, lngLat.lat]);
-      openDirections(dest);
-    });
-    // OpenBeta area association: jump to an area's climbs (from an area
-    // marker's "Show climbs" button or a climb's area chip).
-    const areaBtn = el.querySelector('.popup-area-climbs-btn, .popup-area-link');
-    if (areaBtn) areaBtn.addEventListener('click', () => {
-      const key = areaBtn.getAttribute('data-area-key');
-      popup.remove();
-      if (key) selectClimbArea(key);
-    });
-    // Climb list rows (area popups) + prev/next steppers (climb popups)
-    el.querySelectorAll('.pcl-row, .pcl-step').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const { fsrc, fid } = btn.dataset;
-        popup.remove();
-        flyToClimb(fsrc, fid);
+    let sortMode = 'alpha';   // survives grade-pill rebuilds
+
+    // The popup body re-renders when a grade pill changes the shared filter
+    // state, so all wiring lives in a re-runnable function.
+    function wire() {
+      const el = popup.getElement();
+      const dirBtn = el.querySelector('.popup-directions-btn');
+      if (dirBtn) dirBtn.addEventListener('click', () => {
+        const dest = featureCentroid(feature.geometry)
+          || (Array.isArray(lngLat) ? lngLat : [lngLat.lng, lngLat.lat]);
+        openDirections(dest);
       });
-    });
+      // OpenBeta area association: jump to an area's climbs (from an area
+      // marker's "Show climbs" button or a climb's area chip).
+      const areaBtn = el.querySelector('.popup-area-climbs-btn, .popup-area-link');
+      if (areaBtn) areaBtn.addEventListener('click', () => {
+        const key = areaBtn.getAttribute('data-area-key');
+        popup.remove();
+        if (key) selectClimbArea(key);
+      });
+      // Climb list rows (area popups) + prev/next steppers (climb popups)
+      el.querySelectorAll('.pcl-row, .pcl-step').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const { fsrc, fid } = btn.dataset;
+          popup.remove();
+          flyToClimb(fsrc, fid);
+        });
+      });
+      // Climb-list tools: sort (A–Z / grade) + grade pills. The pills SET
+      // the sidebar's slider ranges — one shared filter state — and the
+      // popup re-renders from it.
+      const list = el.querySelector('.popup-climb-list');
+      if (!list) return;
+      const byAlpha = (a, b) =>
+        a.dataset.cname.localeCompare(b.dataset.cname, undefined, { numeric: true });
+      const applySort = () => {
+        el.querySelectorAll('.pcl-tool[data-sort]').forEach(b =>
+          b.classList.toggle('active', b.dataset.sort === sortMode));
+        const rows = [...list.querySelectorAll('.pcl-row')];
+        rows.sort(sortMode === 'grade'
+          ? (a, b) => (+a.dataset.rank) - (+b.dataset.rank) || byAlpha(a, b)
+          : byAlpha);
+        rows.forEach(r => list.appendChild(r));
+      };
+      el.querySelectorAll('.pcl-tool[data-sort]').forEach(btn => {
+        btn.addEventListener('click', () => { sortMode = btn.dataset.sort; applySort(); });
+      });
+      applySort();
+      const family = (el.querySelector('.pcl-tools') || {}).dataset?.family;
+      el.querySelectorAll('.pcl-tool[data-gbucket]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const want = btn.dataset.gbucket;
+          if (family !== 'routes' && V_BUCKETS[want] && sliderSetters.v) {
+            sliderSetters.v(...V_BUCKETS[want]);
+          }
+          if (family !== 'boulders' && R_BUCKETS[want] && sliderSetters.r) {
+            sliderSetters.r(...R_BUCKETS[want]);
+          }
+          popup.setHTML(buildPopupHTML(feature.properties, sourceKey));
+          wire();
+        });
+      });
+    }
+    wire();
     return popup;
   }
 
