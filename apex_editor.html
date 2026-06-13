@@ -2982,14 +2982,6 @@
 
   async function openBatchPanel() {
     document.getElementById('batch-panel').classList.add('open');
-    if (!batchMapInst) {
-      batchMapInst = new mapboxgl.Map({
-        container: 'batch-map',
-        style: 'mapbox://styles/mapbox/outdoors-v12',
-        center: [-89.73, 43.43],
-        zoom: 13
-      });
-    }
     if (!exifrLib) {
       try {
         const mod = await import('https://cdn.jsdelivr.net/npm/exifr/dist/lite.esm.js');
@@ -2997,6 +2989,19 @@
       } catch (e) {
         console.warn('exifr load failed', e);
       }
+    }
+    // Wait one frame so the browser has laid out the now-visible panel before
+    // Mapbox reads the container's dimensions.
+    await new Promise(r => requestAnimationFrame(r));
+    if (!batchMapInst) {
+      batchMapInst = new mapboxgl.Map({
+        container: 'batch-map',
+        style: 'mapbox://styles/mapbox/outdoors-v12',
+        center: [-89.73, 43.43],
+        zoom: 13
+      });
+    } else {
+      batchMapInst.resize();
     }
   }
 
@@ -3009,9 +3014,14 @@
       let exifLat = null, exifLng = null, exifDate = null;
       if (exifrLib) {
         try {
-          const data = await exifrLib.parse(file, ['GPSLatitude', 'GPSLongitude', 'DateTimeOriginal']);
-          if (data && data.latitude != null) { exifLat = data.latitude; exifLng = data.longitude; }
-          if (data && data.DateTimeOriginal) exifDate = data.DateTimeOriginal;
+          // gps() returns synthesized decimal {latitude, longitude}; parse() with a
+          // pick array returns raw DMS tags whose key is NOT "latitude".
+          const gps = await exifrLib.gps(file);
+          if (gps && gps.latitude != null) { exifLat = gps.latitude; exifLng = gps.longitude; }
+        } catch {}
+        try {
+          const dtData = await exifrLib.parse(file, ['DateTimeOriginal']);
+          if (dtData && dtData.DateTimeOriginal) exifDate = dtData.DateTimeOriginal;
         } catch {}
       }
       const objUrl = URL.createObjectURL(file);
