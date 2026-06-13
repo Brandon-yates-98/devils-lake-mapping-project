@@ -621,7 +621,7 @@
     #batch-assign-modal.open { display: flex; }
     #batch-assign-box {
       background: #1a2a1a; border: 1px solid rgba(155,194,60,0.3);
-      border-radius: 8px; width: 320px; max-height: 70vh;
+      border-radius: 8px; width: min(680px, 92vw); max-height: 75vh;
       display: flex; flex-direction: column; overflow: hidden;
     }
     #batch-assign-header {
@@ -633,7 +633,53 @@
       background: none; border: none; color: rgba(255,255,255,0.5); font-size: 18px; cursor: pointer;
     }
     #batch-assign-close-btn:hover { color: #fff; }
-    #batch-assign-list { overflow-y: auto; padding: 8px; }
+    /* Two-column body: image preview left, feature list right */
+    #batch-assign-body { display: flex; flex: 1; overflow: hidden; }
+    #batch-assign-preview {
+      width: 200px; flex-shrink: 0; background: #111a11;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    #batch-assign-img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; flex-shrink: 0; }
+    #batch-assign-filename {
+      padding: 6px 8px 2px; font-size: 9.5px; color: rgba(255,255,255,0.4);
+      word-break: break-all; line-height: 1.3; flex-shrink: 0;
+    }
+    #batch-assign-gps-badge {
+      margin: 4px 8px 8px; padding: 3px 7px; border-radius: 4px;
+      font-size: 9px; font-weight: 700; text-align: center; flex-shrink: 0;
+    }
+    .batch-gps-badge.has-gps { background: rgba(155,194,60,0.12); color: #9bc23c; border: 1px solid rgba(155,194,60,0.25); }
+    .batch-gps-badge.no-gps  { background: rgba(255,180,0,0.1); color: rgba(255,180,0,0.8); border: 1px solid rgba(255,180,0,0.2); }
+    #batch-assign-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    /* No-GPS controls strip */
+    #batch-assign-nogps-controls {
+      flex-direction: column; gap: 8px; padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;
+    }
+    .batch-nogps-hint { font-size: 10.5px; color: rgba(255,255,255,0.45); line-height: 1.4; margin: 0; }
+    #batch-pick-location-btn {
+      padding: 7px 12px; background: rgba(155,194,60,0.1);
+      border: 1px solid rgba(155,194,60,0.3); border-radius: 5px;
+      color: #9bc23c; font-size: 11px; font-weight: 700; cursor: pointer; text-align: left;
+    }
+    #batch-pick-location-btn:hover { background: rgba(155,194,60,0.2); }
+    /* Name search */
+    #batch-name-search-section {
+      padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+    }
+    #batch-name-search-label {
+      font-size: 9.5px; color: rgba(255,255,255,0.3); margin-bottom: 4px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    #batch-name-search {
+      width: 100%; box-sizing: border-box; padding: 6px 10px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 5px; color: rgba(255,255,255,0.85); font-size: 11px; outline: none;
+    }
+    #batch-name-search:focus { border-color: rgba(155,194,60,0.5); }
+    #batch-name-search::placeholder { color: rgba(255,255,255,0.22); }
+    #batch-assign-list { overflow-y: auto; padding: 8px; flex: 1; }
     .batch-assign-row {
       display: flex; align-items: center; gap: 8px; padding: 8px 10px;
       border-radius: 5px; cursor: pointer; border: 1px solid transparent;
@@ -649,6 +695,19 @@
     .batch-assign-loading, .batch-assign-empty {
       padding: 16px; text-align: center; color: rgba(255,255,255,0.4); font-size: 11px;
     }
+    /* Map-click location-picking mode */
+    #batch-pick-overlay {
+      display: none; position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.88); border: 1px solid rgba(155,194,60,0.45); border-radius: 8px;
+      padding: 10px 16px; align-items: center; gap: 12px; z-index: 5;
+      white-space: nowrap; font-size: 12px; color: rgba(255,255,255,0.85);
+    }
+    #batch-pick-overlay.active { display: flex; }
+    #batch-pick-cancel-btn {
+      padding: 4px 10px; background: rgba(227,93,93,0.2); border: 1px solid rgba(227,93,93,0.4);
+      border-radius: 4px; color: #e35d5d; font-size: 10.5px; cursor: pointer;
+    }
+    #batch-map-col.picking { cursor: crosshair; }
     .batch-marker-el {
       width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
       border: 2.5px solid #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.5);
@@ -887,6 +946,10 @@
   <div id="batch-body">
     <div id="batch-map-col">
       <div id="batch-map"></div>
+      <div id="batch-pick-overlay">
+        <span>&#128205; Click the map where this photo was taken</span>
+        <button id="batch-pick-cancel-btn">Cancel</button>
+      </div>
     </div>
     <div id="batch-sidebar">
       <div id="batch-toolbar">
@@ -902,10 +965,27 @@
   <div id="batch-assign-modal">
     <div id="batch-assign-box">
       <div id="batch-assign-header">
-        <span>Assign to Nearby Feature</span>
+        <span>Assign Photo to Feature</span>
         <button id="batch-assign-close-btn">&#x2715;</button>
       </div>
-      <div id="batch-assign-list"></div>
+      <div id="batch-assign-body">
+        <div id="batch-assign-preview">
+          <img id="batch-assign-img" src="" alt="" />
+          <div id="batch-assign-filename"></div>
+          <div id="batch-assign-gps-badge" class="batch-gps-badge"></div>
+        </div>
+        <div id="batch-assign-right">
+          <div id="batch-assign-nogps-controls" style="display:none">
+            <p class="batch-nogps-hint">No GPS data — pick a location on the map or search by name below.</p>
+            <button id="batch-pick-location-btn">&#128205; Pick Location on Map</button>
+          </div>
+          <div id="batch-name-search-section">
+            <div id="batch-name-search-label">Search by name</div>
+            <input id="batch-name-search" type="text" placeholder="Type to search all features&hellip;" />
+          </div>
+          <div id="batch-assign-list"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2949,6 +3029,9 @@
   let batchMapInst = null;
   let batchItems = [];
   let exifrLib = null;
+  let batchPickingItem = null;       // non-null = map-click-to-place mode active
+  let currentBatchAssignItem = null; // item shown in the assign modal
+  let batchNameSearchTimer = null;
 
   const HEIC_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">' +
@@ -2966,8 +3049,40 @@
   document.getElementById('batch-close-btn').addEventListener('click', closeBatchPanel);
   document.getElementById('batch-add-files-btn').addEventListener('click', () =>
     document.getElementById('batch-file-input').click());
-  document.getElementById('batch-assign-close-btn').addEventListener('click', () =>
-    document.getElementById('batch-assign-modal').classList.remove('open'));
+  document.getElementById('batch-assign-close-btn').addEventListener('click', () => {
+    document.getElementById('batch-assign-modal').classList.remove('open');
+    currentBatchAssignItem = null;
+  });
+  document.getElementById('batch-pick-location-btn').addEventListener('click', () => {
+    const item = currentBatchAssignItem;
+    if (!item) return;
+    document.getElementById('batch-assign-modal').classList.remove('open');
+    startPickingMode(item);
+  });
+  document.getElementById('batch-pick-cancel-btn').addEventListener('click', cancelPickingMode);
+  document.getElementById('batch-name-search').addEventListener('input', e => {
+    const q = e.target.value.trim();
+    const listEl = document.getElementById('batch-assign-list');
+    clearTimeout(batchNameSearchTimer);
+    if (!q) { listEl.innerHTML = ''; return; }
+    listEl.innerHTML = '<div class="batch-assign-loading">Searching…</div>';
+    batchNameSearchTimer = setTimeout(async () => {
+      const { data, error } = await db.from('osm_geometries')
+        .select('id, source, name, properties')
+        .in('source', ['climbing_areas', 'climbing_routes', 'climbing_boulders', 'campsites', 'trails'])
+        .ilike('name', `%${q}%`)
+        .limit(20);
+      if (error || !data) { listEl.innerHTML = '<div class="batch-assign-empty">Search failed.</div>'; return; }
+      if (!data.length) { listEl.innerHTML = '<div class="batch-assign-empty">No matching features.</div>'; return; }
+      const feats = data.map(r => ({
+        feature_id: r.properties?._draw_id || r.id?.toString() || '',
+        feature_source: r.source,
+        feature_name: r.name,
+        dist_label: null
+      }));
+      if (currentBatchAssignItem) renderBatchFeatureList(listEl, feats, currentBatchAssignItem);
+    }, 280);
+  });
   document.getElementById('batch-save-all-btn').addEventListener('click', uploadAllAssigned);
 
   document.getElementById('batch-file-input').addEventListener('change', async e => {
@@ -2999,6 +3114,23 @@
         style: 'mapbox://styles/mapbox/outdoors-v12',
         center: [-89.73, 43.43],
         zoom: 13
+      });
+      batchMapInst.on('click', e => {
+        if (!batchPickingItem) return;
+        const item = batchPickingItem;
+        cancelPickingMode();
+        item._pickLat = e.lngLat.lat;
+        item._pickLng = e.lngLat.lng;
+        if (item.marker) item.marker.remove();
+        const el = document.createElement('div');
+        el.className = 'batch-marker-el';
+        el.innerHTML = `<img src="${item.displayUrl}" alt="" />`;
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([e.lngLat.lng, e.lngLat.lat]).addTo(batchMapInst);
+        el.addEventListener('click', ev => { ev.stopPropagation(); showBatchAssign(item); });
+        item.marker = marker;
+        renderBatchList();
+        showBatchAssign(item);
       });
     } else {
       batchMapInst.resize();
@@ -3067,9 +3199,12 @@
     batchItems.forEach((item, i) => {
       const div = document.createElement('div');
       div.className = 'batch-item' + (item.assignedFeatureId ? ' assigned' : '') + (item.status === 'uploaded' ? ' uploaded' : '');
-      const gpsText = item.exifLat != null
-        ? `${item.exifLat.toFixed(5)}, ${item.exifLng.toFixed(5)}`
-        : 'No GPS data';
+      const hasGps = item.exifLat != null;
+      const hasPlaced = item._pickLat != null;
+      const gpsText = hasGps
+        ? `GPS: ${item.exifLat.toFixed(5)}, ${item.exifLng.toFixed(5)}`
+        : hasPlaced ? `Placed: ${item._pickLat.toFixed(5)}, ${item._pickLng.toFixed(5)}`
+        : 'No GPS — click → to assign';
       const assignText = item.assignedFeatureName
         ? `<div class="batch-item-assigned">→ ${item.assignedFeatureName}</div>`
         : `<div class="batch-item-unassigned">Unassigned</div>`;
@@ -3077,7 +3212,7 @@
         <img class="batch-thumb" src="${item.displayUrl}" alt="" />
         <div class="batch-item-info">
           <div class="batch-item-filename">${item.file.name}</div>
-          <div class="batch-item-gps ${item.exifLat != null ? 'has-gps' : ''}">${gpsText}</div>
+          <div class="batch-item-gps ${hasGps || hasPlaced ? 'has-gps' : ''}">${gpsText}</div>
           ${assignText}
         </div>
         <div class="batch-item-btns">
@@ -3100,33 +3235,63 @@
   }
 
   async function showBatchAssign(item) {
+    currentBatchAssignItem = item;
     const modal = document.getElementById('batch-assign-modal');
     const listEl = document.getElementById('batch-assign-list');
-    modal.classList.add('open');
-    listEl.innerHTML = '<div class="batch-assign-loading">Finding nearby features…</div>';
+    const imgEl = document.getElementById('batch-assign-img');
+    const filenameEl = document.getElementById('batch-assign-filename');
+    const gpsBadge = document.getElementById('batch-assign-gps-badge');
+    const nogpsControls = document.getElementById('batch-assign-nogps-controls');
+    const nameSearch = document.getElementById('batch-name-search');
 
-    if (item.exifLat == null) {
-      listEl.innerHTML = '<div class="batch-assign-empty">No GPS data — drag the photo onto a feature or enter coordinates manually.</div>';
-      return;
+    imgEl.src = item.displayUrl;
+    filenameEl.textContent = item.file.name;
+    nameSearch.value = '';
+
+    const lat = item._pickLat ?? item.exifLat;
+    const lng = item._pickLng ?? item.exifLng;
+    const hasLocation = lat != null;
+
+    if (hasLocation) {
+      const src = item.exifLat != null ? 'GPS' : 'Placed';
+      gpsBadge.textContent = `${src}: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      gpsBadge.className = 'batch-gps-badge has-gps';
+      nogpsControls.style.display = 'none';
+    } else {
+      gpsBadge.textContent = 'No GPS';
+      gpsBadge.className = 'batch-gps-badge no-gps';
+      nogpsControls.style.display = 'flex';
+      listEl.innerHTML = '';
     }
 
-    const { data, error } = await db.rpc('nearby_features_for_image', {
-      p_lat: item.exifLat, p_lng: item.exifLng, p_radius_m: 300
-    });
+    modal.classList.add('open');
+    if (!hasLocation) return;
 
+    listEl.innerHTML = '<div class="batch-assign-loading">Finding nearby features…</div>';
+    const { data, error } = await db.rpc('nearby_features_for_image', {
+      p_lat: lat, p_lng: lng, p_radius_m: 300
+    });
     listEl.innerHTML = '';
     if (error || !data || !data.length) {
-      listEl.innerHTML = '<div class="batch-assign-empty">No features within 300 m of this photo\'s GPS location.</div>';
+      listEl.innerHTML = '<div class="batch-assign-empty">No features within 300 m — try searching by name above.</div>';
       return;
     }
+    renderBatchFeatureList(listEl, data.map(f => ({
+      feature_id: f.feature_id, feature_source: f.feature_source,
+      feature_name: f.feature_name, dist_label: `${f.distance_m}m`
+    })), item);
+  }
 
-    data.forEach(feat => {
+  function renderBatchFeatureList(listEl, feats, item) {
+    const modal = document.getElementById('batch-assign-modal');
+    listEl.innerHTML = '';
+    feats.forEach(feat => {
       const row = document.createElement('div');
       row.className = 'batch-assign-row';
       const srcLabel = feat.feature_source.replace('climbing_', '');
       row.innerHTML = `
         <span class="batch-feat-name">${feat.feature_name || '(unnamed)'}</span>
-        <span class="batch-feat-dist">${feat.distance_m}m</span>
+        ${feat.dist_label ? `<span class="batch-feat-dist">${feat.dist_label}</span>` : ''}
         <span class="batch-feat-src">${srcLabel}</span>`;
       row.addEventListener('click', () => {
         item.assignedFeatureId = feat.feature_id;
@@ -3139,6 +3304,18 @@
       });
       listEl.appendChild(row);
     });
+  }
+
+  function startPickingMode(item) {
+    batchPickingItem = item;
+    document.getElementById('batch-map-col').classList.add('picking');
+    document.getElementById('batch-pick-overlay').classList.add('active');
+  }
+
+  function cancelPickingMode() {
+    batchPickingItem = null;
+    document.getElementById('batch-map-col').classList.remove('picking');
+    document.getElementById('batch-pick-overlay').classList.remove('active');
   }
 
   function updateBatchSaveBtn() {
