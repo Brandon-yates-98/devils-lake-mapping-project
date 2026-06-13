@@ -335,6 +335,32 @@
       font-size: 7.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
       color: rgba(255,255,255,0.28); margin: 8px 0 4px;
     }
+    /* two-thumb V-grade range: overlaid native sliders, painted segment between */
+    .cf-vrange-val { float: right; letter-spacing: 0; text-transform: none; font-size: 10px; color: #9bc23c; }
+    .cf-vrange { position: relative; height: 20px; margin: 2px 5px 4px; }
+    .cf-vrange::before {
+      content: ''; position: absolute; top: 8.5px; left: 0; right: 0; height: 3px;
+      border-radius: 2px; background: rgba(255,255,255,0.12);
+    }
+    .cf-vrange-fill {
+      position: absolute; top: 8.5px; height: 3px; border-radius: 2px;
+      left: 0; right: 0; /* full range until JS narrows it */
+      background: rgba(155,194,60,0.7);
+    }
+    .cf-vrange input[type="range"] {
+      position: absolute; left: 0; top: 0; width: 100%; height: 20px; margin: 0;
+      -webkit-appearance: none; appearance: none; background: none; pointer-events: none;
+    }
+    .cf-vrange input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; pointer-events: auto;
+      width: 13px; height: 13px; border-radius: 50%; cursor: pointer;
+      background: #9bc23c; border: 2px solid #15240f;
+    }
+    .cf-vrange input[type="range"]::-moz-range-thumb {
+      pointer-events: auto; width: 10px; height: 10px; border-radius: 50%;
+      cursor: pointer; background: #9bc23c; border: 2px solid #15240f;
+    }
+    .cf-vrange input[type="range"]::-moz-range-track { background: none; }
     .cf-chips { display: flex; flex-wrap: wrap; gap: 4px; }
     .cf-chip {
       font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 10px;
@@ -734,7 +760,7 @@
         <ul id="cf-suggestions" class="cf-autocomplete" role="listbox"></ul>
       </div>
 
-      <div class="cf-label">Wall / Sector</div>
+      <div class="cf-label">Area</div>
       <select id="cf-area" class="cf-select">
         <option value="all">All Areas</option>
       </select>
@@ -742,21 +768,24 @@
       <div class="cf-label">Type</div>
       <div id="cf-types" class="cf-chips">
         <span class="cf-chip" data-type="trad">Trad</span>
-        <span class="cf-chip" data-type="sport">Sport</span>
         <span class="cf-chip" data-type="tr">T/R</span>
-        <span class="cf-chip" data-type="aid">Aid</span>
-        <span class="cf-chip" data-type="alpine">Alpine</span>
-        <span class="cf-chip" data-type="mixed">Mixed</span>
         <span class="cf-chip" data-type="boulder">Boulder</span>
       </div>
 
-      <div class="cf-label">Grade</div>
+      <div class="cf-label">Route Grade</div>
       <div id="cf-grades" class="cf-chips">
         <span class="cf-chip active" data-bucket="all">All</span>
-        <span class="cf-chip" data-bucket="easy" title="≤5.8 · V0–V3">≤5.8</span>
-        <span class="cf-chip" data-bucket="mod" title="5.9–5.10d · V4–V6">5.9–5.10</span>
-        <span class="cf-chip" data-bucket="hard" title="5.11a–5.11d · V7–V9">5.11</span>
-        <span class="cf-chip" data-bucket="proj" title="5.12+ · V10+">5.12+</span>
+        <span class="cf-chip" data-bucket="easy">&le;5.8</span>
+        <span class="cf-chip" data-bucket="mod">5.9&ndash;5.10</span>
+        <span class="cf-chip" data-bucket="hard">5.11</span>
+        <span class="cf-chip" data-bucket="proj">5.12+</span>
+      </div>
+
+      <div class="cf-label">Boulder Grade <span id="cf-vrange-val" class="cf-vrange-val">Any</span></div>
+      <div class="cf-vrange">
+        <div id="cf-vrange-fill" class="cf-vrange-fill"></div>
+        <input type="range" id="cf-vmin" min="0" max="13" step="1" value="0" aria-label="Minimum V grade" />
+        <input type="range" id="cf-vmax" min="0" max="13" step="1" value="13" aria-label="Maximum V grade" />
       </div>
 
       <div id="cf-result-count" class="cf-result-count"></div>
@@ -942,7 +971,8 @@
   // Sources whose features ARE areas (markers + hull polygons share the
   // same area_id/area_path association).
   const AREA_SOURCES = new Set(['climbing_areas', 'climbing_area_hulls']);
-  const climbFilter = { search: '', area: 'all', types: new Set(), grade: 'all' };
+  const V_TOP = 13; // slider ceiling — top of range means "no upper cap"
+  const climbFilter = { search: '', area: 'all', types: new Set(), grade: 'all', vmin: 0, vmax: V_TOP };
 
   // ── OpenBeta area ↔ climbs association ────────────────────────
   // climbFilter.area holds an "area key": the area's OpenBeta uuid (new imports)
@@ -1168,7 +1198,12 @@
     if (!m) return -1;
     return parseInt(m[1]) * 4 + (m[2] ? m[2].toLowerCase().charCodeAt(0) - 97 : 0);
   }
-  function vRank(g) { const m = String(g).match(/^[Vv](\d+)/); return m ? parseInt(m[1]) : -1; }
+  function vRank(g) {
+    if (/^[Vv]-?easy/.test(String(g))) return 0;   // "V-easy" ≈ V0
+    const m = String(g).match(/^[Vv](\d+)/);
+    return m ? parseInt(m[1]) : -1;
+  }
+  // Combined bucket test — display only (grade pill colors).
   function gradeInBucket(grade, bucket) {
     if (!grade || bucket === 'all') return true;
     const r = ydsRank(grade), v = vRank(grade);
@@ -1178,12 +1213,38 @@
     if (bucket === 'proj') return r >= 48 || v >= 10;
     return true;
   }
+  // Family-specific bucket tests for FILTERING: a route grade filter applies
+  // only to routes, a boulder grade filter only to boulders, and ungraded
+  // climbs match only 'all'.
+  function ydsInBucket(grade, bucket) {
+    if (bucket === 'all') return true;
+    const r = ydsRank(grade);
+    if (bucket === 'easy') return r >= 0 && r <= 32;
+    if (bucket === 'mod')  return r >= 36 && r <= 43;
+    if (bucket === 'hard') return r >= 44 && r <= 47;
+    if (bucket === 'proj') return r >= 48;
+    return true;
+  }
+  function vRangeLabel(lo, hi) {
+    if (lo === 0 && hi === V_TOP) return 'Any';
+    if (hi === V_TOP) return `V${lo}+`;
+    if (lo === hi) return `V${lo}`;
+    return `V${lo}–V${hi}`;
+  }
+  // V-grade range test for the boulder slider; the full range matches
+  // everything (including ungraded problems).
+  function vInRange(grade, lo, hi) {
+    if (lo === 0 && hi === V_TOP) return true;
+    const v = vRank(grade);
+    return v >= lo && (hi === V_TOP || v <= hi);
+  }
 
   // ── Climbing filter apply ─────────────────────────────────────
   function applyClimbingFilters() {
-    const { search, area, types, grade } = climbFilter;
+    const { search, area, types, grade, vmin, vmax } = climbFilter;
     const searchLow = search.toLowerCase();
-    const hasFilter = search || area !== 'all' || types.size > 0 || grade !== 'all';
+    const hasFilter = search || area !== 'all' || types.size > 0
+      || grade !== 'all' || vmin > 0 || vmax < V_TOP;
     let climbTotal = 0;   // matching routes + boulders — the results
 
     // Climbs have no map layers — filtering them recomputes the area badge
@@ -1192,6 +1253,7 @@
     CLIMB_SOURCES.forEach(srcKey => {
       const cached = layerCache[srcKey];
       if (!cached) return;
+      const isBoulderSrc = srcKey === 'climbing_boulders';
       const filtered = !hasFilter ? cached.features : cached.features.filter(f => {
         const p = f.properties;
         if (search && !(p.name || '').toLowerCase().includes(searchLow)) return false;
@@ -1203,7 +1265,9 @@
           );
           if (!matched) return false;
         }
-        if (grade !== 'all' && !gradeInBucket(p.grade || '', grade)) return false;
+        // each grade filter constrains only its own family
+        if (isBoulderSrc ? !vInRange(p.grade || '', vmin, vmax)
+                         : !ydsInBucket(p.grade || '', grade)) return false;
         return true;
       });
       filteredClimbs[srcKey] = filtered;
@@ -1247,14 +1311,16 @@
   function updateClimbFilterChip(total) {
     const chip = document.getElementById('climb-filter-chip');
     if (!chip) return;
-    const { search, area, types, grade } = climbFilter;
-    const active = search || area !== 'all' || types.size > 0 || grade !== 'all';
+    const { search, area, types, grade, vmin, vmax } = climbFilter;
+    const vActive = vmin > 0 || vmax < V_TOP;
+    const active = search || area !== 'all' || types.size > 0 || grade !== 'all' || vActive;
     if (!active) { chip.style.display = 'none'; return; }
     const parts = [];
     if (area !== 'all') parts.push((climbAreaNodes[canonicalAreaKey(area)] || {}).name || 'this area');
     if (search) parts.push(`"${search}"`);
     if (types.size) parts.push([...types].join('/'));
     if (grade !== 'all') parts.push(grade);
+    if (vActive) parts.push(vRangeLabel(vmin, vmax));
     document.getElementById('cfc-label').textContent =
       `${total != null ? total + ' climbs' : 'Filtered'} · ${parts.join(' · ')}`;
     chip.style.display = 'flex';
@@ -1563,6 +1629,14 @@
       climbFilter.search = name;
       closeSuggestions();
       applyClimbingFilters();
+      // climbs render through their area's badge — jump straight to the
+      // matched climb and open its popup instead of leaving the user to
+      // hunt for which wall lit up
+      for (const src of CLIMB_SOURCES) {
+        const f = (layerCache[src] || { features: [] }).features
+          .find(x => (x.properties.name || '').trim().toLowerCase() === name.toLowerCase());
+        if (f) { flyToClimb(src, f.properties.id); break; }
+      }
     }
 
     function renderSuggestions(q) {
@@ -1646,6 +1720,28 @@
         applyClimbingFilters();
       });
     });
+    // boulder V-grade range: two overlaid sliders, handles can't cross
+    const vminEl = document.getElementById('cf-vmin');
+    const vmaxEl = document.getElementById('cf-vmax');
+    function syncVRange(fromMin) {
+      let lo = Number(vminEl.value), hi = Number(vmaxEl.value);
+      if (lo > hi) {
+        if (fromMin) { hi = lo; vmaxEl.value = lo; }
+        else { lo = hi; vminEl.value = hi; }
+      }
+      climbFilter.vmin = lo;
+      climbFilter.vmax = hi;
+      const valEl = document.getElementById('cf-vrange-val');
+      if (valEl) valEl.textContent = vRangeLabel(lo, hi);
+      const fill = document.getElementById('cf-vrange-fill');
+      if (fill) {
+        fill.style.left = (lo / V_TOP * 100) + '%';
+        fill.style.right = (100 - hi / V_TOP * 100) + '%';
+      }
+      applyClimbingFilters();
+    }
+    vminEl.addEventListener('input', () => syncVRange(true));
+    vmaxEl.addEventListener('input', () => syncVRange(false));
     document.getElementById('cf-reset').addEventListener('click', () => {
       climbFilter.search = ''; climbFilter.area = 'all';
       climbFilter.types.clear(); climbFilter.grade = 'all';
@@ -1656,7 +1752,9 @@
       document.querySelectorAll('#cf-types .cf-chip').forEach(c => c.classList.remove('active'));
       document.querySelectorAll('#cf-grades .cf-chip').forEach(c => c.classList.remove('active'));
       document.querySelector('#cf-grades .cf-chip[data-bucket="all"]').classList.add('active');
-      applyClimbingFilters();
+      vminEl.value = 0;
+      vmaxEl.value = V_TOP;
+      syncVRange(true); // also resets vmin/vmax state + label and re-applies
     });
   }
 
