@@ -26,6 +26,7 @@ Reads are anon (RLS-allowed); the write happens via the SQL file you run.
 """
 import json
 import math
+import sys
 import urllib.request
 
 from shapely import concave_hull, set_precision
@@ -43,7 +44,7 @@ BUFFER_DEG = 55 / 111_000          # ~55 m in latitude degrees
 SIMPLIFY_DEG = 6 / 111_000         # ~6 m — keeps vertices low, shape smooth
 CONCAVE_RATIO = 0.45               # 0 = max concave, 1 = convex hull
 EXCLUDE_NAMES = {"Linkups, Contrivances, Oddities and Triflings"}  # not geographic
-OUT_SQL = "migrations/020_climbing_area_hulls_v2.sql"
+OUT_SQL = sys.argv[1] if len(sys.argv) > 1 else "migrations/020_climbing_area_hulls_v2.sql"
 OUT_PREVIEW = "_hulls_preview.geojson"
 
 
