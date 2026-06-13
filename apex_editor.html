@@ -2950,6 +2950,18 @@
   let batchItems = [];
   let exifrLib = null;
 
+  const HEIC_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">' +
+    '<rect width="60" height="60" fill="#1a2a1a" rx="5"/>' +
+    '<text x="30" y="28" font-family="monospace" font-size="10" fill="#9bc23c" text-anchor="middle">HEIC</text>' +
+    '<text x="30" y="44" font-family="monospace" font-size="10" fill="rgba(155,194,60,0.5)" text-anchor="middle">no preview</text>' +
+    '</svg>');
+
+  function isHeic(file) {
+    return /\.(heic|heif)$/i.test(file.name) ||
+      file.type === 'image/heic' || file.type === 'image/heif';
+  }
+
   document.getElementById('batch-upload-btn').addEventListener('click', openBatchPanel);
   document.getElementById('batch-close-btn').addEventListener('click', closeBatchPanel);
   document.getElementById('batch-add-files-btn').addEventListener('click', () =>
@@ -3003,8 +3015,10 @@
         } catch {}
       }
       const objUrl = URL.createObjectURL(file);
+      // HEIC can't be rendered by Chrome/Firefox — use a placeholder for display
+      const displayUrl = isHeic(file) ? HEIC_PLACEHOLDER : objUrl;
       const item = {
-        file, url: objUrl, exifLat, exifLng, exifDate,
+        file, url: objUrl, displayUrl, exifLat, exifLng, exifDate,
         marker: null, assignedFeatureId: null,
         assignedFeatureName: null, assignedFeatureSource: null,
         status: 'pending'
@@ -3013,7 +3027,7 @@
       if (exifLat != null && batchMapInst) {
         const el = document.createElement('div');
         el.className = 'batch-marker-el';
-        el.innerHTML = `<img src="${objUrl}" alt="" />`;
+        el.innerHTML = `<img src="${displayUrl}" alt="" />`;
         const marker = new mapboxgl.Marker({ element: el })
           .setLngLat([exifLng, exifLat]).addTo(batchMapInst);
         el.addEventListener('click', e => { e.stopPropagation(); showBatchAssign(item); });
@@ -3050,7 +3064,7 @@
         ? `<div class="batch-item-assigned">→ ${item.assignedFeatureName}</div>`
         : `<div class="batch-item-unassigned">Unassigned</div>`;
       div.innerHTML = `
-        <img class="batch-thumb" src="${item.url}" alt="" />
+        <img class="batch-thumb" src="${item.displayUrl}" alt="" />
         <div class="batch-item-info">
           <div class="batch-item-filename">${item.file.name}</div>
           <div class="batch-item-gps ${item.exifLat != null ? 'has-gps' : ''}">${gpsText}</div>
@@ -3156,9 +3170,19 @@
       for (const item of group.items) {
         progress.textContent = `Uploading ${done + failed + 1} / ${assigned.length}…`;
         try {
-          const { blob, ext } = await compressImage(item.file);
+          let blob, ext, contentType;
+          try {
+            // Compress JPEG/PNG/WebP; HEIC throws DOMException in Chrome/Firefox
+            const c = await compressImage(item.file);
+            blob = c.blob; ext = c.ext; contentType = blob.type;
+          } catch {
+            // Fallback: upload the original file (handles HEIC and unknown formats)
+            blob = item.file;
+            ext = item.file.name.split('.').pop().toLowerCase() || 'jpg';
+            contentType = item.file.type || 'application/octet-stream';
+          }
           const path = `${group.source}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
-          const { error } = await db.storage.from('photos').upload(path, blob, { contentType: blob.type, cacheControl: '31536000' });
+          const { error } = await db.storage.from('photos').upload(path, blob, { contentType, cacheControl: '31536000' });
           if (error) throw error;
           const url = db.storage.from('photos').getPublicUrl(path).data.publicUrl;
           currentMeta.push({ url, caption: '' });
