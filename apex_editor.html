@@ -138,22 +138,77 @@
     .storage-label { font-size: 9px; color: rgba(255,255,255,0.4); margin-top: 5px; }
 
     /* ─── Feature photos ─── */
-    #feat-photo-strip { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+    #feat-photo-strip { display: flex; flex-direction: column; gap: 0; margin: 6px 0; }
+    .photo-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+    .photo-item:last-child { margin-bottom: 0; }
     .photo-thumb {
-      position: relative; width: 56px; height: 56px;
+      flex: 0 0 54px; width: 54px; height: 54px;
       border-radius: 5px; overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.12); cursor: pointer;
     }
     .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .photo-thumb .pt-del {
-      position: absolute; top: 1px; right: 1px;
-      width: 16px; height: 16px; line-height: 14px;
-      border-radius: 50%; border: none; cursor: pointer;
-      background: rgba(0,0,0,0.65); color: #fff;
-      font-size: 11px; text-align: center; padding: 0;
+    .photo-thumb:hover img { opacity: 0.85; }
+    .photo-item-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .photo-item-btns { display: flex; gap: 3px; }
+    .pt-up, .pt-dn, .pt-del {
+      width: 22px; height: 22px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+      font-size: 11px; cursor: pointer; padding: 0; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
     }
-    .photo-thumb .pt-del:hover { background: #e35d5d; }
+    .pt-del { margin-left: auto; color: #e35d5d; border-color: rgba(227,93,93,0.3); }
+    .pt-up:hover, .pt-dn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .pt-del:hover { background: rgba(227,93,93,0.2); }
+    .pt-up:disabled, .pt-dn:disabled { opacity: 0.3; cursor: default; }
+    .photo-caption-input {
+      width: 100%; box-sizing: border-box;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 4px; color: rgba(255,255,255,0.8); font-size: 10px;
+      padding: 3px 6px; font-family: inherit; outline: none;
+    }
+    .photo-caption-input::placeholder { color: rgba(255,255,255,0.25); }
+    .photo-caption-input:focus { border-color: rgba(155,194,60,0.5); }
     .photo-upload-status { font-size: 9.5px; color: rgba(255,255,255,0.4); margin-top: 4px; min-height: 12px; }
+    .photo-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+    .photo-tab {
+      flex: 1; padding: 5px 8px; border-radius: 5px; font-size: 10px; font-weight: 700;
+      cursor: pointer; border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.5);
+      font-family: inherit;
+    }
+    .photo-tab.active { background: rgba(155,194,60,0.15); border-color: rgba(155,194,60,0.5); color: #9bc23c; }
+    .photo-tab span { margin-left: 3px; font-size: 9px; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 0 5px; }
+    .photo-tab.active span { background: rgba(155,194,60,0.2); }
+    .pending-photo-item {
+      display: flex; align-items: flex-start; gap: 8px; padding: 8px;
+      border-radius: 6px; margin-bottom: 6px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    }
+    .pending-thumb {
+      width: 60px; height: 60px; flex-shrink: 0; border-radius: 5px;
+      object-fit: cover; cursor: pointer;
+    }
+    .pending-info { flex: 1; min-width: 0; }
+    .pending-caption { font-size: 10.5px; font-weight: 600; color: rgba(255,255,255,0.8); margin-bottom: 2px; }
+    .pending-meta { font-size: 9px; color: rgba(255,255,255,0.35); line-height: 1.5; }
+    .pending-btns { display: flex; gap: 5px; margin-top: 6px; }
+    .pending-approve-btn {
+      flex: 1; padding: 4px; background: rgba(155,194,60,0.15);
+      border: 1px solid rgba(155,194,60,0.4); border-radius: 4px;
+      color: #9bc23c; font-size: 10px; font-weight: 700; cursor: pointer;
+      font-family: inherit;
+    }
+    .pending-approve-btn:hover { background: rgba(155,194,60,0.3); }
+    .pending-reject-btn {
+      flex: 1; padding: 4px; background: rgba(227,93,93,0.08);
+      border: 1px solid rgba(227,93,93,0.3); border-radius: 4px;
+      color: #e35d5d; font-size: 10px; font-weight: 700; cursor: pointer;
+      font-family: inherit;
+    }
+    .pending-reject-btn:hover { background: rgba(227,93,93,0.2); }
+    #pending-photos-list .empty-pending {
+      padding: 16px; text-align: center; color: rgba(255,255,255,0.25); font-size: 10.5px;
+    }
 
     /* ─── Default-visibility pin (public map default) ─── */
     .layer-default-pin {
@@ -201,10 +256,48 @@
     }
     .popup-photos {
       display: flex; gap: 5px; overflow-x: auto;
-      margin: 2px 0 6px; padding-bottom: 3px;
+      margin: 2px 0 2px; padding-bottom: 3px;
     }
-    .popup-photos a { flex: 0 0 auto; }
-    .popup-photos img { height: 76px; border-radius: 6px; display: block; }
+    .popup-photos img {
+      height: 76px; border-radius: 6px; display: block; flex: 0 0 auto;
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .popup-photos img:hover { opacity: 0.85; }
+    .popup-photo-count {
+      font-size: 9.5px; color: #999; margin-bottom: 6px; margin-top: 1px;
+    }
+
+    /* ─── Lightbox ─── */
+    #lb-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.92); flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+    }
+    #lb-overlay.open { display: flex; }
+    #lb-img {
+      max-width: 92vw; max-height: 76vh;
+      border-radius: 8px; object-fit: contain; display: block;
+    }
+    #lb-caption {
+      color: rgba(255,255,255,0.82); font-size: 13px;
+      text-align: center; max-width: 80vw; line-height: 1.4;
+    }
+    #lb-counter { color: rgba(255,255,255,0.38); font-size: 11px; }
+    #lb-close {
+      position: absolute; top: 16px; right: 20px;
+      background: none; border: none; color: rgba(255,255,255,0.7);
+      font-size: 26px; cursor: pointer; line-height: 1; padding: 4px 8px;
+    }
+    #lb-close:hover { color: #fff; }
+    #lb-prev, #lb-next {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.12); border: none; color: #fff;
+      font-size: 36px; cursor: pointer; padding: 8px 14px; border-radius: 6px;
+      line-height: 1; transition: background 0.15s;
+    }
+    #lb-prev { left: 12px; }
+    #lb-next { right: 12px; }
+    #lb-prev:hover, #lb-next:hover { background: rgba(255,255,255,0.25); }
     .layer-group-label {
       font-size: 7px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase;
       color: rgba(155,194,60,0.4); padding: 8px 2px 3px;
@@ -442,9 +535,139 @@
     .popup-delete-btn { display: flex; align-items: center; justify-content: center; padding: 6px 11px; border: none; border-radius: 5px; background: #e74c3c; color: #fff; font-size: 11px; cursor: pointer; flex-shrink: 0; }
     .popup-delete-btn:hover { background: #c0392b; }
     .mapboxgl-popup-close-button { color: rgba(255,255,255,0.6) !important; font-size: 18px !important; padding: 5px 8px !important; top: 0 !important; right: 0 !important; }
+
+    /* ════ BATCH UPLOAD PANEL ════════════════════════════════════ */
+    #batch-panel {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: #0d1a0d; flex-direction: column;
+      font-family: 'Inter', sans-serif;
+    }
+    #batch-panel.open { display: flex; }
+    #batch-panel-header {
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+      background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(155,194,60,0.3);
+      flex-shrink: 0;
+    }
+    #batch-panel-header h2 { margin: 0; font-size: 14px; font-weight: 800; color: #9bc23c; flex: 1; }
+    #batch-close-btn {
+      background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7);
+      border-radius: 5px; padding: 4px 10px; cursor: pointer; font-size: 12px;
+    }
+    #batch-close-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    #batch-body {
+      display: flex; flex: 1; min-height: 0;
+    }
+    #batch-map-col { flex: 1; position: relative; }
+    #batch-map { position: absolute; inset: 0; }
+    #batch-sidebar {
+      width: 340px; flex-shrink: 0; display: flex; flex-direction: column;
+      background: rgba(0,0,0,0.4); border-left: 1px solid rgba(255,255,255,0.08);
+    }
+    #batch-toolbar {
+      display: flex; gap: 6px; padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;
+    }
+    #batch-add-files-btn {
+      flex: 1; padding: 6px 10px; background: rgba(155,194,60,0.15);
+      border: 1px solid rgba(155,194,60,0.4); border-radius: 5px;
+      color: #9bc23c; font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    #batch-add-files-btn:hover { background: rgba(155,194,60,0.25); }
+    #batch-save-all-btn {
+      flex: 1; padding: 6px 10px; background: #9bc23c;
+      border: none; border-radius: 5px;
+      color: #14250f; font-size: 11px; font-weight: 800; cursor: pointer;
+    }
+    #batch-save-all-btn:hover { background: #acd24c; }
+    #batch-save-all-btn:disabled { opacity: 0.4; cursor: default; }
+    #batch-progress {
+      padding: 4px 12px; font-size: 9.5px; color: rgba(255,255,255,0.4);
+      min-height: 20px; flex-shrink: 0;
+    }
+    #batch-list { flex: 1; overflow-y: auto; padding: 6px 8px; }
+    .batch-item {
+      display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+      border-radius: 6px; margin-bottom: 4px; cursor: pointer;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+      transition: background 0.12s;
+    }
+    .batch-item:hover { background: rgba(255,255,255,0.08); }
+    .batch-item.assigned { border-color: rgba(155,194,60,0.35); }
+    .batch-item.uploaded { opacity: 0.55; }
+    .batch-thumb {
+      width: 44px; height: 44px; border-radius: 4px; object-fit: cover; flex-shrink: 0;
+    }
+    .batch-item-info { flex: 1; min-width: 0; }
+    .batch-item-filename { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .batch-item-gps { font-size: 9px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .batch-item-gps.has-gps { color: #9bc23c; }
+    .batch-item-assigned { font-size: 9.5px; color: #9bc23c; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .batch-item-unassigned { font-size: 9.5px; color: rgba(255,255,255,0.28); margin-top: 2px; }
+    .batch-item-btns { display: flex; gap: 4px; flex-shrink: 0; }
+    .batch-assign-btn, .batch-remove-btn {
+      width: 26px; height: 26px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+      font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .batch-assign-btn:hover { background: rgba(155,194,60,0.2); color: #9bc23c; border-color: rgba(155,194,60,0.4); }
+    .batch-remove-btn:hover { background: rgba(227,93,93,0.2); color: #e35d5d; border-color: rgba(227,93,93,0.3); }
+
+    /* Assignment modal */
+    #batch-assign-modal {
+      display: none; position: absolute; inset: 0;
+      background: rgba(0,0,0,0.6); align-items: center; justify-content: center;
+      z-index: 10;
+    }
+    #batch-assign-modal.open { display: flex; }
+    #batch-assign-box {
+      background: #1a2a1a; border: 1px solid rgba(155,194,60,0.3);
+      border-radius: 8px; width: 320px; max-height: 70vh;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    #batch-assign-header {
+      display: flex; align-items: center; padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;
+    }
+    #batch-assign-header span { flex: 1; font-size: 13px; font-weight: 700; color: #9bc23c; }
+    #batch-assign-close-btn {
+      background: none; border: none; color: rgba(255,255,255,0.5); font-size: 18px; cursor: pointer;
+    }
+    #batch-assign-close-btn:hover { color: #fff; }
+    #batch-assign-list { overflow-y: auto; padding: 8px; }
+    .batch-assign-row {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      border-radius: 5px; cursor: pointer; border: 1px solid transparent;
+      transition: background 0.12s;
+    }
+    .batch-assign-row:hover { background: rgba(155,194,60,0.12); border-color: rgba(155,194,60,0.25); }
+    .batch-feat-name { flex: 1; font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.85); }
+    .batch-feat-dist { font-size: 9.5px; color: rgba(155,194,60,0.7); font-weight: 700; flex-shrink: 0; }
+    .batch-feat-src {
+      font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.3); flex-shrink: 0;
+    }
+    .batch-assign-loading, .batch-assign-empty {
+      padding: 16px; text-align: center; color: rgba(255,255,255,0.4); font-size: 11px;
+    }
+    .batch-marker-el {
+      width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
+      border: 2.5px solid #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .batch-marker-el.assigned { border-color: #9bc23c; }
+    .batch-marker-el img { width: 100%; height: 100%; object-fit: cover; display: block; }
   </style>
 </head>
 <body>
+
+<!-- ── Lightbox (shared, outside any popup DOM) ── -->
+<div id="lb-overlay" role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <button id="lb-close" aria-label="Close">&#x2715;</button>
+  <button id="lb-prev" aria-label="Previous photo">&#8249;</button>
+  <img id="lb-img" alt="" />
+  <div id="lb-caption"></div>
+  <div id="lb-counter"></div>
+  <button id="lb-next" aria-label="Next photo">&#8250;</button>
+</div>
 
 <!-- ══ LOGIN MODAL ═════════════════════════════════════════════ -->
 <div id="login-modal" class="show">
@@ -496,6 +719,9 @@
       <div id="left-layer-list">
         <div class="panel-placeholder">Select an experience</div>
       </div>
+    </div>
+    <div class="panel-section">
+      <button class="btn-outline" id="batch-upload-btn" style="width:100%"><i class="fa-solid fa-images"></i> Batch Upload</button>
     </div>
     <div class="panel-section" id="storage-meter">
       <div class="panel-section-title">Storage</div>
@@ -626,10 +852,19 @@
           <div id="dynamic-fields"></div>
           <div>
             <label class="rp-label">Photos <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">— shown in the map popup</span></label>
-            <div id="feat-photo-strip"></div>
-            <button class="btn-outline btn-sm" id="add-photos-btn" style="width:100%"><i class="fa-solid fa-camera"></i> Add Photos</button>
-            <input id="photo-file-input" type="file" accept="image/*" multiple style="display:none" />
-            <div id="photo-upload-status" class="photo-upload-status"></div>
+            <div class="photo-tabs">
+              <button class="photo-tab active" data-ptab="approved">Approved <span id="pt-approved-count"></span></button>
+              <button class="photo-tab" data-ptab="pending">Pending <span id="pt-pending-count"></span></button>
+            </div>
+            <div id="photo-tab-approved">
+              <div id="feat-photo-strip"></div>
+              <button class="btn-outline btn-sm" id="add-photos-btn" style="width:100%"><i class="fa-solid fa-camera"></i> Add Photos</button>
+              <input id="photo-file-input" type="file" accept="image/*" multiple style="display:none" />
+              <div id="photo-upload-status" class="photo-upload-status"></div>
+            </div>
+            <div id="photo-tab-pending" style="display:none">
+              <div id="pending-photos-list"></div>
+            </div>
           </div>
           <button class="btn-primary" id="save-feature-btn" style="width:100%"><i class="fa-solid fa-floppy-disk"></i> Save Feature</button>
         </div>
@@ -641,6 +876,39 @@
 
 <!-- Toast -->
 <div id="toast"></div>
+
+<!-- ══ BATCH UPLOAD PANEL ══════════════════════════════════════ -->
+<div id="batch-panel">
+  <div id="batch-panel-header">
+    <h2><i class="fa-solid fa-images"></i> Batch Upload</h2>
+    <span id="batch-panel-hint" style="font-size:10.5px;color:rgba(255,255,255,0.4);flex:1">Add photos → assign to nearby features → Upload &amp; Save</span>
+    <button id="batch-close-btn">&#x2715; Close</button>
+  </div>
+  <div id="batch-body">
+    <div id="batch-map-col">
+      <div id="batch-map"></div>
+    </div>
+    <div id="batch-sidebar">
+      <div id="batch-toolbar">
+        <button id="batch-add-files-btn"><i class="fa-solid fa-folder-open"></i> Add Photos</button>
+        <input id="batch-file-input" type="file" multiple accept="image/*" style="display:none" />
+        <button id="batch-save-all-btn" disabled><i class="fa-solid fa-cloud-arrow-up"></i> Upload &amp; Save</button>
+      </div>
+      <div id="batch-progress"></div>
+      <div id="batch-list"></div>
+    </div>
+  </div>
+  <!-- Assignment modal — shown over the whole panel -->
+  <div id="batch-assign-modal">
+    <div id="batch-assign-box">
+      <div id="batch-assign-header">
+        <span>Assign to Nearby Feature</span>
+        <button id="batch-assign-close-btn">&#x2715;</button>
+      </div>
+      <div id="batch-assign-list"></div>
+    </div>
+  </div>
+</div>
 
 <script>
   mapboxgl.accessToken = 'pk.eyJ1IjoiYnlhdGVzNDAiLCJhIjoiY21xN25reXZ6MDFxeTJwcHp0eWd1eThkZSJ9.e8kuKAeb7KnerdLxQU7vpQ';
@@ -1126,8 +1394,19 @@
     let photos = props.photos;
     if (typeof photos === 'string') { try { photos = JSON.parse(photos); } catch { photos = []; } }
     if (!Array.isArray(photos)) photos = [];
-    const photosHTML = photos.length
-      ? `<div class="popup-photos">${photos.slice(0, 12).map(u => `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" loading="lazy" alt="" /></a>`).join('')}</div>`
+    let photoMeta = props.photo_meta;
+    if (typeof photoMeta === 'string') { try { photoMeta = JSON.parse(photoMeta); } catch { photoMeta = []; } }
+    if (!Array.isArray(photoMeta)) photoMeta = [];
+    const lbData = photoMeta.length
+      ? photoMeta.map(m => ({ url: m.url || '', caption: m.caption || '' }))
+      : photos.map(u => ({ url: u, caption: '' }));
+    const escU = u => u.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    const photosHTML = lbData.length
+      ? `<div class="popup-photos" data-photos="${escU(JSON.stringify(lbData))}">${
+          lbData.slice(0, 12).map((m, i) =>
+            `<img class="popup-photo-thumb" src="${escU(m.url)}" data-idx="${i}" loading="lazy" alt="" />`
+          ).join('')
+        }</div><div class="popup-photo-count">${lbData.length} photo${lbData.length === 1 ? '' : 's'}</div>`
       : '';
 
     const isClimbing = isClimb || sourceKey === 'climbing_areas';
@@ -1180,6 +1459,13 @@
             if (!confirm(`Delete "${nm}"? This cannot be undone.`)) return;
             popup.remove();
             if (await applyFeatureDeletion(feature, sourceKey)) toast('Feature deleted');
+          });
+          popup.getElement().querySelectorAll('.popup-photo-thumb').forEach(img => {
+            img.addEventListener('click', () => {
+              const container = img.closest('.popup-photos');
+              const data = container ? JSON.parse(container.dataset.photos || '[]') : [];
+              openLightbox(data, +img.dataset.idx);
+            });
           });
           e.originalEvent._popupHandled = true;
         });
@@ -2068,17 +2354,25 @@
       const val = input.dataset.base ? feature.properties[key] : cd[key];
       input.value = (val != null) ? val : '';
     });
-    // Photos: the column arrives as an array via get_layer_geojson, but may be
-    // a JSON string on features round-tripped through mapbox-gl-draw.
+    // Photos: prefer photo_meta (ordered with captions); fall back to photos[]
     let ph = feature.properties.photos;
     if (typeof ph === 'string') { try { ph = JSON.parse(ph); } catch { ph = []; } }
-    formPhotos = Array.isArray(ph) ? ph.filter(u => typeof u === 'string') : [];
+    const rawPhotos = Array.isArray(ph) ? ph.filter(u => typeof u === 'string') : [];
+    let pm = feature.properties.photo_meta;
+    if (typeof pm === 'string') { try { pm = JSON.parse(pm); } catch { pm = []; } }
+    formPhotoMeta = Array.isArray(pm) && pm.length
+      ? pm.map(m => ({ url: String(m.url || ''), caption: String(m.caption || '') }))
+      : rawPhotos.map(u => ({ url: u, caption: '' }));
     renderPhotoStrip();
+    // Load pending submissions for this feature
+    const featKey = feature.properties._draw_id || feature.properties.area_id || '';
+    const featSource = document.getElementById('draw-target-select').value || '';
+    loadPendingPhotos(featSource, featKey);
   }
 
   function hideFeatureForm() {
     selectedDrawFeatureId = null;
-    formPhotos = [];
+    formPhotoMeta = [];
     document.getElementById('feature-attr-panel').style.display = '';
     document.getElementById('feature-attr-form').style.display = 'none';
   }
@@ -2087,20 +2381,45 @@
   // Originals never leave the device at full size: longest edge capped and
   // re-encoded (WebP, JPEG fallback) so the 1 GB free tier holds thousands
   // of photos instead of ~200 camera originals.
-  let formPhotos = [];   // photo URLs for the feature currently in the form
+  let formPhotoMeta = [];   // [{url, caption}] for the feature currently in the form
 
   function renderPhotoStrip() {
     const strip = document.getElementById('feat-photo-strip');
     strip.innerHTML = '';
-    formPhotos.forEach((url, i) => {
-      const t = document.createElement('div');
-      t.className = 'photo-thumb';
-      t.innerHTML = `<img src="${url}" alt="" loading="lazy" /><button class="pt-del" title="Remove photo">×</button>`;
-      t.querySelector('.pt-del').addEventListener('click', () => {
-        formPhotos.splice(i, 1);
+    formPhotoMeta.forEach(({ url, caption }, i) => {
+      const item = document.createElement('div');
+      item.className = 'photo-item';
+      const safeUrl = url.replace(/"/g, '%22');
+      const safeCap = caption.replace(/"/g, '&quot;');
+      item.innerHTML = `
+        <div class="photo-thumb"><img src="${safeUrl}" alt="" loading="lazy" /></div>
+        <div class="photo-item-right">
+          <div class="photo-item-btns">
+            <button class="pt-up" title="Move up" ${i === 0 ? 'disabled' : ''}>&#9650;</button>
+            <button class="pt-dn" title="Move down" ${i === formPhotoMeta.length - 1 ? 'disabled' : ''}>&#9660;</button>
+            <button class="pt-del" title="Remove photo">&#x2715;</button>
+          </div>
+          <input class="photo-caption-input" type="text" placeholder="Caption (optional)" value="${safeCap}" />
+        </div>`;
+      item.querySelector('.pt-up').addEventListener('click', () => {
+        [formPhotoMeta[i - 1], formPhotoMeta[i]] = [formPhotoMeta[i], formPhotoMeta[i - 1]];
         renderPhotoStrip();
       });
-      strip.appendChild(t);
+      item.querySelector('.pt-dn').addEventListener('click', () => {
+        [formPhotoMeta[i], formPhotoMeta[i + 1]] = [formPhotoMeta[i + 1], formPhotoMeta[i]];
+        renderPhotoStrip();
+      });
+      item.querySelector('.pt-del').addEventListener('click', () => {
+        formPhotoMeta.splice(i, 1);
+        renderPhotoStrip();
+      });
+      item.querySelector('.photo-caption-input').addEventListener('input', e => {
+        formPhotoMeta[i].caption = e.target.value;
+      });
+      item.querySelector('.photo-thumb').addEventListener('click', () => {
+        openLightbox(formPhotoMeta, i);
+      });
+      strip.appendChild(item);
     });
   }
 
@@ -2140,7 +2459,7 @@
         const { error } = await db.storage.from('photos')
           .upload(path, blob, { contentType: blob.type, cacheControl: '31536000' });
         if (error) throw error;
-        formPhotos.push(db.storage.from('photos').getPublicUrl(path).data.publicUrl);
+        formPhotoMeta.push({ url: db.storage.from('photos').getPublicUrl(path).data.publicUrl, caption: '' });
         renderPhotoStrip();
         done++;
       } catch (err) {
@@ -2416,12 +2735,13 @@
     feature.properties.custom_data = JSON.stringify(customData);
     draw.setFeatureProperty(feature.id, 'name', name);
     await db.rpc('upsert_drawn_feature', { p_source: source, p_feature: feature });
-    // Photos live in the osm_geometries.photos COLUMN (get_layer_geojson
-    // serves the column, not properties.photos) — persist via dedicated RPC.
+    // Photos live in the osm_geometries.photos + photo_meta COLUMNS
+    // (get_layer_geojson serves columns, not properties) — persist via RPC.
     const photoKey = String(feature.properties.id || feature.properties._draw_id || '');
     if (photoKey) {
-      const { error: phErr } = await db.rpc('set_feature_photos',
-        { p_source: source, p_key: photoKey, p_photos: formPhotos });
+      const photoUrls = formPhotoMeta.map(m => m.url);
+      const { error: phErr } = await db.rpc('set_feature_photos_v2',
+        { p_source: source, p_key: photoKey, p_photos: photoUrls, p_photo_meta: formPhotoMeta });
       if (phErr) toast('Photos not saved: ' + phErr.message, true);
     }
     delete layerCache[source];
@@ -2522,6 +2842,396 @@
       await init();
     }
   });
+
+  // ── Photo tab switching ─────────────────────────────────────────
+  document.querySelectorAll('.photo-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.photo-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.ptab;
+      document.getElementById('photo-tab-approved').style.display = tab === 'approved' ? '' : 'none';
+      document.getElementById('photo-tab-pending').style.display  = tab === 'pending'  ? '' : 'none';
+    });
+  });
+
+  // ── Pending photos (approval queue) ─────────────────────────────
+  async function loadPendingPhotos(source, featureKey) {
+    const countEl = document.getElementById('pt-pending-count');
+    countEl.textContent = '';
+    if (!source || !featureKey) {
+      renderPendingList([]);
+      return;
+    }
+    const { data, error } = await db
+      .from('pending_images')
+      .select('*')
+      .eq('feature_source', source)
+      .eq('feature_key', featureKey)
+      .eq('status', 'pending')
+      .order('submitted_at', { ascending: false });
+    const items = error ? [] : (data || []);
+    countEl.textContent = items.length || '';
+    // Show badge on tab button if any pending
+    document.querySelector('.photo-tab[data-ptab="pending"]')
+      .classList.toggle('active', false);
+    renderPendingList(items, source, featureKey);
+  }
+
+  function renderPendingList(items, source, featureKey) {
+    const list = document.getElementById('pending-photos-list');
+    list.innerHTML = '';
+    if (!items.length) {
+      list.innerHTML = '<div class="empty-pending">No pending submissions</div>';
+      return;
+    }
+    items.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'pending-photo-item';
+      const date = item.submitted_at ? new Date(item.submitted_at).toLocaleDateString() : '';
+      const who = item.submitter_email || 'anonymous';
+      div.innerHTML = `
+        <img class="pending-thumb" src="${item.url}" alt="" loading="lazy" />
+        <div class="pending-info">
+          <div class="pending-caption">${item.caption || '(no caption)'}</div>
+          <div class="pending-meta">
+            ${who} &bull; ${date}<br/>
+            ${item.exif_lat != null ? `GPS: ${item.exif_lat.toFixed(4)}, ${item.exif_lng.toFixed(4)}` : 'No GPS'}
+          </div>
+          <div class="pending-btns">
+            <button class="pending-approve-btn">&#10003; Approve</button>
+            <button class="pending-reject-btn">&#x2715; Reject</button>
+          </div>
+        </div>`;
+      div.querySelector('.pending-thumb').addEventListener('click', () =>
+        openLightbox([{ url: item.url, caption: item.caption || '' }], 0));
+      div.querySelector('.pending-approve-btn').addEventListener('click', async () => {
+        div.style.opacity = '0.5';
+        const { error } = await db.rpc('approve_pending_image', { p_id: item.id });
+        if (error) { toast('Approve failed: ' + error.message, true); div.style.opacity = ''; return; }
+        div.remove();
+        document.getElementById('pt-pending-count').textContent =
+          String(+document.getElementById('pt-pending-count').textContent - 1 || '');
+        // Refresh approved strip if the feature is still selected
+        if (source && featureKey) {
+          const { data: gj } = await db.rpc('get_layer_geojson', { p_source: source });
+          const feat = gj?.features?.find(f =>
+            (f.properties._draw_id || '') === featureKey ||
+            (f.properties.area_id  || '') === featureKey);
+          if (feat) {
+            let pm = feat.properties.photo_meta;
+            if (typeof pm === 'string') { try { pm = JSON.parse(pm); } catch { pm = []; } }
+            formPhotoMeta = Array.isArray(pm) ? pm.map(m => ({ url: m.url||'', caption: m.caption||'' })) : [];
+            renderPhotoStrip();
+          }
+        }
+        toast('Photo approved');
+      });
+      div.querySelector('.pending-reject-btn').addEventListener('click', async () => {
+        if (!confirm('Reject and permanently delete this submission?')) return;
+        div.style.opacity = '0.5';
+        // Extract storage path from URL and delete
+        try {
+          const url = new URL(item.url);
+          const pathMatch = url.pathname.match(/\/pending-photos\/(.+)$/);
+          if (pathMatch) await db.storage.from('pending-photos').remove([pathMatch[1]]);
+        } catch {}
+        await db.from('pending_images').update({ status: 'rejected' }).eq('id', item.id);
+        div.remove();
+        document.getElementById('pt-pending-count').textContent =
+          String(+document.getElementById('pt-pending-count').textContent - 1 || '');
+        toast('Submission rejected');
+      });
+      list.appendChild(div);
+    });
+  }
+
+  // ── Batch Upload Panel ──────────────────────────────────────────
+  let batchMapInst = null;
+  let batchItems = [];
+  let exifrLib = null;
+
+  document.getElementById('batch-upload-btn').addEventListener('click', openBatchPanel);
+  document.getElementById('batch-close-btn').addEventListener('click', closeBatchPanel);
+  document.getElementById('batch-add-files-btn').addEventListener('click', () =>
+    document.getElementById('batch-file-input').click());
+  document.getElementById('batch-assign-close-btn').addEventListener('click', () =>
+    document.getElementById('batch-assign-modal').classList.remove('open'));
+  document.getElementById('batch-save-all-btn').addEventListener('click', uploadAllAssigned);
+
+  document.getElementById('batch-file-input').addEventListener('change', async e => {
+    const files = [...e.target.files];
+    e.target.value = '';
+    if (!files.length) return;
+    document.getElementById('batch-progress').textContent = `Reading ${files.length} file${files.length > 1 ? 's' : ''}…`;
+    await handleBatchFiles(files);
+    document.getElementById('batch-progress').textContent = `${batchItems.length} photo${batchItems.length > 1 ? 's' : ''} loaded — click → to assign`;
+    updateBatchSaveBtn();
+  });
+
+  async function openBatchPanel() {
+    document.getElementById('batch-panel').classList.add('open');
+    if (!batchMapInst) {
+      batchMapInst = new mapboxgl.Map({
+        container: 'batch-map',
+        style: 'mapbox://styles/mapbox/outdoors-v12',
+        center: [-89.73, 43.43],
+        zoom: 13
+      });
+    }
+    if (!exifrLib) {
+      try {
+        const mod = await import('https://cdn.jsdelivr.net/npm/exifr/dist/lite.esm.js');
+        exifrLib = mod.default || mod;
+      } catch (e) {
+        console.warn('exifr load failed', e);
+      }
+    }
+  }
+
+  function closeBatchPanel() {
+    document.getElementById('batch-panel').classList.remove('open');
+  }
+
+  async function handleBatchFiles(files) {
+    for (const file of files) {
+      let exifLat = null, exifLng = null, exifDate = null;
+      if (exifrLib) {
+        try {
+          const data = await exifrLib.parse(file, ['GPSLatitude', 'GPSLongitude', 'DateTimeOriginal']);
+          if (data && data.latitude != null) { exifLat = data.latitude; exifLng = data.longitude; }
+          if (data && data.DateTimeOriginal) exifDate = data.DateTimeOriginal;
+        } catch {}
+      }
+      const objUrl = URL.createObjectURL(file);
+      const item = {
+        file, url: objUrl, exifLat, exifLng, exifDate,
+        marker: null, assignedFeatureId: null,
+        assignedFeatureName: null, assignedFeatureSource: null,
+        status: 'pending'
+      };
+      batchItems.push(item);
+      if (exifLat != null && batchMapInst) {
+        const el = document.createElement('div');
+        el.className = 'batch-marker-el';
+        el.innerHTML = `<img src="${objUrl}" alt="" />`;
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([exifLng, exifLat]).addTo(batchMapInst);
+        el.addEventListener('click', e => { e.stopPropagation(); showBatchAssign(item); });
+        item.marker = marker;
+      }
+    }
+    // Fit map to GPS points if any new ones
+    const pts = batchItems.filter(i => i.exifLat != null);
+    if (pts.length && batchMapInst) {
+      if (pts.length === 1) {
+        batchMapInst.flyTo({ center: [pts[0].exifLng, pts[0].exifLat], zoom: 15 });
+      } else {
+        const lngs = pts.map(p => p.exifLng), lats = pts.map(p => p.exifLat);
+        batchMapInst.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 60 });
+      }
+    }
+    renderBatchList();
+  }
+
+  function renderBatchList() {
+    const list = document.getElementById('batch-list');
+    list.innerHTML = '';
+    if (!batchItems.length) {
+      list.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(255,255,255,0.25);font-size:11px">No photos added yet</div>';
+      return;
+    }
+    batchItems.forEach((item, i) => {
+      const div = document.createElement('div');
+      div.className = 'batch-item' + (item.assignedFeatureId ? ' assigned' : '') + (item.status === 'uploaded' ? ' uploaded' : '');
+      const gpsText = item.exifLat != null
+        ? `${item.exifLat.toFixed(5)}, ${item.exifLng.toFixed(5)}`
+        : 'No GPS data';
+      const assignText = item.assignedFeatureName
+        ? `<div class="batch-item-assigned">→ ${item.assignedFeatureName}</div>`
+        : `<div class="batch-item-unassigned">Unassigned</div>`;
+      div.innerHTML = `
+        <img class="batch-thumb" src="${item.url}" alt="" />
+        <div class="batch-item-info">
+          <div class="batch-item-filename">${item.file.name}</div>
+          <div class="batch-item-gps ${item.exifLat != null ? 'has-gps' : ''}">${gpsText}</div>
+          ${assignText}
+        </div>
+        <div class="batch-item-btns">
+          <button class="batch-assign-btn" title="Assign to feature">&#x2794;</button>
+          <button class="batch-remove-btn" title="Remove">&#x2715;</button>
+        </div>`;
+      div.querySelector('.batch-assign-btn').addEventListener('click', e => {
+        e.stopPropagation(); showBatchAssign(item);
+      });
+      div.querySelector('.batch-remove-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        if (item.marker) item.marker.remove();
+        URL.revokeObjectURL(item.url);
+        batchItems.splice(i, 1);
+        renderBatchList();
+        updateBatchSaveBtn();
+      });
+      list.appendChild(div);
+    });
+  }
+
+  async function showBatchAssign(item) {
+    const modal = document.getElementById('batch-assign-modal');
+    const listEl = document.getElementById('batch-assign-list');
+    modal.classList.add('open');
+    listEl.innerHTML = '<div class="batch-assign-loading">Finding nearby features…</div>';
+
+    if (item.exifLat == null) {
+      listEl.innerHTML = '<div class="batch-assign-empty">No GPS data — drag the photo onto a feature or enter coordinates manually.</div>';
+      return;
+    }
+
+    const { data, error } = await db.rpc('nearby_features_for_image', {
+      p_lat: item.exifLat, p_lng: item.exifLng, p_radius_m: 300
+    });
+
+    listEl.innerHTML = '';
+    if (error || !data || !data.length) {
+      listEl.innerHTML = '<div class="batch-assign-empty">No features within 300 m of this photo\'s GPS location.</div>';
+      return;
+    }
+
+    data.forEach(feat => {
+      const row = document.createElement('div');
+      row.className = 'batch-assign-row';
+      const srcLabel = feat.feature_source.replace('climbing_', '');
+      row.innerHTML = `
+        <span class="batch-feat-name">${feat.feature_name || '(unnamed)'}</span>
+        <span class="batch-feat-dist">${feat.distance_m}m</span>
+        <span class="batch-feat-src">${srcLabel}</span>`;
+      row.addEventListener('click', () => {
+        item.assignedFeatureId = feat.feature_id;
+        item.assignedFeatureName = feat.feature_name;
+        item.assignedFeatureSource = feat.feature_source;
+        modal.classList.remove('open');
+        if (item.marker) item.marker.getElement().classList.add('assigned');
+        renderBatchList();
+        updateBatchSaveBtn();
+      });
+      listEl.appendChild(row);
+    });
+  }
+
+  function updateBatchSaveBtn() {
+    const hasAssigned = batchItems.some(i => i.assignedFeatureId && i.status === 'pending');
+    document.getElementById('batch-save-all-btn').disabled = !hasAssigned;
+  }
+
+  async function uploadAllAssigned() {
+    const assigned = batchItems.filter(i => i.assignedFeatureId && i.status === 'pending');
+    if (!assigned.length) return;
+    const progress = document.getElementById('batch-progress');
+    const btn = document.getElementById('batch-save-all-btn');
+    btn.disabled = true;
+
+    // Group by feature
+    const byFeature = {};
+    for (const item of assigned) {
+      const k = item.assignedFeatureSource + '\x00' + item.assignedFeatureId;
+      if (!byFeature[k]) byFeature[k] = { source: item.assignedFeatureSource, featureId: item.assignedFeatureId, items: [] };
+      byFeature[k].items.push(item);
+    }
+
+    let done = 0, failed = 0;
+    for (const group of Object.values(byFeature)) {
+      // Fetch existing photo_meta for this feature
+      const { data: gj } = await db.rpc('get_layer_geojson', { p_source: group.source });
+      const feat = gj?.features?.find(f =>
+        (f.properties._draw_id || f.id?.toString() || '') === group.featureId ||
+        f.properties.area_id === group.featureId ||
+        f.id?.toString() === group.featureId
+      );
+      let currentMeta = [];
+      if (feat) {
+        let pm = feat.properties.photo_meta;
+        if (typeof pm === 'string') { try { pm = JSON.parse(pm); } catch { pm = []; } }
+        currentMeta = Array.isArray(pm) ? pm.map(m => ({ url: m.url || '', caption: m.caption || '' })) : [];
+      }
+
+      for (const item of group.items) {
+        progress.textContent = `Uploading ${done + failed + 1} / ${assigned.length}…`;
+        try {
+          const { blob, ext } = await compressImage(item.file);
+          const path = `${group.source}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+          const { error } = await db.storage.from('photos').upload(path, blob, { contentType: blob.type, cacheControl: '31536000' });
+          if (error) throw error;
+          const url = db.storage.from('photos').getPublicUrl(path).data.publicUrl;
+          currentMeta.push({ url, caption: '' });
+          item.status = 'uploaded';
+          done++;
+        } catch (err) {
+          console.warn('batch upload failed:', item.file.name, err);
+          item.status = 'failed';
+          failed++;
+        }
+      }
+
+      if (currentMeta.length) {
+        const photoUrls = currentMeta.map(m => m.url);
+        await db.rpc('set_feature_photos_v2', {
+          p_source: group.source, p_key: group.featureId,
+          p_photos: photoUrls, p_photo_meta: currentMeta
+        });
+      }
+    }
+
+    refreshStorageMeter();
+    progress.textContent = `Done: ${done} uploaded${failed ? `, ${failed} failed` : ''}`;
+    renderBatchList();
+    updateBatchSaveBtn();
+  }
+
+  // ── Lightbox ────────────────────────────────────────────────────
+  let lbPhotos = [], lbIdx = 0;
+
+  function openLightbox(photos, idx) {
+    lbPhotos = photos; lbIdx = idx;
+    updateLb();
+    document.getElementById('lb-overlay').classList.add('open');
+  }
+
+  function closeLightbox() {
+    document.getElementById('lb-overlay').classList.remove('open');
+    document.getElementById('lb-img').src = '';
+  }
+
+  function updateLb() {
+    const p = lbPhotos[lbIdx] || {};
+    const url = typeof p === 'string' ? p : (p.url || '');
+    const caption = typeof p === 'object' ? (p.caption || '') : '';
+    document.getElementById('lb-img').src = url;
+    const cap = document.getElementById('lb-caption');
+    cap.textContent = caption;
+    cap.style.display = caption ? '' : 'none';
+    const ctr = document.getElementById('lb-counter');
+    ctr.textContent = lbPhotos.length > 1 ? `${lbIdx + 1} / ${lbPhotos.length}` : '';
+    document.getElementById('lb-prev').style.display = lbPhotos.length > 1 ? '' : 'none';
+    document.getElementById('lb-next').style.display = lbPhotos.length > 1 ? '' : 'none';
+  }
+
+  document.getElementById('lb-close').addEventListener('click', closeLightbox);
+  document.getElementById('lb-prev').addEventListener('click', () => {
+    lbIdx = (lbIdx - 1 + lbPhotos.length) % lbPhotos.length; updateLb();
+  });
+  document.getElementById('lb-next').addEventListener('click', () => {
+    lbIdx = (lbIdx + 1) % lbPhotos.length; updateLb();
+  });
+  document.getElementById('lb-overlay').addEventListener('click', e => {
+    if (e.target.id === 'lb-overlay') closeLightbox();
+  });
+  document.addEventListener('keydown', e => {
+    const ov = document.getElementById('lb-overlay');
+    if (!ov.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft' && lbPhotos.length > 1) { lbIdx = (lbIdx - 1 + lbPhotos.length) % lbPhotos.length; updateLb(); }
+    if (e.key === 'ArrowRight' && lbPhotos.length > 1) { lbIdx = (lbIdx + 1) % lbPhotos.length; updateLb(); }
+  });
+
 </script>
 </body>
 </html>

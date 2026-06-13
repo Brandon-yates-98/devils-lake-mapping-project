@@ -524,11 +524,109 @@
     .popup-directions-btn i { font-size: 11px; }
     .popup-photos {
       display: flex; gap: 5px; overflow-x: auto;
-      margin: 2px 0 6px; padding-bottom: 3px;
+      margin: 2px 0 2px; padding-bottom: 3px;
       -webkit-overflow-scrolling: touch;
     }
-    .popup-photos a { flex: 0 0 auto; }
-    .popup-photos img { height: 76px; border-radius: 6px; display: block; }
+    .popup-photos img {
+      height: 76px; border-radius: 6px; display: block; flex: 0 0 auto;
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .popup-photos img:hover { opacity: 0.85; }
+    .popup-photo-count {
+      font-size: 9.5px; color: #999; margin-bottom: 6px; margin-top: 1px;
+    }
+
+    /* ─── Submit photo button (in popup) ─── */
+    .popup-submit-btn {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      width: 100%; margin-top: 7px; padding: 6px;
+      background: none; border: 1px dashed #d0d0d0; border-radius: 6px;
+      color: #aaa; font-family: 'Inter', sans-serif; font-size: 10.5px;
+      font-weight: 600; cursor: pointer; transition: border-color 0.15s, color 0.15s;
+    }
+    .popup-submit-btn:hover { border-color: #9bc23c; color: #6c8c2e; }
+
+    /* ─── Photo submission modal ─── */
+    #submit-modal {
+      display: none; position: fixed; inset: 0; z-index: 9998;
+      background: rgba(0,0,0,0.6); align-items: center; justify-content: center;
+    }
+    #submit-modal.open { display: flex; }
+    #submit-box {
+      background: #fff; border-radius: 10px; width: 320px; max-width: 94vw;
+      overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+      font-family: 'Inter', sans-serif;
+    }
+    #submit-box-header {
+      background: linear-gradient(135deg,#162914,#1e3318);
+      padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+    }
+    #submit-box-header span { flex: 1; font-size: 13px; font-weight: 800; color: #fff; }
+    #submit-modal-close {
+      background: none; border: none; color: rgba(255,255,255,0.6);
+      font-size: 18px; cursor: pointer; padding: 2px 6px;
+    }
+    #submit-modal-close:hover { color: #fff; }
+    #submit-box-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    #submit-feature-name { font-size: 11px; color: #666; font-weight: 600; }
+    #submit-preview-wrap {
+      width: 100%; height: 160px; border-radius: 7px; overflow: hidden;
+      background: #f0f0f0; display: flex; align-items: center; justify-content: center;
+      border: 2px dashed #ddd; cursor: pointer; position: relative;
+    }
+    #submit-preview-wrap.has-image { border: none; }
+    #submit-preview-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+    #submit-preview-img.show { display: block; }
+    #submit-choose-hint { font-size: 12px; color: #aaa; text-align: center; }
+    #submit-file-input { display: none; }
+    #submit-caption-input, #submit-email-input {
+      width: 100%; box-sizing: border-box; border: 1px solid #e0e0e0;
+      border-radius: 6px; padding: 7px 10px; font-size: 12px;
+      font-family: inherit; outline: none; color: #333;
+    }
+    #submit-caption-input:focus, #submit-email-input:focus { border-color: #9bc23c; }
+    #submit-send-btn {
+      width: 100%; padding: 9px; background: #9bc23c; border: none;
+      border-radius: 6px; color: #14250f; font-size: 12px; font-weight: 800;
+      cursor: pointer; font-family: inherit;
+    }
+    #submit-send-btn:hover { background: #acd24c; }
+    #submit-send-btn:disabled { opacity: 0.5; cursor: default; }
+    #submit-status { font-size: 10.5px; color: #888; text-align: center; min-height: 14px; }
+    #submit-status.ok { color: #27ae60; font-weight: 700; }
+    #submit-status.err { color: #e74c3c; }
+
+    /* ─── Lightbox ─── */
+    #lb-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.92); flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+    }
+    #lb-overlay.open { display: flex; }
+    #lb-img {
+      max-width: 92vw; max-height: 76vh;
+      border-radius: 8px; object-fit: contain; display: block;
+    }
+    #lb-caption {
+      color: rgba(255,255,255,0.82); font-size: 13px;
+      text-align: center; max-width: 80vw; line-height: 1.4;
+    }
+    #lb-counter { color: rgba(255,255,255,0.38); font-size: 11px; }
+    #lb-close {
+      position: absolute; top: 16px; right: 20px;
+      background: none; border: none; color: rgba(255,255,255,0.7);
+      font-size: 26px; cursor: pointer; line-height: 1; padding: 4px 8px;
+    }
+    #lb-close:hover { color: #fff; }
+    #lb-prev, #lb-next {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.12); border: none; color: #fff;
+      font-size: 36px; cursor: pointer; padding: 8px 14px; border-radius: 6px;
+      line-height: 1; transition: background 0.15s;
+    }
+    #lb-prev { left: 12px; }
+    #lb-next { right: 12px; }
+    #lb-prev:hover, #lb-next:hover { background: rgba(255,255,255,0.25); }
 
     /* ─── Area ↔ climb popup navigation ─── */
     .pcl-head {
@@ -707,6 +805,38 @@
   </style>
 </head>
 <body>
+
+<!-- ── Lightbox (shared, outside any popup DOM) ── -->
+<div id="lb-overlay" role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <button id="lb-close" aria-label="Close">&#x2715;</button>
+  <button id="lb-prev" aria-label="Previous photo">&#8249;</button>
+  <img id="lb-img" alt="" />
+  <div id="lb-caption"></div>
+  <div id="lb-counter"></div>
+  <button id="lb-next" aria-label="Next photo">&#8250;</button>
+</div>
+
+<!-- ── Photo submission modal ── -->
+<div id="submit-modal" role="dialog" aria-modal="true" aria-label="Submit a photo">
+  <div id="submit-box">
+    <div id="submit-box-header">
+      <span>&#128247; Submit a Photo</span>
+      <button id="submit-modal-close" aria-label="Close">&#x2715;</button>
+    </div>
+    <div id="submit-box-body">
+      <div id="submit-feature-name"></div>
+      <div id="submit-preview-wrap">
+        <img id="submit-preview-img" alt="" />
+        <div id="submit-choose-hint">Tap to choose a photo</div>
+        <input id="submit-file-input" type="file" accept="image/*" />
+      </div>
+      <input id="submit-caption-input" type="text" placeholder="Caption (optional)" />
+      <input id="submit-email-input" type="email" placeholder="Your email (optional, for attribution)" />
+      <button id="submit-send-btn" disabled>Submit</button>
+      <div id="submit-status"></div>
+    </div>
+  </div>
+</div>
 
 <!-- ══ HEADER ══════════════════════════════════════════════════ -->
 <header id="site-header">
@@ -1862,13 +1992,22 @@
       .map(([k, v]) => `<div class="popup-row"><span class="popup-label">${fmtKey(k)}</span><span class="popup-value">${fmtVal(k, v)}</span></div>`)
       .join('');
 
-    // Feature photos (editor uploads) — scrollable strip, tap to open full size
+    // Feature photos — gallery strip; click opens lightbox
     let photos = props.photos;
     if (typeof photos === 'string') { try { photos = JSON.parse(photos); } catch { photos = []; } }
     if (!Array.isArray(photos)) photos = [];
-    const photosHTML = photos.length
-      ? `<div class="popup-photos">${photos.slice(0, 12).map(u =>
-          `<a href="${escapeHtml(u)}" target="_blank" rel="noopener"><img src="${escapeHtml(u)}" loading="lazy" alt="" /></a>`).join('')}</div>`
+    let photoMeta = props.photo_meta;
+    if (typeof photoMeta === 'string') { try { photoMeta = JSON.parse(photoMeta); } catch { photoMeta = []; } }
+    if (!Array.isArray(photoMeta)) photoMeta = [];
+    const lbData = photoMeta.length
+      ? photoMeta.map(m => ({ url: m.url || '', caption: m.caption || '' }))
+      : photos.map(u => ({ url: u, caption: '' }));
+    const photosHTML = lbData.length
+      ? `<div class="popup-photos" data-photos="${escapeHtml(JSON.stringify(lbData))}">${
+          lbData.slice(0, 12).map((m, i) =>
+            `<img class="popup-photo-thumb" src="${escapeHtml(m.url)}" data-idx="${i}" loading="lazy" alt="" />`
+          ).join('')
+        }</div><div class="popup-photo-count">${lbData.length} photo${lbData.length === 1 ? '' : 's'}</div>`
       : '';
     // OpenBeta area association: areas get a "show climbs" button + an
     // in-popup climb browser; climbs get an area chip and prev/next stepping
@@ -1972,6 +2111,12 @@
             </div>`
           : ''}
         <button class="popup-directions-btn"><i class="fa-solid fa-route"></i> Directions</button>
+        <button class="popup-submit-btn"
+          data-source="${escapeHtml(sourceKey)}"
+          data-key="${escapeHtml(props._draw_id || props.area_id || '')}"
+          data-name="${escapeHtml(title || '')}">
+          &#128247; Submit a photo
+        </button>
       </div>`;
   }
 
@@ -2859,6 +3004,19 @@
           flyToClimb(fsrc, fid);
         });
       });
+      // Submit photo button
+      const submitBtn = el.querySelector('.popup-submit-btn');
+      if (submitBtn) submitBtn.addEventListener('click', () => {
+        openSubmitModal(submitBtn.dataset.source, submitBtn.dataset.key, submitBtn.dataset.name);
+      });
+      // Lightbox: click photo thumbs
+      el.querySelectorAll('.popup-photo-thumb').forEach(img => {
+        img.addEventListener('click', () => {
+          const container = img.closest('.popup-photos');
+          const data = container ? JSON.parse(container.dataset.photos || '[]') : [];
+          openLightbox(data, +img.dataset.idx);
+        });
+      });
       // Climb-list tools: sort (A–Z / grade) + grade pills. The pills SET
       // the sidebar's slider ranges — one shared filter state — and the
       // popup re-renders from it.
@@ -3417,6 +3575,157 @@
       status.textContent = 'Could not finish saving — check your connection and try again.';
     }
     btn.disabled = false;
+  });
+
+  // ── Public photo submission ────────────────────────────────────
+  let submitSource = '', submitKey = '', submitFile = null;
+
+  function openSubmitModal(source, key, name) {
+    submitSource = source; submitKey = key; submitFile = null;
+    document.getElementById('submit-feature-name').textContent = name ? `For: ${name}` : '';
+    document.getElementById('submit-preview-img').src = '';
+    document.getElementById('submit-preview-img').classList.remove('show');
+    document.getElementById('submit-choose-hint').style.display = '';
+    document.getElementById('submit-preview-wrap').classList.remove('has-image');
+    document.getElementById('submit-caption-input').value = '';
+    document.getElementById('submit-email-input').value = '';
+    document.getElementById('submit-send-btn').disabled = true;
+    document.getElementById('submit-status').textContent = '';
+    document.getElementById('submit-status').className = '';
+    document.getElementById('submit-modal').classList.add('open');
+  }
+
+  document.getElementById('submit-modal-close').addEventListener('click', () => {
+    document.getElementById('submit-modal').classList.remove('open');
+  });
+  document.getElementById('submit-modal').addEventListener('click', e => {
+    if (e.target.id === 'submit-modal') document.getElementById('submit-modal').classList.remove('open');
+  });
+  document.getElementById('submit-preview-wrap').addEventListener('click', () => {
+    document.getElementById('submit-file-input').click();
+  });
+  document.getElementById('submit-file-input').addEventListener('change', e => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    submitFile = f;
+    const objUrl = URL.createObjectURL(f);
+    const img = document.getElementById('submit-preview-img');
+    img.src = objUrl;
+    img.classList.add('show');
+    document.getElementById('submit-choose-hint').style.display = 'none';
+    document.getElementById('submit-preview-wrap').classList.add('has-image');
+    document.getElementById('submit-send-btn').disabled = false;
+  });
+
+  document.getElementById('submit-send-btn').addEventListener('click', async () => {
+    if (!submitFile) return;
+    const btn = document.getElementById('submit-send-btn');
+    const status = document.getElementById('submit-status');
+    btn.disabled = true;
+    status.textContent = 'Uploading…';
+    status.className = '';
+    try {
+      // Compress
+      const { blob, ext } = await compressForSubmit(submitFile);
+      const path = `pending/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+      const { error: upErr } = await db.storage.from('pending-photos')
+        .upload(path, blob, { contentType: blob.type });
+      if (upErr) throw upErr;
+      const { data: urlData } = db.storage.from('pending-photos').getPublicUrl(path);
+      // Extract EXIF if exifr is available (loaded lazily from CDN)
+      let exifLat = null, exifLng = null, exifRaw = null;
+      try {
+        const mod = await import('https://cdn.jsdelivr.net/npm/exifr/dist/lite.esm.js');
+        const ex = mod.default || mod;
+        const d = await ex.parse(submitFile, ['GPSLatitude','GPSLongitude','DateTimeOriginal']);
+        if (d && d.latitude != null) { exifLat = d.latitude; exifLng = d.longitude; }
+        if (d) exifRaw = d;
+      } catch {}
+      const caption = document.getElementById('submit-caption-input').value.trim();
+      const email = document.getElementById('submit-email-input').value.trim();
+      const { error: rpcErr } = await db.rpc('submit_pending_image', {
+        p_source: submitSource,
+        p_feature_key: submitKey,
+        p_url: urlData.publicUrl,
+        p_caption: caption,
+        p_email: email,
+        p_lat: exifLat,
+        p_lng: exifLng,
+        p_exif_raw: exifRaw ? exifRaw : null
+      });
+      if (rpcErr) throw rpcErr;
+      status.textContent = 'Thanks! Your photo will appear after review.';
+      status.className = 'ok';
+      submitFile = null;
+    } catch (err) {
+      console.error('submit photo error:', err);
+      status.textContent = 'Upload failed — please try again.';
+      status.className = 'err';
+      btn.disabled = false;
+    }
+  });
+
+  async function compressForSubmit(file, maxDim = 1600) {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+    const w = Math.max(1, Math.round(bmp.width * scale));
+    const h = Math.max(1, Math.round(bmp.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
+    bmp.close();
+    let blob = await new Promise(res => canvas.toBlob(res, 'image/webp', 0.82));
+    if (!blob || blob.type !== 'image/webp')
+      blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.85));
+    if (!blob) throw new Error('encode failed');
+    return { blob, ext: blob.type === 'image/webp' ? 'webp' : 'jpg' };
+  }
+
+  // ── Lightbox ────────────────────────────────────────────────────
+  let lbPhotos = [], lbIdx = 0;
+
+  function openLightbox(photos, idx) {
+    lbPhotos = photos; lbIdx = idx;
+    updateLb();
+    document.getElementById('lb-overlay').classList.add('open');
+  }
+
+  function closeLightbox() {
+    document.getElementById('lb-overlay').classList.remove('open');
+    document.getElementById('lb-img').src = '';
+  }
+
+  function updateLb() {
+    const p = lbPhotos[lbIdx] || {};
+    const url = typeof p === 'string' ? p : (p.url || '');
+    const caption = typeof p === 'object' ? (p.caption || '') : '';
+    document.getElementById('lb-img').src = url;
+    const cap = document.getElementById('lb-caption');
+    cap.textContent = caption;
+    cap.style.display = caption ? '' : 'none';
+    const ctr = document.getElementById('lb-counter');
+    ctr.textContent = lbPhotos.length > 1 ? `${lbIdx + 1} / ${lbPhotos.length}` : '';
+    document.getElementById('lb-prev').style.display = lbPhotos.length > 1 ? '' : 'none';
+    document.getElementById('lb-next').style.display = lbPhotos.length > 1 ? '' : 'none';
+  }
+
+  document.getElementById('lb-close').addEventListener('click', closeLightbox);
+  document.getElementById('lb-prev').addEventListener('click', () => {
+    lbIdx = (lbIdx - 1 + lbPhotos.length) % lbPhotos.length; updateLb();
+  });
+  document.getElementById('lb-next').addEventListener('click', () => {
+    lbIdx = (lbIdx + 1) % lbPhotos.length; updateLb();
+  });
+  document.getElementById('lb-overlay').addEventListener('click', e => {
+    if (e.target.id === 'lb-overlay') closeLightbox();
+  });
+  document.addEventListener('keydown', e => {
+    const ov = document.getElementById('lb-overlay');
+    if (!ov.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft' && lbPhotos.length > 1) { lbIdx = (lbIdx - 1 + lbPhotos.length) % lbPhotos.length; updateLb(); }
+    if (e.key === 'ArrowRight' && lbPhotos.length > 1) { lbIdx = (lbIdx + 1) % lbPhotos.length; updateLb(); }
   });
 
 </script>
