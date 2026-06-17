@@ -354,6 +354,27 @@
     .tab-pane::-webkit-scrollbar-thumb { background: rgba(155,194,60,0.3); border-radius: 2px; }
     .tab-pane.active { display: flex; }
 
+    /* ── Collapsible side panels ── */
+    #left-panel, #right-panel { transition: width 0.22s ease, opacity 0.18s ease; }
+    #left-panel.collapsed, #right-panel.collapsed {
+      width: 0 !important; opacity: 0; pointer-events: none;
+      overflow: hidden; border-color: transparent;
+    }
+    .panel-toggle {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 17px; height: 48px; padding: 0; z-index: 20;
+      background: #0d1b0d; border: 1px solid rgba(155,194,60,0.25);
+      color: #9bc23c; cursor: pointer; font-size: 11px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      transition: left 0.22s ease, right 0.22s ease, background 0.15s;
+    }
+    .panel-toggle:hover { background: rgba(155,194,60,0.18); }
+    #left-toggle  { left: 200px; border-left: none; border-radius: 0 6px 6px 0; }
+    #right-toggle { right: 290px; border-right: none; border-radius: 6px 0 0 6px; }
+    #left-toggle.collapsed  { left: 0; }
+    #right-toggle.collapsed { right: 0; }
+
     /* ── Shared right-panel form elements ── */
     .rp-section { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
     .rp-label { font-size: 8.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(155,194,60,0.6); margin-bottom: 5px; display: block; }
@@ -714,6 +735,101 @@
     }
     .batch-marker-el.assigned { border-color: #9bc23c; }
     .batch-marker-el img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* ── Basemap Switcher ──────────────────────────────── */
+    #basemap-switcher {
+      position: absolute; bottom: 30px; right: 10px; z-index: 100;
+      display: flex; flex-direction: row; gap: 2px;
+      font-family: 'Inter', sans-serif;
+    }
+    .bm-btn {
+      padding: 5px 9px; font-size: 10px; font-weight: 700;
+      background: rgba(13,26,13,0.88); border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 4px; color: rgba(255,255,255,0.6);
+      cursor: pointer; text-align: left; white-space: nowrap;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      transition: background 0.1s, color 0.1s;
+    }
+    .bm-btn:hover { background: rgba(30,50,30,0.95); color: #fff; }
+    .bm-btn.active {
+      background: rgba(155,194,60,0.2); border-color: rgba(155,194,60,0.6);
+      color: #9bc23c;
+    }
+
+    /* ── Site-number label toggle (mounted as a Mapbox top-left control) ── */
+    #site-label-toggle {
+      display: none; align-items: center; gap: 5px;
+      padding: 6px 10px; font-family: 'Inter', sans-serif;
+      font-size: 11px; font-weight: 700; white-space: nowrap;
+      background: rgba(13,26,13,0.88); border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 5px; color: rgba(255,255,255,0.6); cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      transition: background 0.1s, color 0.1s, border-color 0.1s;
+    }
+    #site-label-toggle.available { display: flex; }
+    #site-label-toggle:hover { background: rgba(30,50,30,0.95); color: #fff; }
+    #site-label-toggle.active {
+      background: rgba(155,194,60,0.2); border-color: rgba(155,194,60,0.6); color: #9bc23c;
+    }
+
+    /* ── Image Overlay Panel ───────────────────────────── */
+    #overlay-panel {
+      display: none; position: absolute; bottom: 90px; right: 300px; z-index: 200;
+      background: rgba(13,26,13,0.96); border: 1px solid rgba(243,156,18,0.5);
+      border-radius: 8px; width: 230px; box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.85);
+    }
+    #overlay-panel.active { display: block; }
+    #overlay-panel-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px 7px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    #overlay-panel-filename {
+      flex: 1; font-weight: 700; font-size: 11px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    #overlay-remove-btn {
+      background: none; border: none; color: rgba(255,255,255,0.45);
+      cursor: pointer; font-size: 13px; padding: 0 2px; line-height: 1;
+    }
+    #overlay-remove-btn:hover { color: #e74c3c; }
+    #overlay-panel-body { padding: 8px 10px; display: flex; flex-direction: column; gap: 7px; }
+    .overlay-ctrl-row {
+      display: flex; align-items: center; gap: 7px; color: rgba(255,255,255,0.7);
+    }
+    .overlay-ctrl-row > span:first-child { width: 48px; flex-shrink: 0; }
+    #overlay-opacity-slider { flex: 1; accent-color: #f39c12; }
+    #overlay-opacity-label { width: 30px; text-align: right; }
+    .overlay-btn {
+      flex: 1; padding: 4px 6px; background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;
+      color: rgba(255,255,255,0.7); font-size: 10px; cursor: pointer;
+    }
+    .overlay-btn:hover { background: rgba(255,255,255,0.15); }
+    #overlay-lock-btn.locked { border-color: rgba(243,156,18,0.6); color: #f39c12; }
+    #overlay-stats {
+      display: flex; gap: 8px; font-size: 9.5px; color: rgba(255,255,255,0.4);
+      padding: 2px 0;
+    }
+    /* Overlay drag handles */
+    .ov-handle {
+      cursor: grab; box-shadow: 0 1px 6px rgba(0,0,0,0.8);
+      border: 2px solid rgba(255,255,255,0.9);
+    }
+    .ov-handle:active { cursor: grabbing; }
+    .ov-handle.locked { cursor: default !important; pointer-events: none; opacity: 0.4; }
+    .ov-h-center {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; cursor: move;
+    }
+    .ov-h-corner {
+      width: 12px; height: 12px; border-radius: 2px; background: rgba(255,255,255,0.15);
+    }
+    .ov-h-rot {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #f39c12; display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: #000; font-weight: 900; line-height: 1;
+    }
   </style>
 </head>
 <body>
@@ -782,6 +898,10 @@
     <div class="panel-section">
       <button class="btn-outline" id="batch-upload-btn" style="width:100%"><i class="fa-solid fa-images"></i> Batch Upload</button>
     </div>
+    <div class="panel-section">
+      <button class="btn-outline" id="overlay-open-btn" style="width:100%"><i class="fa-regular fa-image"></i> Image Overlay</button>
+      <input type="file" id="overlay-file-input" accept="image/*" style="display:none">
+    </div>
     <div class="panel-section" id="storage-meter">
       <div class="panel-section-title">Storage</div>
       <div class="storage-bar"><div id="storage-bar-fill"></div></div>
@@ -795,6 +915,21 @@
 
   <!-- ── Map ── -->
   <div id="map"></div>
+
+  <!-- ── Sidebar collapse toggles ── -->
+  <button id="left-toggle" class="panel-toggle" title="Collapse layers panel" aria-expanded="true"><i class="fa-solid fa-chevron-left"></i></button>
+  <button id="right-toggle" class="panel-toggle" title="Collapse tools panel" aria-expanded="true"><i class="fa-solid fa-chevron-right"></i></button>
+
+  <!-- ── Site-number label toggle (shown when a layer carries a Site # field) ── -->
+  <button id="site-label-toggle" title="Show site numbers on points" aria-pressed="false"><i class="fa-solid fa-hashtag"></i> Site #</button>
+
+  <!-- ── Basemap switcher ── -->
+  <div id="basemap-switcher">
+    <button class="bm-btn active" data-bm="outdoors">Outdoors</button>
+    <button class="bm-btn" data-bm="satellite-streets">Satellite</button>
+    <button class="bm-btn" data-bm="streets">Streets</button>
+    <button class="bm-btn" data-bm="dark">Dark</button>
+  </div>
 
   <!-- ── Right panel ── -->
   <aside id="right-panel">
@@ -898,6 +1033,15 @@
         </div>
       </div>
 
+      <div class="rp-section">
+        <label class="rp-label">Reposition</label>
+        <button class="draw-mode-btn" id="edit-layer-btn" style="width:100%"><i class="fa-solid fa-up-down-left-right"></i>Edit points — drag to move</button>
+        <div style="font-size:11px;color:rgba(255,255,255,0.25);font-style:italic;margin-top:6px">
+          Loads every feature in the target layer as a draggable handle. Drag to move (auto-saves);
+          click one to edit its fields. Click the button again or press Esc to finish.
+        </div>
+      </div>
+
       <div class="rp-section" id="feature-attr-section">
         <label class="rp-label">Selected Feature</label>
         <div id="feature-attr-panel" class="show">
@@ -930,6 +1074,33 @@
       </div>
     </div>
   </aside>
+
+  <!-- ══ IMAGE OVERLAY PANEL ═════════════════════════════════════ -->
+  <div id="overlay-panel">
+    <div id="overlay-panel-header">
+      <i class="fa-regular fa-image" style="color:#f39c12"></i>
+      <span id="overlay-panel-filename">Image Overlay</span>
+      <button id="overlay-remove-btn" title="Remove overlay">✕</button>
+    </div>
+    <div id="overlay-panel-body">
+      <label class="overlay-ctrl-row">
+        <span>Opacity</span>
+        <input type="range" id="overlay-opacity-slider" min="0" max="100" value="65">
+        <span id="overlay-opacity-label">65%</span>
+      </label>
+      <div class="overlay-ctrl-row">
+        <button id="overlay-fit-btn" class="overlay-btn">Reset to view</button>
+        <button id="overlay-lock-btn" class="overlay-btn">🔓 Lock</button>
+      </div>
+      <div id="overlay-stats">
+        <span id="overlay-stat-rot">↻ 0°</span>
+        <span id="overlay-stat-size"></span>
+      </div>
+      <div class="overlay-ctrl-row">
+        <button id="overlay-export-btn" class="overlay-btn" style="width:100%" title="Export corner GPS coords for the OCR digitizer script">Export for OCR ↓</button>
+      </div>
+    </div>
+  </div>
 
 </main>
 
@@ -1003,10 +1174,16 @@
   let currentExpLayers = [];
   let allTemplates = [];
   let selectedDrawFeatureId = null;
+  let editCtx = null; // { source, drawId } — single feature loaded into draw for editing
+  let bulkEditSource = null; // layer slug whose features are all loaded into draw for repositioning
   const sourceToMapboxLayers = {};
   const layerToSource = {};
   const layerCache = {};
   const layerMeta = {};
+  // Site-number labels: dedicated symbol layers (one per point layer carrying a
+  // `ref` field) that draw the bare site # for rapid editing. Toggled globally.
+  let siteLabelsOn = false;
+  const siteLabelLayerIds = [];  // { id, source } for every *-sitelabel layer
   let interactionsRegistered = false;
   let trailHoverId = null;
   let editingExpId = null; // null = creating, uuid = editing
@@ -1128,6 +1305,52 @@
   map.addControl(new mapboxgl.NavigationControl(), 'top-right');
   map.addControl(new mapboxgl.ScaleControl({ unit: 'imperial' }), 'bottom-right');
 
+  // ── Collapsible side panels ──
+  [['left-panel', 'left-toggle', 'left'], ['right-panel', 'right-toggle', 'right']].forEach(([panelId, toggleId, side]) => {
+    const panel = document.getElementById(panelId);
+    const toggle = document.getElementById(toggleId);
+    if (!panel || !toggle) return;
+    toggle.addEventListener('click', () => {
+      const collapsed = panel.classList.toggle('collapsed');
+      toggle.classList.toggle('collapsed', collapsed);
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+      toggle.title = (collapsed ? 'Expand ' : 'Collapse ') + (side === 'left' ? 'layers panel' : 'tools panel');
+      // chevron points outward to collapse, inward to expand
+      const pointRight = (side === 'left') === collapsed;
+      toggle.querySelector('i').className = 'fa-solid fa-chevron-' + (pointRight ? 'right' : 'left');
+      // let the width transition finish, then re-fit the map canvas
+      setTimeout(() => { try { map.resize(); } catch (e) {} }, 240);
+    });
+  });
+
+  // ── Site-number label toggle ──
+  const siteLabelBtn = document.getElementById('site-label-toggle');
+  if (siteLabelBtn) {
+    siteLabelBtn.addEventListener('click', () => {
+      siteLabelsOn = !siteLabelsOn;
+      siteLabelBtn.classList.toggle('active', siteLabelsOn);
+      siteLabelBtn.setAttribute('aria-pressed', String(siteLabelsOn));
+      ensureDrawLabelLayers();  // cover any features already loaded in edit mode
+      applySiteLabels();
+    });
+    // Mount inside the map viewport (top-left) so it clears both side panels
+    // and reflows automatically when a panel is collapsed.
+    map.addControl({
+      onAdd() {
+        const c = document.createElement('div');
+        c.className = 'mapboxgl-ctrl';
+        c.appendChild(siteLabelBtn);
+        return c;
+      },
+      onRemove() {},
+    }, 'top-left');
+  }
+  // Show the toggle only when the active experience has a layer with a Site # field.
+  function refreshSiteLabelToggle() {
+    if (!siteLabelBtn) return;
+    siteLabelBtn.classList.toggle('available', siteLabelLayerIds.length > 0);
+  }
+
   // Custom marker glyphs + fallback circle (matches the public map's renderer)
   function drawMapGlyph(id) {
     const S = 64;
@@ -1187,6 +1410,33 @@
       ctx.moveTo(22, 28); ctx.lineTo(38, 26);
       ctx.moveTo(22, 40); ctx.lineTo(44, 38);
       ctx.stroke();
+    } else if (name === 'dl-tent') {
+      // A-frame tent: solid triangle with a triangular door cut out
+      ctx.beginPath();
+      ctx.moveTo(32, 16); ctx.lineTo(52, 50); ctx.lineTo(12, 50); ctx.closePath();
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.moveTo(32, 30); ctx.lineTo(40, 50); ctx.lineTo(24, 50); ctx.closePath();
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    } else if (name === 'dl-rv') {
+      // camper van: tall box + lower cab to the right, windows + two wheels
+      ctx.beginPath();
+      ctx.moveTo(12, 22); ctx.lineTo(38, 22); ctx.lineTo(38, 32);
+      ctx.lineTo(52, 32); ctx.lineTo(52, 44); ctx.lineTo(12, 44);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillRect(41, 34, 9, 7);   // cab windshield
+      ctx.fillRect(16, 26, 9, 7);   // side window
+      ctx.beginPath();               // wheel wells
+      ctx.arc(22, 44, 6, 0, Math.PI * 2); ctx.arc(44, 44, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.beginPath();               // tires
+      ctx.arc(22, 45, 3.4, 0, Math.PI * 2); ctx.arc(44, 45, 3.4, 0, Math.PI * 2);
+      ctx.fill();
     } else if (!tint) {
       ctx.beginPath();
       ctx.arc(S / 2, S / 2, S / 2 - 5, 0, Math.PI * 2);
@@ -1211,14 +1461,86 @@
     if (!map.hasImage(e.id)) map.addImage(e.id, drawMapGlyph(e.id), { pixelRatio: 4 });
   });
 
+  // Draw handle styles — based on the mapbox-gl-draw default theme but with
+  // noticeably larger point/vertex radii so features are easy to grab and drag.
+  // (The default ~3-5px handles are fiddly to hit when repositioning a point.)
+  const DRAW_STYLES = [
+    { id: 'gl-draw-polygon-fill-inactive', type: 'fill',
+      filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+      paint: { 'fill-color': '#3bb2d0', 'fill-outline-color': '#3bb2d0', 'fill-opacity': 0.1 } },
+    { id: 'gl-draw-polygon-fill-active', type: 'fill',
+      filter: ['all', ['==', 'active', 'true'], ['==', '$type', 'Polygon']],
+      paint: { 'fill-color': '#fbb03b', 'fill-outline-color': '#fbb03b', 'fill-opacity': 0.1 } },
+    { id: 'gl-draw-polygon-midpoint', type: 'circle',
+      filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
+      paint: { 'circle-radius': 5, 'circle-color': '#fbb03b' } },
+    { id: 'gl-draw-polygon-stroke-inactive', type: 'line',
+      filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#3bb2d0', 'line-width': 2 } },
+    { id: 'gl-draw-polygon-stroke-active', type: 'line',
+      filter: ['all', ['==', 'active', 'true'], ['==', '$type', 'Polygon']],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#fbb03b', 'line-dasharray': [0.2, 2], 'line-width': 2 } },
+    { id: 'gl-draw-line-inactive', type: 'line',
+      filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#3bb2d0', 'line-width': 2 } },
+    { id: 'gl-draw-line-active', type: 'line',
+      filter: ['all', ['==', '$type', 'LineString'], ['==', 'active', 'true']],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#fbb03b', 'line-dasharray': [0.2, 2], 'line-width': 2 } },
+    // Vertices (line/polygon editing handles) — enlarged
+    { id: 'gl-draw-polygon-and-line-vertex-stroke-inactive', type: 'circle',
+      filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
+      paint: { 'circle-radius': 9, 'circle-color': '#fff' } },
+    { id: 'gl-draw-polygon-and-line-vertex-inactive', type: 'circle',
+      filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
+      paint: { 'circle-radius': 6, 'circle-color': '#fbb03b' } },
+    // Point features — enlarged grab targets
+    { id: 'gl-draw-point-point-stroke-inactive', type: 'circle',
+      filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['!=', 'mode', 'static']],
+      paint: { 'circle-radius': 7, 'circle-opacity': 1, 'circle-color': '#fff' } },
+    { id: 'gl-draw-point-inactive', type: 'circle',
+      filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['!=', 'mode', 'static']],
+      paint: { 'circle-radius': 5, 'circle-color': '#3bb2d0' } },
+    { id: 'gl-draw-point-stroke-active', type: 'circle',
+      filter: ['all', ['==', '$type', 'Point'], ['==', 'active', 'true'], ['!=', 'meta', 'midpoint']],
+      paint: { 'circle-radius': 10, 'circle-color': '#fff' } },
+    { id: 'gl-draw-point-active', type: 'circle',
+      filter: ['all', ['==', '$type', 'Point'], ['!=', 'meta', 'midpoint'], ['==', 'active', 'true']],
+      paint: { 'circle-radius': 7, 'circle-color': '#fbb03b' } },
+    { id: 'gl-draw-polygon-fill-static', type: 'fill',
+      filter: ['all', ['==', 'mode', 'static'], ['==', '$type', 'Polygon']],
+      paint: { 'fill-color': '#404040', 'fill-outline-color': '#404040', 'fill-opacity': 0.1 } },
+    { id: 'gl-draw-polygon-stroke-static', type: 'line',
+      filter: ['all', ['==', 'mode', 'static'], ['==', '$type', 'Polygon']],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#404040', 'line-width': 2 } },
+    { id: 'gl-draw-line-static', type: 'line',
+      filter: ['all', ['==', 'mode', 'static'], ['==', '$type', 'LineString']],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#404040', 'line-width': 2 } },
+    { id: 'gl-draw-point-static', type: 'circle',
+      filter: ['all', ['==', 'mode', 'static'], ['==', '$type', 'Point']],
+      paint: { 'circle-radius': 5, 'circle-color': '#404040' } },
+  ];
+
   const draw = new MapboxDraw({
     displayControlsDefault: false,
     userProperties: true,
+    clickBuffer: 8,    // forgiving grab radius for mouse (default 2px)
+    touchBuffer: 30,   // and for touch (default 25px)
+    styles: DRAW_STYLES,
   });
   map.addControl(draw);
 
   // ══ Map layer helpers ════════════════════════════════════════
   function clearMapLayers() {
+    // Site-number labels live outside sourceToMapboxLayers; drop them first so
+    // their source can be removed cleanly and the registry doesn't go stale.
+    siteLabelLayerIds.forEach(({ id }) => { if (map.getLayer(id)) map.removeLayer(id); });
+    siteLabelLayerIds.length = 0;
     Object.keys(sourceToMapboxLayers).forEach(key => {
       (sourceToMapboxLayers[key] || []).forEach(id => {
         if (map.getLayer(id)) map.removeLayer(id);
@@ -1229,6 +1551,7 @@
     Object.keys(layerToSource).forEach(k => delete layerToSource[k]);
     Object.keys(layerMeta).forEach(k => delete layerMeta[k]);
     interactionsRegistered = false;
+    refreshSiteLabelToggle();
   }
 
   function addLayerToMap(layerCfg) {
@@ -1260,6 +1583,31 @@
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: { 'line-color': TC, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 14, 4] } });
       mapboxIds.push(key+'-glow', key+'-case', key+'-line');
+    } else if (key === 'roads') {
+      // Nicely-formatted roads: width scaled by class (motorway/trunk wide → service/
+      // residential thin), a warm cream surface over a soft brown casing for a clean
+      // cartographic outdoor look. Sits below basemap labels + our markers (firstSymbol).
+      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      const W = ['match', ['get', 'highway'],
+        'motorway', 1.0, 'motorway_link', 0.7,
+        'trunk', 0.92, 'trunk_link', 0.62,
+        'primary', 0.82, 'primary_link', 0.58,
+        'secondary', 0.7, 'secondary_link', 0.52,
+        'tertiary', 0.6, 'tertiary_link', 0.48,
+        'residential', 0.5, 'unclassified', 0.48, 'living_street', 0.44,
+        'service', 0.34, 'road', 0.5,
+        0.42];
+      const roadW = (a, b, c) => ['interpolate', ['linear'], ['zoom'], 11, ['*', W, a], 15, ['*', W, b], 18, ['*', W, c]];
+      const caseSpec = { id: key+'-case', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#5b4f3d', 'line-width': roadW(0.9, 4.2, 9), 'line-opacity': 0.55 } };
+      const lineSpec = { id: key+'-line', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#f1e7d0', 'line-width': roadW(0.4, 2.8, 6.2), 'line-opacity': 0.96 } };
+      if (filter) { caseSpec.filter = filter; lineSpec.filter = filter; }
+      map.addLayer(caseSpec, firstSymbol);
+      map.addLayer(lineSpec, firstSymbol);
+      mapboxIds.push(key+'-case', key+'-line');
     } else if (geomType === 'line') {
       map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       const spec = { id: key+'-line', type: 'line', source: key,
@@ -1397,6 +1745,39 @@
           key+'-name-routes', key+'-name-boulders',
           `${HULL_SRC}-fill-routes`, `${HULL_SRC}-line-routes`, `${HULL_SRC}-label-routes`,
           `${HULL_SRC}-fill-boulders`, `${HULL_SRC}-line-boulders`, `${HULL_SRC}-label-boulders`);
+      } else if (key === 'campsite_sites') {
+        // Campground footprint at low zoom → individual tent/RV site icons at z13.5+.
+        // Hull polygons come from the companion 'campground_hulls' source (migration 027),
+        // fetched alongside this layer and tied to its visibility (pushed to mapboxIds).
+        const CG = 'campground_hulls';
+        if (!map.getSource(CG)) map.addSource(CG, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: CG+'-fill', type: 'fill', source: CG, maxzoom: 14,
+          paint: { 'fill-color': '#27ae60', 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.18, 14, 0] } }, firstSymbol);
+        map.addLayer({ id: CG+'-line', type: 'line', source: CG, maxzoom: 14,
+          paint: { 'line-color': '#1f8a4c', 'line-width': 1.6, 'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.9, 14, 0] } }, firstSymbol);
+        map.addLayer({ id: CG+'-label', type: 'symbol', source: CG, maxzoom: 14,
+          layout: { 'text-field': ['get', 'name'], 'text-size': 12, 'text-max-width': 8 },
+          paint: { 'text-color': '#fff', 'text-halo-color': '#1b3a1b', 'text-halo-width': 1.4 } });
+        // Spur "driveways" — thin connector from each site to the nearest road (migration 028).
+        // Warm-tan path over a soft cream casing so it reads as an unpaved drive on either basemap;
+        // appears with the site icons (z13.5+), sits below them (firstSymbol).
+        const SP = 'campsite_spurs';
+        if (!map.getSource(SP)) map.addSource(SP, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: SP+'-casing', type: 'line', source: SP, minzoom: 13.5,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#f2ead7', 'line-width': ['interpolate', ['linear'], ['zoom'], 13.5, 1.8, 17, 3.6], 'line-opacity': 0.4 } }, firstSymbol);
+        map.addLayer({ id: SP+'-line', type: 'line', source: SP, minzoom: 13.5,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#a9805a', 'line-width': ['interpolate', ['linear'], ['zoom'], 13.5, 0.7, 17, 1.7], 'line-opacity': 0.92 } }, firstSymbol);
+        // tent disc for standard (+ any other type); RV disc for electrical — smaller than the old circles
+        const ICON = ['match', ['get', 'site_type'], 'electrical', 'dl-rv@#e67e22', 'dl-tent@#27ae60'];
+        const iconSpec = { id: key+'-icon', type: 'symbol', source: key, minzoom: 13.5,
+          layout: { 'icon-image': ICON,
+            'icon-size': ['interpolate', ['linear'], ['zoom'], 13, 0.42, 16, 0.62],
+            'icon-allow-overlap': true, 'icon-ignore-placement': true } };
+        if (filter) iconSpec.filter = filter;
+        map.addLayer(iconSpec);
+        mapboxIds.push(key+'-icon', CG+'-fill', CG+'-line', CG+'-label', SP+'-casing', SP+'-line');
       } else {
         const spec = { id: key+'-circle', type: 'circle', source: key,
           paint: { 'circle-color': color, 'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 4, 14, 7],
@@ -1425,10 +1806,91 @@
       }
     }
 
+    // Any point/mixed layer carrying a `ref` (Site #) field gets a dedicated,
+    // independently-toggleable number label — added last so it sits above icons.
+    maybeAddSiteLabelLayer(key, layerCfg, filter);
+
     sourceToMapboxLayers[key] = mapboxIds;
     mapboxIds.forEach(id => { layerToSource[id] = key; });
     const vis = (layerCfg.visible_by_default !== false) ? 'visible' : 'none';
     mapboxIds.forEach(id => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis); });
+    applySiteLabels(key);  // honor the global toggle + this layer's visibility
+  }
+
+  // Adds a `${key}-sitelabel` symbol layer when the layer is point/mixed and its
+  // field_schema declares a `ref` field. Starts hidden; applySiteLabels() drives it.
+  function maybeAddSiteLabelLayer(key, layerCfg, filter) {
+    const isPointish = layerCfg.geom_type === 'point' || layerCfg.geom_type === 'mixed';
+    const hasRef = (layerCfg.field_schema || []).some(f => f && f.name === 'ref');
+    if (!isPointish || !hasRef) return;
+    const id = key + '-sitelabel';
+    if (map.getLayer(id)) return;
+    const labelSpec = {
+      id, type: 'symbol', source: key, minzoom: 13.5,  // appear with the site icons, not over the hull
+      layout: {
+        'text-field': ['coalesce', ['get', 'ref'], ''],
+        'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 11, 11, 16, 15],
+        'text-allow-overlap': true,    // every number stays visible while editing
+        'text-ignore-placement': true,
+        'text-offset': [0, -0.75],     // sit just above the marker
+        'text-anchor': 'bottom',
+        'visibility': 'none',
+      },
+      paint: {
+        'text-color': '#ffffff', 'text-halo-color': '#1b3a1b', 'text-halo-width': 2,
+      },
+    };
+    const ptFilter = layerCfg.geom_type === 'mixed'
+      ? (filter ? ['all', ['==', '$type', 'Point'], filter] : ['==', '$type', 'Point'])
+      : filter;
+    if (ptFilter) labelSpec.filter = ptFilter;
+    map.addLayer(labelSpec);
+    siteLabelLayerIds.push({ id, source: key });
+  }
+
+  // In edit mode, features are pulled out of the layer source into Mapbox GL
+  // Draw, so the source-based labels above disappear. These twin layers read
+  // straight from Draw's own sources (user props are exposed as `user_*`) so the
+  // site numbers stay pinned to each point — and follow them live while dragging.
+  // 'cold' = idle features, 'hot' = the actively-edited one.
+  function ensureDrawLabelLayers() {
+    ['cold', 'hot'].forEach(phase => {
+      const src = 'mapbox-gl-draw-' + phase;
+      const id = 'sitelabel-draw-' + phase;
+      if (!map.getSource(src) || map.getLayer(id)) return;  // draw not ready / already added
+      map.addLayer({
+        id, type: 'symbol', source: src,
+        filter: ['all', ['==', '$type', 'Point'], ['has', 'user_ref']],
+        layout: {
+          'text-field': ['coalesce', ['get', 'user_ref'], ''],
+          'text-font': ['DIN Offc Pro Bold', 'Arial Unicode MS Bold'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 11, 11, 16, 15],
+          'text-allow-overlap': true, 'text-ignore-placement': true,
+          'text-offset': [0, -0.75], 'text-anchor': 'bottom',
+          'visibility': siteLabelsOn ? 'visible' : 'none',
+        },
+        paint: { 'text-color': '#ffffff', 'text-halo-color': '#1b3a1b', 'text-halo-width': 2 },
+      });
+    });
+  }
+
+  // Visibility = global toggle ON  &&  parent layer currently visible.
+  // Pass a sourceKey to refresh just that layer's label, or omit for all.
+  function applySiteLabels(onlyKey) {
+    siteLabelLayerIds.forEach(({ id, source }) => {
+      if (onlyKey && source !== onlyKey) return;
+      if (!map.getLayer(id)) return;
+      const parentVisible = (sourceToMapboxLayers[source] || []).some(lid =>
+        map.getLayer(lid) && map.getLayoutProperty(lid, 'visibility') !== 'none');
+      const show = siteLabelsOn && parentVisible;
+      map.setLayoutProperty(id, 'visibility', show ? 'visible' : 'none');
+    });
+    // Draw labels follow the global toggle alone (their features live in Draw,
+    // not a map layer that can be hidden independently).
+    ['sitelabel-draw-cold', 'sitelabel-draw-hot'].forEach(id => {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', siteLabelsOn ? 'visible' : 'none');
+    });
   }
 
   function setLayerVisible(sourceKey, visible) {
@@ -1436,6 +1898,7 @@
     (sourceToMapboxLayers[sourceKey] || []).forEach(id => {
       if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', val);
     });
+    applySiteLabels(sourceKey);  // labels follow their parent layer's visibility
   }
 
   // ── Popup helpers ───────────────────────────────────────────
@@ -1633,6 +2096,7 @@
     });
     Object.keys(layerToSource).forEach(lid => {
       if (lid.endsWith('-glow') || lid.endsWith('-case')) return;
+      if (lid.startsWith('campground_hulls-') || lid.startsWith('campsite_spurs-')) return;  // derived geometry — not selectable/editable
       map.on('mouseenter', lid, () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', lid, () => { map.getCanvas().style.cursor = ''; });
       if (!lid.endsWith('-outline')) {
@@ -1697,6 +2161,18 @@
       const hullSrc = map.getSource('climbing_area_hulls');
       if (hullSrc && layerCache['climbing_area_hulls']) hullSrc.setData(layerCache['climbing_area_hulls']);
     }
+    // Campground footprint hulls + campsite spurs — companions to campsite_sites
+    // (migrations 027/028), not experience layers, loaded alongside the points.
+    if (layers.some(l => (l.source_key || l.template_slug) === 'campsite_sites')) {
+      for (const src of ['campground_hulls', 'campsite_spurs']) {
+        if (!layerCache[src]) {
+          const { data } = await db.rpc('get_layer_geojson', { p_source: src });
+          if (data) layerCache[src] = data;
+        }
+        const s = map.getSource(src);
+        if (s && layerCache[src]) s.setData(layerCache[src]);
+      }
+    }
   }
 
   // ══ Render experience on map ═════════════════════════════════
@@ -1726,6 +2202,7 @@
     registerInteractions();
     await loadLayerData(normalized);
     buildLeftPanel(normalized);
+    refreshSiteLabelToggle();
   }
 
   function buildLeftPanel(layers) {
@@ -2406,6 +2883,7 @@
 
   // Load a feature (drawn or imported) into the editor straight from its popup.
   async function beginFeatureEdit(feature, sourceKey) {
+    await endFeatureEdit();              // commit/clear any feature already open for edit
     await selectDrawTarget(sourceKey);
     switchTab('draw');
     // Stable identity: DB row id for imported features, else existing draw id.
@@ -2421,10 +2899,103 @@
     }
     const ids = draw.add(drawFeature);
     const drawId = ids[0];
+    // Hide the layer's own copy while editing so the draw handle isn't rendered
+    // on top of it — that overlap looked like a duplicate point once you moved it.
+    // endFeatureEdit() reloads it from the DB at its saved position afterward.
+    editCtx = { source: sourceKey, drawId };
+    hideFeatureInLayer(sourceKey, stableId || drawId);
+    ensureDrawLabelLayers(); applySiteLabels();  // keep the site # visible on the draw handle
     draw.changeMode('simple_select', { featureIds: [drawId] });
     showFeatureForm(draw.get(drawId));
-    toast('Editing feature — adjust geometry or fields, then Save');
+    toast('Editing feature — drag to move, edit fields, then Save');
   }
+
+  // Splice a feature out of the cached layer GeoJSON so it isn't double-drawn
+  // (once by the map layer, once by the draw handle) while it's being edited.
+  function hideFeatureInLayer(source, key) {
+    const cache = layerCache[source];
+    if (!cache || !cache.features || !key) return;
+    const i = cache.features.findIndex(f => {
+      const p = f.properties || {};
+      return String(p.id || p._draw_id || '') === String(key);
+    });
+    if (i !== -1) {
+      cache.features.splice(i, 1);
+      const src = map.getSource(source);
+      if (src) src.setData(cache);
+    }
+  }
+
+  // Finish editing: drop the draw handle and reload the layer from the DB so the
+  // feature reappears exactly once, at its saved position, with all attributes.
+  async function endFeatureEdit() {
+    hideFeatureForm();
+    if (!editCtx) return;
+    const { source, drawId } = editCtx;
+    editCtx = null;
+    try { draw.delete(drawId); } catch {}
+    delete layerCache[source];
+    await refreshCustomSource(source);
+  }
+
+  // ── Reposition mode ────────────────────────────────────────────
+  // Load every feature in the target layer into draw as a draggable handle, so
+  // points can be dragged directly (each drag auto-saves via handleDrawUpdate).
+  // The layer's own rendering is hidden meanwhile so handles aren't doubled.
+  async function enterLayerEdit(source) {
+    await endFeatureEdit();
+    if (!source) { toast('Select a target layer first', true); return; }
+    const mapSrc = map.getSource(source);
+    if (!mapSrc) { toast('Add this layer to the map first', true); return; }
+    if (!layerCache[source]) {
+      const { data } = await db.rpc('get_layer_geojson', { p_source: source });
+      if (data) layerCache[source] = data;
+    }
+    const cache = layerCache[source];
+    const feats = ((cache && cache.features) || [])
+      .filter(f => f.geometry)
+      .map(f => ({
+        type: 'Feature', geometry: f.geometry,
+        properties: { ...f.properties },
+        id: String(f.properties.id || f.properties._draw_id || ''),
+      }))
+      .filter(f => f.id);
+    if (!feats.length) { toast('No saved features to reposition in this layer', true); return; }
+    if (feats.length > 800 &&
+        !confirm(`This layer has ${feats.length} features — load them all as draggable handles? It may be slow.`)) return;
+    try { draw.deleteAll(); } catch {}
+    draw.add({ type: 'FeatureCollection', features: feats });
+    draw.changeMode('simple_select');
+    mapSrc.setData({ type: 'FeatureCollection', features: [] });  // hide layer copy
+    ensureDrawLabelLayers(); applySiteLabels();  // keep all site #s visible while repositioning
+    bulkEditSource = source;
+    const btn = document.getElementById('edit-layer-btn');
+    btn.classList.add('active');
+    btn.innerHTML = '<i class="fa-solid fa-check"></i>Done editing';
+    toast(`Repositioning ${feats.length} features — drag any point to move it (auto-saves). Click Done or press Esc to finish.`);
+  }
+
+  async function exitLayerEdit() {
+    if (!bulkEditSource) return;
+    const source = bulkEditSource;
+    bulkEditSource = null;
+    try { draw.deleteAll(); } catch {}
+    hideFeatureForm();
+    const btn = document.getElementById('edit-layer-btn');
+    btn.classList.remove('active');
+    btn.innerHTML = '<i class="fa-solid fa-up-down-left-right"></i>Edit points — drag to move';
+    delete layerCache[source];
+    await refreshCustomSource(source);   // restore layer at all saved positions
+  }
+
+  document.getElementById('edit-layer-btn').addEventListener('click', () => {
+    if (bulkEditSource) exitLayerEdit();
+    else enterLayerEdit(document.getElementById('draw-target-select').value);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && bulkEditSource &&
+        !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target.tagName || ''))) exitLayerEdit();
+  });
 
   document.getElementById('create-custom-layer-btn').addEventListener('click', async () => {
     const name = document.getElementById('new-layer-name').value.trim();
@@ -2479,6 +3050,7 @@
     const src = map.getSource(sourceKey);
     if (src && cached) src.setData(cached);
     try { draw.delete(key); } catch {}
+    if (editCtx && String(editCtx.drawId) === key) editCtx = null;
     if (selectedDrawFeatureId != null && String(selectedDrawFeatureId) === key) hideFeatureForm();
 
     const { error } = await db.rpc('delete_feature_by_id', { p_source: sourceKey, p_key: key });
@@ -2534,16 +3106,23 @@
       feature.properties._draw_id = feature.id;
       await db.rpc('upsert_drawn_feature', { p_source: source, p_feature: feature });
     }
-    delete layerCache[source];
-    await refreshCustomSource(source);
-    toast('Feature updated');
+    // While a feature is open for edit its layer copy is hidden and the draw
+    // handle already shows the live position — reloading here would re-add the
+    // hidden copy and double the point. The layer is refreshed by endFeatureEdit.
+    if (!editCtx && !bulkEditSource) {
+      delete layerCache[source];
+      await refreshCustomSource(source);
+    }
+    toast('Feature moved');
   }
 
   function handleDrawSelection(e) {
     if (e.features.length) {
       showFeatureForm(e.features[0]);
+    } else if (bulkEditSource) {
+      hideFeatureForm();   // in reposition mode, deselecting just closes the form
     } else {
-      hideFeatureForm();
+      endFeatureEdit();   // deselecting finishes a single edit: remove handle, restore layer copy
     }
   }
 
@@ -2954,9 +3533,15 @@
         { p_source: source, p_key: photoKey, p_photos: photoUrls, p_photo_meta: formPhotoMeta });
       if (phErr) toast('Photos not saved: ' + phErr.message, true);
     }
-    delete layerCache[source];
-    await refreshCustomSource(source);
     toast('Feature saved');
+    // Edited features: end the edit (drops handle, reloads layer once). Created
+    // or other features (no edit context): just refresh as before.
+    if (editCtx) {
+      await endFeatureEdit();
+    } else if (!bulkEditSource) {
+      delete layerCache[source];
+      await refreshCustomSource(source);
+    }
   });
 
   async function refreshCustomSource(sourceKey) {
@@ -3006,6 +3591,7 @@
     interactionsRegistered = false;
     Object.keys(sourceToMapboxLayers).forEach(k => delete sourceToMapboxLayers[k]);
     Object.keys(layerToSource).forEach(k => delete layerToSource[k]);
+    siteLabelLayerIds.length = 0; // style swap wiped the label layers; re-added below
     const normalized = currentExpLayers.map(el => ({
       source_key: el.template_slug,
       template_slug: el.template_slug,
@@ -3027,6 +3613,14 @@
       const src = map.getSource(key);
       if (src && layerCache[key]) src.setData(layerCache[key]);
     });
+    // Companion sources aren't experience layers — re-feed their caches too.
+    ['campground_hulls', 'campsite_spurs'].forEach(src => {
+      const s = map.getSource(src);
+      if (s && layerCache[src]) s.setData(layerCache[src]);
+    });
+    refreshSiteLabelToggle();
+    ensureDrawLabelLayers();  // re-add draw labels wiped by the style swap (e.g. mid-edit)
+    applySiteLabels();
   });
 
   // Reload the layer_templates cache + draw-target dropdown (e.g. after a duplicate).
@@ -3579,6 +4173,275 @@
     if (e.key === 'Escape') closeLightbox();
     if (e.key === 'ArrowLeft' && lbPhotos.length > 1) { lbIdx = (lbIdx - 1 + lbPhotos.length) % lbPhotos.length; updateLb(); }
     if (e.key === 'ArrowRight' && lbPhotos.length > 1) { lbIdx = (lbIdx + 1) % lbPhotos.length; updateLb(); }
+  });
+
+  // ══ Basemap Switcher ═══════════════════════════════════════════
+
+  const BM_STYLES = {
+    'outdoors':          'mapbox://styles/mapbox/outdoors-v12',
+    'satellite-streets': 'mapbox://styles/mapbox/satellite-streets-v12',
+    'streets':           'mapbox://styles/mapbox/streets-v12',
+    'dark':              'mapbox://styles/mapbox/dark-v11',
+  };
+  let currentBasemap = 'outdoors';
+
+  document.querySelectorAll('.bm-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const bm = btn.dataset.bm;
+      if (bm === currentBasemap) return;
+      currentBasemap = bm;
+      document.querySelectorAll('.bm-btn').forEach(b => b.classList.toggle('active', b.dataset.bm === bm));
+      // Preserve Draw features across style change
+      const savedDraw = draw ? draw.getAll() : null;
+      map.setStyle(BM_STYLES[bm]);
+      // style.load handler re-adds custom layers; restore draw features after it fires
+      map.once('style.load', () => {
+        if (savedDraw && draw) {
+          try { draw.set(savedDraw); } catch (_) {}
+        }
+        // Re-add overlay if one was active
+        if (ovDataUrl) _rebuildOverlay();
+      });
+    });
+  });
+
+  // ══ Image Overlay ══════════════════════════════════════════════
+
+  const OVERLAY_SRC   = 'georef-overlay';
+  const OVERLAY_LAYER = 'georef-overlay-layer';
+  const M_PER_DEG_LAT = 111320;
+
+  // Overlay state: center + half-dimensions in metres + rotation degrees
+  let ovState = null;    // { lng, lat, halfW, halfH, rot }
+  let ovDataUrl = null;  // cached so we can rebuild after basemap switch
+  let ovLocked  = false;
+  let ovMarkers = [];    // [center, TL, TR, BR, BL, rotHandle]
+
+  // ── Coordinate helpers ──────────────────────────────────────────
+  function mToLng(m, lat) { return m / (M_PER_DEG_LAT * Math.cos(lat * Math.PI / 180)); }
+  function mToLat(m)       { return m / M_PER_DEG_LAT; }
+  function lngToM(dlng, lat) { return dlng * M_PER_DEG_LAT * Math.cos(lat * Math.PI / 180); }
+  function latToM(dlat)      { return dlat * M_PER_DEG_LAT; }
+
+  function rot2D(x, y, deg) {
+    const r = deg * Math.PI / 180;
+    return [x * Math.cos(r) - y * Math.sin(r), x * Math.sin(r) + y * Math.cos(r)];
+  }
+
+  // Local offset (metres) → [lng, lat] absolute
+  function offsetToLL(dx_m, dy_m, s) {
+    const [rx, ry] = rot2D(dx_m, dy_m, s.rot);
+    return [s.lng + mToLng(rx, s.lat), s.lat + mToLat(ry)];
+  }
+
+  // ── State → handle positions ────────────────────────────────────
+  const ROT_HANDLE_FACTOR = 1.4;  // how far above top edge the rotation knob sits
+
+  function stateToHandles(s) {
+    const { halfW: w, halfH: h } = s;
+    return {
+      center:    [s.lng, s.lat],
+      corners:   [[-w, h], [w, h], [w, -h], [-w, -h]].map(([x, y]) => offsetToLL(x, y, s)),
+      rotHandle: offsetToLL(0, h * ROT_HANDLE_FACTOR, s),
+    };
+  }
+
+  // ── State → Mapbox image source corners [TL, TR, BR, BL] ────────
+  function stateToMapboxCoords(s) {
+    const h = stateToHandles(s);
+    return h.corners;   // already in Mapbox order: TL, TR, BR, BL
+  }
+
+  // ── Drag update functions ────────────────────────────────────────
+  function applyDrag_center(s, [lng, lat]) {
+    return { ...s, lng, lat };
+  }
+
+  function applyDrag_corner(s, cornerIdx, [lng, lat]) {
+    // Opposite corner stays fixed; new center = midpoint
+    const opp = stateToHandles(s).corners[(cornerIdx + 2) % 4];
+    const newLng = (opp[0] + lng) / 2;
+    const newLat = (opp[1] + lat) / 2;
+    // Dragged corner in local unrotated space
+    const dx_m = lngToM(lng - newLng, newLat);
+    const dy_m = latToM(lat - newLat);
+    const [lx, ly] = rot2D(dx_m, dy_m, -s.rot);
+    return { ...s, lng: newLng, lat: newLat,
+             halfW: Math.max(5, Math.abs(lx)), halfH: Math.max(5, Math.abs(ly)) };
+  }
+
+  function applyDrag_rot(s, [lng, lat]) {
+    const dx_m = lngToM(lng - s.lng, s.lat);
+    const dy_m = latToM(lat - s.lat);
+    return { ...s, rot: Math.atan2(dx_m, dy_m) * 180 / Math.PI };
+  }
+
+  // ── Reposition all handles from current state ────────────────────
+  function syncHandles() {
+    if (!ovState || !ovMarkers.length) return;
+    const h = stateToHandles(ovState);
+    ovMarkers[0].setLngLat(h.center);
+    h.corners.forEach((ll, i) => ovMarkers[i + 1].setLngLat(ll));
+    ovMarkers[5].setLngLat(h.rotHandle);
+    const src = map.getSource(OVERLAY_SRC);
+    if (src) src.setCoordinates(h.corners);
+    // Update stats
+    document.getElementById('overlay-stat-rot').textContent =
+      `↻ ${ovState.rot.toFixed(1)}°`;
+    const wm = Math.round(ovState.halfW * 2), hm = Math.round(ovState.halfH * 2);
+    document.getElementById('overlay-stat-size').textContent =
+      `${wm >= 1000 ? (wm/1000).toFixed(1)+'km' : wm+'m'} × ${hm >= 1000 ? (hm/1000).toFixed(1)+'km' : hm+'m'}`;
+  }
+
+  // ── Create markers ───────────────────────────────────────────────
+  function makeHandle(cls, inner = '') {
+    const el = document.createElement('div');
+    el.className = `ov-handle ${cls}`;
+    if (inner) el.innerHTML = inner;
+    return el;
+  }
+
+  function buildHandleMarkers(s) {
+    ovMarkers.forEach(m => m.remove());
+    ovMarkers = [];
+    const h = stateToHandles(s);
+
+    // 0: center
+    const cEl = makeHandle('ov-h-center');
+    const cM  = new mapboxgl.Marker({ element: cEl, draggable: !ovLocked }).setLngLat(h.center).addTo(map);
+    cM.on('drag', () => { ovState = applyDrag_center(ovState, [cM.getLngLat().lng, cM.getLngLat().lat]); syncHandles(); });
+    ovMarkers.push(cM);
+
+    // 1-4: corners (TL, TR, BR, BL)
+    h.corners.forEach((ll, i) => {
+      const el = makeHandle('ov-h-corner');
+      const m  = new mapboxgl.Marker({ element: el, draggable: !ovLocked }).setLngLat(ll).addTo(map);
+      m.on('drag', () => { ovState = applyDrag_corner(ovState, i, [m.getLngLat().lng, m.getLngLat().lat]); syncHandles(); });
+      ovMarkers.push(m);
+    });
+
+    // 5: rotation handle
+    const rEl = makeHandle('ov-h-rot', '↻');
+    const rM  = new mapboxgl.Marker({ element: rEl, draggable: !ovLocked }).setLngLat(h.rotHandle).addTo(map);
+    rM.on('drag', () => { ovState = applyDrag_rot(ovState, [rM.getLngLat().lng, rM.getLngLat().lat]); syncHandles(); });
+    ovMarkers.push(rM);
+  }
+
+  // ── Remove overlay ───────────────────────────────────────────────
+  function removeOverlay() {
+    ovMarkers.forEach(m => m.remove());
+    ovMarkers = [];
+    if (ovDataUrl && ovDataUrl.startsWith('blob:')) URL.revokeObjectURL(ovDataUrl);
+    ovState = null; ovDataUrl = null; ovLocked = false;
+    if (map.getLayer(OVERLAY_LAYER)) map.removeLayer(OVERLAY_LAYER);
+    if (map.getSource(OVERLAY_SRC))  map.removeSource(OVERLAY_SRC);
+    document.getElementById('overlay-panel').classList.remove('active');
+  }
+
+  // ── Rebuild after basemap switch ──────────────────────────────────
+  function _rebuildOverlay() {
+    if (!ovDataUrl || !ovState) return;
+    if (map.getSource(OVERLAY_SRC)) {
+      map.removeLayer(OVERLAY_LAYER);
+      map.removeSource(OVERLAY_SRC);
+    }
+    map.addSource(OVERLAY_SRC, { type: 'image', url: ovDataUrl, coordinates: stateToMapboxCoords(ovState) });
+    map.addLayer({ id: OVERLAY_LAYER, type: 'raster', source: OVERLAY_SRC,
+      paint: { 'raster-opacity': document.getElementById('overlay-opacity-slider').value / 100,
+               'raster-fade-duration': 0 } });
+    buildHandleMarkers(ovState);
+  }
+
+  // ── Load new image ────────────────────────────────────────────────
+  function loadOverlay(file) {
+    const blobUrl = URL.createObjectURL(file);
+    const b    = map.getBounds();
+    const cLng = (b.getEast()  + b.getWest())  / 2;
+    const cLat = (b.getNorth() + b.getSouth()) / 2;
+    const viewW_m = lngToM(b.getEast() - b.getWest(), cLat);
+    const viewH_m = latToM(b.getNorth() - b.getSouth());
+    const img  = new Image();
+    img.onload = () => {
+      const asp  = img.naturalWidth / img.naturalHeight;
+      const base = Math.min(viewW_m, viewH_m) * 0.7;
+      const halfW = asp >= 1 ? base / 2 : base * asp / 2;
+      const halfH = asp >= 1 ? base / (2 * asp) : base / 2;
+      const newState = { lng: cLng, lat: cLat, halfW, halfH, rot: 0 };
+      removeOverlay();  // clears old overlay; sets ovState/ovDataUrl to null
+      ovState   = newState;
+      ovDataUrl = blobUrl;
+      ovLocked  = false;
+      map.addSource(OVERLAY_SRC, { type: 'image', url: ovDataUrl, coordinates: stateToMapboxCoords(ovState) });
+      map.addLayer({ id: OVERLAY_LAYER, type: 'raster', source: OVERLAY_SRC,
+        paint: { 'raster-opacity': 0.65, 'raster-fade-duration': 0 } });
+      buildHandleMarkers(ovState);
+      document.getElementById('overlay-panel-filename').textContent = file.name;
+      document.getElementById('overlay-panel').classList.add('active');
+      document.getElementById('overlay-lock-btn').textContent = '🔓 Lock';
+      document.getElementById('overlay-lock-btn').classList.remove('locked');
+      syncHandles();
+    };
+    img.onerror = () => URL.revokeObjectURL(blobUrl);
+    img.src = blobUrl;
+  }
+
+  // ── Controls ──────────────────────────────────────────────────────
+  document.getElementById('overlay-open-btn').addEventListener('click', () => {
+    document.getElementById('overlay-file-input').click();
+  });
+  document.getElementById('overlay-file-input').addEventListener('change', e => {
+    if (e.target.files[0]) loadOverlay(e.target.files[0]);
+    e.target.value = '';
+  });
+
+  document.getElementById('overlay-opacity-slider').addEventListener('input', e => {
+    document.getElementById('overlay-opacity-label').textContent = e.target.value + '%';
+    if (map.getLayer(OVERLAY_LAYER))
+      map.setPaintProperty(OVERLAY_LAYER, 'raster-opacity', e.target.value / 100);
+  });
+
+  document.getElementById('overlay-fit-btn').addEventListener('click', () => {
+    if (!ovState) return;
+    const b    = map.getBounds();
+    const cLng = (b.getEast()  + b.getWest())  / 2;
+    const cLat = (b.getNorth() + b.getSouth()) / 2;
+    const viewW_m = lngToM(b.getEast() - b.getWest(), cLat);
+    const viewH_m = latToM(b.getNorth() - b.getSouth());
+    ovState = { ...ovState, lng: cLng, lat: cLat,
+                halfW: viewW_m * 0.35, halfH: viewH_m * 0.35, rot: 0 };
+    syncHandles();
+  });
+
+  document.getElementById('overlay-lock-btn').addEventListener('click', () => {
+    ovLocked = !ovLocked;
+    const btn = document.getElementById('overlay-lock-btn');
+    btn.textContent = ovLocked ? '🔒 Locked' : '🔓 Lock';
+    btn.classList.toggle('locked', ovLocked);
+    ovMarkers.forEach(m => {
+      m.setDraggable(!ovLocked);
+      m.getElement().classList.toggle('locked', ovLocked);
+    });
+  });
+
+  document.getElementById('overlay-remove-btn').addEventListener('click', removeOverlay);
+
+  document.getElementById('overlay-export-btn').addEventListener('click', () => {
+    if (!ovState) return;
+    const corners = stateToMapboxCoords(ovState);
+    // corners = [TL, TR, BR, BL] where each is [lng, lat]
+    const payload = {
+      TL: corners[0],
+      TR: corners[1],
+      BR: corners[2],
+      BL: corners[3],
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a    = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: 'overlay_gcps.json',
+    });
+    a.click();
+    URL.revokeObjectURL(a.href);
   });
 
 </script>

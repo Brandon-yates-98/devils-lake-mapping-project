@@ -2280,6 +2280,33 @@
       ctx.moveTo(22, 28); ctx.lineTo(38, 26);
       ctx.moveTo(22, 40); ctx.lineTo(44, 38);
       ctx.stroke();
+    } else if (name === 'dl-tent') {
+      // A-frame tent: solid triangle with a triangular door cut out
+      ctx.beginPath();
+      ctx.moveTo(32, 16); ctx.lineTo(52, 50); ctx.lineTo(12, 50); ctx.closePath();
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.moveTo(32, 30); ctx.lineTo(40, 50); ctx.lineTo(24, 50); ctx.closePath();
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    } else if (name === 'dl-rv') {
+      // camper van: tall box + lower cab to the right, windows + two wheels
+      ctx.beginPath();
+      ctx.moveTo(12, 22); ctx.lineTo(38, 22); ctx.lineTo(38, 32);
+      ctx.lineTo(52, 32); ctx.lineTo(52, 44); ctx.lineTo(12, 44);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillRect(41, 34, 9, 7);   // cab windshield
+      ctx.fillRect(16, 26, 9, 7);   // side window
+      ctx.beginPath();               // wheel wells
+      ctx.arc(22, 44, 6, 0, Math.PI * 2); ctx.arc(44, 44, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.beginPath();               // tires
+      ctx.arc(22, 45, 3.4, 0, Math.PI * 2); ctx.arc(44, 45, 3.4, 0, Math.PI * 2);
+      ctx.fill();
     } else if (!tint) {
       // unknown icon → plain circle (a tinted disc below covers this case)
       ctx.beginPath();
@@ -2336,6 +2363,31 @@
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: { 'line-color': TRAIL_COLOR, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 14, 4] } });
       mapboxIds.push(key+'-glow', key+'-case', key+'-line');
+    } else if (key === 'roads') {
+      // Nicely-formatted roads: width scaled by class (motorway/trunk wide → service/
+      // residential thin), a warm cream surface over a soft brown casing for a clean
+      // cartographic outdoor look. Sits below basemap labels + our markers (firstSymbol).
+      map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      const W = ['match', ['get', 'highway'],
+        'motorway', 1.0, 'motorway_link', 0.7,
+        'trunk', 0.92, 'trunk_link', 0.62,
+        'primary', 0.82, 'primary_link', 0.58,
+        'secondary', 0.7, 'secondary_link', 0.52,
+        'tertiary', 0.6, 'tertiary_link', 0.48,
+        'residential', 0.5, 'unclassified', 0.48, 'living_street', 0.44,
+        'service', 0.34, 'road', 0.5,
+        0.42];
+      const roadW = (a, b, c) => ['interpolate', ['linear'], ['zoom'], 11, ['*', W, a], 15, ['*', W, b], 18, ['*', W, c]];
+      const caseSpec = { id: key+'-case', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#5b4f3d', 'line-width': roadW(0.9, 4.2, 9), 'line-opacity': 0.55 } };
+      const lineSpec = { id: key+'-line', type: 'line', source: key,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#f1e7d0', 'line-width': roadW(0.4, 2.8, 6.2), 'line-opacity': 0.96 } };
+      if (filter) { caseSpec.filter = filter; lineSpec.filter = filter; }
+      map.addLayer(caseSpec, firstSymbol);
+      map.addLayer(lineSpec, firstSymbol);
+      mapboxIds.push(key+'-case', key+'-line');
     } else if (geomType === 'line') {
       map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       const spec = { id: key+'-line', type: 'line', source: key,
@@ -2520,6 +2572,39 @@
           key+'-name-routes', key+'-name-boulders',
           `${HULL_SRC}-fill-routes`, `${HULL_SRC}-line-routes`, `${HULL_SRC}-label-routes`,
           `${HULL_SRC}-fill-boulders`, `${HULL_SRC}-line-boulders`, `${HULL_SRC}-label-boulders`);
+      } else if (key === 'campsite_sites') {
+        // Campground footprint at low zoom → individual tent/RV site icons at z13.5+.
+        // Hull polygons come from the companion 'campground_hulls' source (migration 027),
+        // fetched alongside this layer and tied to its visibility (pushed to mapboxIds).
+        const CG = 'campground_hulls';
+        if (!map.getSource(CG)) map.addSource(CG, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: CG+'-fill', type: 'fill', source: CG, maxzoom: 14,
+          paint: { 'fill-color': '#27ae60', 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.18, 14, 0] } }, firstSymbol);
+        map.addLayer({ id: CG+'-line', type: 'line', source: CG, maxzoom: 14,
+          paint: { 'line-color': '#1f8a4c', 'line-width': 1.6, 'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.9, 14, 0] } }, firstSymbol);
+        map.addLayer({ id: CG+'-label', type: 'symbol', source: CG, maxzoom: 14,
+          layout: { 'text-field': ['get', 'name'], 'text-size': 12, 'text-max-width': 8 },
+          paint: { 'text-color': '#fff', 'text-halo-color': '#1b3a1b', 'text-halo-width': 1.4 } });
+        // Spur "driveways" — thin connector from each site to the nearest road (migration 028).
+        // Warm-tan path over a soft cream casing so it reads as an unpaved drive on either basemap;
+        // appears with the site icons (z13.5+), sits below them (firstSymbol).
+        const SP = 'campsite_spurs';
+        if (!map.getSource(SP)) map.addSource(SP, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: SP+'-casing', type: 'line', source: SP, minzoom: 13.5,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#f2ead7', 'line-width': ['interpolate', ['linear'], ['zoom'], 13.5, 1.8, 17, 3.6], 'line-opacity': 0.4 } }, firstSymbol);
+        map.addLayer({ id: SP+'-line', type: 'line', source: SP, minzoom: 13.5,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#a9805a', 'line-width': ['interpolate', ['linear'], ['zoom'], 13.5, 0.7, 17, 1.7], 'line-opacity': 0.92 } }, firstSymbol);
+        // tent disc for standard (+ any other type); RV disc for electrical — smaller than the old circles
+        const ICON = ['match', ['get', 'site_type'], 'electrical', 'dl-rv@#e67e22', 'dl-tent@#27ae60'];
+        const iconSpec = { id: key+'-icon', type: 'symbol', source: key, minzoom: 13.5,
+          layout: { 'icon-image': ICON,
+            'icon-size': ['interpolate', ['linear'], ['zoom'], 13, 0.42, 16, 0.62],
+            'icon-allow-overlap': true, 'icon-ignore-placement': true } };
+        if (filter) iconSpec.filter = filter;
+        map.addLayer(iconSpec);
+        mapboxIds.push(key+'-icon', CG+'-fill', CG+'-line', CG+'-label', SP+'-casing', SP+'-line');
       } else {
         const spec = { id: key+'-circle', type: 'circle', source: key,
           paint: { 'circle-color': color,
@@ -2960,6 +3045,7 @@
 
     Object.keys(layerToSource).forEach(lid => {
       if (lid.endsWith('-glow') || lid.endsWith('-case') || lid.endsWith('-outline')) return;
+      if (lid.startsWith('campground_hulls-') || lid.startsWith('campsite_spurs-')) return;  // derived geometry — not interactive
       map.on('click', lid, (e) => {
         if (e.originalEvent._popupHandled) return;
         openFeaturePopup(e.features[0], layerToSource[lid], e.lngLat);
@@ -3316,6 +3402,17 @@
         layerCache['climbing_area_hulls'] = hulls;
       }
     }
+    // Campground hulls + campsite spurs — companions to campsite_sites (migrations 027/028).
+    if (layerMeta['campsite_sites']) {
+      for (const src of ['campground_hulls', 'campsite_spurs']) {
+        if (!layerCache[src]) {
+          const data = await rpcCached('get_layer_geojson', { p_source: src }, 'layer:' + src);
+          if (data) { data.features = (data.features || []).filter(f => f.geometry != null); layerCache[src] = data; }
+        }
+        const s = map.getSource(src);
+        if (s && layerCache[src]) s.setData(layerCache[src]);
+      }
+    }
     enrichAreaBadges();
     const areaCache = layerCache['climbing_areas'];
     if (areaCache) {
@@ -3414,6 +3511,10 @@
     // hulls aren't in the experience config — re-feed them too
     const hullSrc = map.getSource('climbing_area_hulls');
     if (hullSrc && layerCache['climbing_area_hulls']) hullSrc.setData(layerCache['climbing_area_hulls']);
+    ['campground_hulls', 'campsite_spurs'].forEach(src => {
+      const s = map.getSource(src);
+      if (s && layerCache[src]) s.setData(layerCache[src]);
+    });
     // Re-apply any active climbing + drive-time filters to the rebuilt sources
     applyClimbingFilters();
     applyCampFilter();
