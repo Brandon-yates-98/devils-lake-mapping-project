@@ -350,6 +350,18 @@
     .tab-btn:hover { color: rgba(155,194,60,0.75); }
     .tab-btn.active { color: #9bc23c; border-bottom-color: #9bc23c; background: rgba(155,194,60,0.05); }
     .tab-pane { display: none; flex: 1; overflow-y: auto; flex-direction: column; scrollbar-width: thin; scrollbar-color: rgba(155,194,60,0.3) transparent; }
+    /* Mobile preview tab */
+    #preview-controls { display: flex; gap: 5px; align-items: center; margin-bottom: 8px; }
+    .prev-w-btn { flex: 1; padding: 5px 0; font-size: 11px; font-weight: 700; cursor: pointer;
+      background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 5px; }
+    .prev-w-btn.active { background: rgba(155,194,60,0.18); border-color: rgba(155,194,60,0.5); color: #9bc23c; }
+    #preview-refresh { flex: 0 0 auto; width: 30px; padding: 5px 0; font-size: 13px; cursor: pointer;
+      background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 5px; }
+    #preview-meta { font-size: 10px; color: rgba(255,255,255,0.35); margin-bottom: 6px; text-align: center; }
+    #preview-frame-wrap { overflow: hidden; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: #000; margin: 0 auto; }
+    #preview-iframe { border: 0; display: block; }
     .tab-pane::-webkit-scrollbar { width: 4px; }
     .tab-pane::-webkit-scrollbar-thumb { background: rgba(155,194,60,0.3); border-radius: 2px; }
     .tab-pane.active { display: flex; }
@@ -937,6 +949,7 @@
       <button class="tab-btn active" data-tab="experiences"><i class="fa-solid fa-map"></i> Exp</button>
       <button class="tab-btn" data-tab="layers"><i class="fa-solid fa-layer-group"></i> Layers</button>
       <button class="tab-btn" data-tab="draw"><i class="fa-solid fa-pen-nib"></i> Draw</button>
+      <button class="tab-btn" data-tab="preview"><i class="fa-solid fa-mobile-screen"></i> Preview</button>
     </div>
 
     <!-- ── Tab 1: Experiences ── -->
@@ -1071,6 +1084,21 @@
           </div>
           <button class="btn-primary" id="save-feature-btn" style="width:100%"><i class="fa-solid fa-floppy-disk"></i> Save Feature</button>
         </div>
+      </div>
+    </div>
+
+    <div id="tab-preview" class="tab-pane">
+      <div class="rp-section">
+        <label class="rp-label">Mobile Preview</label>
+        <div id="preview-controls">
+          <button class="prev-w-btn active" data-w="390" data-h="844">390</button>
+          <button class="prev-w-btn" data-w="375" data-h="812">375</button>
+          <button class="prev-w-btn" data-w="768" data-h="1024">768</button>
+          <button id="preview-refresh" title="Reload preview">&#8635;</button>
+        </div>
+        <div id="preview-meta"></div>
+        <div id="preview-frame-wrap"><iframe id="preview-iframe" title="Mobile preview"></iframe></div>
+        <div id="preview-empty" style="font-size:11px;color:rgba(255,255,255,0.3);font-style:italic">Select an experience to preview.</div>
       </div>
     </div>
   </aside>
@@ -3584,9 +3612,60 @@
   function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+    if (name === 'preview') refreshPreview();
   }
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // ── Mobile preview tab ──────────────────────────────────────────
+  // Renders the public viewer (docs/index.html) in an iframe at a chosen phone
+  // width, scaled to fit the right panel so the viewer's own @media rules fire
+  // at true device width. Edits persist to the DB immediately and rpcCached is
+  // network-first, so a reload always shows the latest saved state.
+  const VIEWER_PREVIEW_URL = 'docs/index.html';  // set to the deployed URL if not served from the repo root
+  let previewW = 390, previewH = 844;
+  function layoutPreview() {
+    const wrap = document.getElementById('preview-frame-wrap');
+    const iframe = document.getElementById('preview-iframe');
+    if (!wrap || !iframe) return;
+    const parent = wrap.parentElement;
+    const cs = getComputedStyle(parent);
+    const avail = parent.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const scale = Math.min(1, avail / previewW);
+    iframe.style.width = previewW + 'px';
+    iframe.style.height = previewH + 'px';
+    iframe.style.transformOrigin = 'top left';
+    iframe.style.transform = `scale(${scale})`;
+    wrap.style.width = Math.round(previewW * scale) + 'px';
+    wrap.style.height = Math.round(previewH * scale) + 'px';
+    const meta = document.getElementById('preview-meta');
+    if (meta) meta.textContent = `${previewW}×${previewH} · ${Math.round(scale * 100)}%`;
+  }
+  function refreshPreview() {
+    const iframe = document.getElementById('preview-iframe');
+    const empty = document.getElementById('preview-empty');
+    if (!iframe) return;
+    if (!currentExperience || !currentExperience.slug) {
+      iframe.style.display = 'none';
+      if (empty) empty.style.display = '';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    iframe.style.display = 'block';
+    layoutPreview();
+    iframe.src = `${VIEWER_PREVIEW_URL}?experience=${encodeURIComponent(currentExperience.slug)}&_=${Date.now()}`;
+  }
+  document.querySelectorAll('.prev-w-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.prev-w-btn').forEach(b => b.classList.toggle('active', b === btn));
+      previewW = +btn.dataset.w; previewH = +btn.dataset.h;
+      layoutPreview();
+    });
+  });
+  document.getElementById('preview-refresh').addEventListener('click', refreshPreview);
+  window.addEventListener('resize', () => {
+    if (document.getElementById('tab-preview').classList.contains('active')) layoutPreview();
   });
 
   // The basemap renders its own campsite POIs (Mapbox data) — hide them so

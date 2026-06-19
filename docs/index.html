@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Devil's Lake Community Map</title>
   <meta name="description" content="Interactive community map of Devil's Lake — trails, climbing, camping, and more. Works offline — save the map and take it to the crag." />
   <meta property="og:type" content="website" />
@@ -46,7 +46,8 @@
       border-bottom: 3px solid #9bc23c;
       display: flex;
       align-items: center;
-      padding: 0 16px;
+      /* viewport-fit=cover: clear the notch/status bar and side insets */
+      padding: env(safe-area-inset-top, 0px) calc(16px + env(safe-area-inset-right, 0px)) 0 calc(16px + env(safe-area-inset-left, 0px));
       gap: 14px;
       z-index: 100;
       box-shadow: 0 2px 16px rgba(0,0,0,0.5);
@@ -127,6 +128,7 @@
         top: 0; left: 0; bottom: 0;
         transform: translateX(-100%);
         box-shadow: none;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
       }
       #left-panel.open {
         transform: translateX(0);
@@ -134,7 +136,16 @@
       }
       #menu-toggle { display: flex; }
       .header-pills { display: none; }
+      /* Bigger touch targets on phones */
+      .poi-chip, .ff-preset { padding: 7px 12px; font-size: 11px; }
+      .layer-row { min-height: 42px; }
+      .feature-sheet-close { width: 44px; height: 44px; }
     }
+
+    /* Embed mode (?embed=1): chrome-free inline map for iframing on partner pages */
+    body.embed #site-header,
+    body.embed #left-panel,
+    body.embed #menu-toggle { display: none !important; }
 
     .panel-section {
       padding: 14px 12px 12px;
@@ -206,6 +217,13 @@
     .layer-group:first-child .layer-group-label { padding-top: 2px; margin-top: 0; }
     .layer-group-label > span { flex: 1; }
     .layer-group-label:hover { color: rgba(155,194,60,0.65); }
+    .group-toggle {
+      flex: 0 0 auto; background: none; border: none; cursor: pointer;
+      color: rgba(155,194,60,0.5); font-size: 10px; line-height: 1; padding: 3px 6px;
+      transition: color 0.15s;
+    }
+    .group-toggle:hover { color: #9bc23c; }
+    .group-toggle.off { color: rgba(255,255,255,0.22); }
     .layer-group-label .ps-caret {
       font-size: 8px; color: rgba(155,194,60,0.5);
       transition: transform 0.18s ease;
@@ -718,7 +736,7 @@
 
     /* ─── On-map basemap switcher (traditional tile thumbnail) ─── */
     #basemap-switcher {
-      position: absolute; left: 12px; bottom: 12px; z-index: 5;
+      position: absolute; left: calc(12px + env(safe-area-inset-left, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 5;
       width: 66px; height: 66px; padding: 0; overflow: hidden;
       border-radius: 8px; border: 2px solid #fff; cursor: pointer;
       background-color: #2c3e50; background-size: cover; background-position: center;
@@ -747,8 +765,8 @@
        MAP
     ════════════════════════════════════ */
     #map { flex: 1; position: relative; }
-    .mapboxgl-ctrl-top-right { top: 10px; right: 10px; }
-    .mapboxgl-ctrl-bottom-right { bottom: 30px; right: 10px; }
+    .mapboxgl-ctrl-top-right { top: 10px; right: calc(10px + env(safe-area-inset-right, 0px)); }
+    .mapboxgl-ctrl-bottom-right { bottom: calc(30px + env(safe-area-inset-bottom, 0px)); right: calc(10px + env(safe-area-inset-right, 0px)); }
 
     /* ════════════════════════════════════
        LOADING SCREEN
@@ -804,6 +822,37 @@
     .mapboxgl-popup-close-button { color: rgba(255,255,255,0.6) !important; font-size: 18px !important; line-height: 1 !important; padding: 5px 8px !important; top: 0 !important; right: 0 !important; }
     .mapboxgl-popup-close-button:hover { color: #fff !important; background: rgba(255,255,255,0.12) !important; border-radius: 0 8px 0 4px !important; }
 
+    /* ─── Mobile feature bottom-sheet (small screens only; see #feature-sheet) ─── */
+    #feature-sheet {
+      position: absolute; left: 0; right: 0; bottom: 0; z-index: 40;
+      display: none; flex-direction: column;
+      max-height: 70dvh;
+      background: #0d1b0d;                 /* injected .popup-header/.popup-body supply their own colors */
+      border-top: 2px solid #9bc23c;
+      border-radius: 14px 14px 0 0;
+      box-shadow: 0 -6px 24px rgba(0,0,0,0.45);
+      transform: translateY(110%);
+      transition: transform 0.25s ease;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      font-family: 'Inter', sans-serif;
+    }
+    @media (max-width: 600px) { #feature-sheet { display: flex; } }
+    #feature-sheet.open { transform: translateY(0); }
+    .feature-sheet-handle {
+      width: 40px; height: 4px; border-radius: 2px; flex-shrink: 0;
+      background: rgba(255,255,255,0.25); margin: 9px auto 5px; cursor: grab;
+      touch-action: none;
+    }
+    .feature-sheet-close {
+      position: absolute; top: 6px; right: 8px; z-index: 2;
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,0.08); border: none; border-radius: 8px;
+      color: rgba(255,255,255,0.7); font-size: 18px; cursor: pointer;
+    }
+    .feature-sheet-close:active { background: rgba(255,255,255,0.16); }
+    .feature-sheet-content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    #feature-sheet .popup-header { border-radius: 0; }
+
     /* ─── Error state ─── */
     #error-screen {
       display: none;
@@ -828,6 +877,14 @@
   <div id="lb-caption"></div>
   <div id="lb-counter"></div>
   <button id="lb-next" aria-label="Next photo">&#8250;</button>
+</div>
+
+<!-- ── Mobile feature bottom-sheet (replaces anchored popups on small screens;
+     the same buildPopupHTML content is mounted here and wired by openFeaturePopup) ── -->
+<div id="feature-sheet" role="dialog" aria-modal="false" aria-label="Feature details">
+  <div class="feature-sheet-handle" aria-hidden="true"></div>
+  <button class="feature-sheet-close" aria-label="Close">&#x2715;</button>
+  <div class="feature-sheet-content"></div>
 </div>
 
 <!-- ── Photo submission modal ── -->
@@ -2160,12 +2217,18 @@
   // the real offline detection, and usedOfflineStyle the real offline signal.
   let usedOfflineStyle = navigator.onLine === false;
 
+  // Embed mode (?embed=1): trim chrome and use cooperative gestures so the map
+  // doesn't hijack page scroll when iframed on a partner/Apex page.
+  const IS_EMBED = new URLSearchParams(location.search).get('embed') === '1';
+  if (IS_EMBED) document.body.classList.add('embed');
+
   const map = new mapboxgl.Map({
     container: 'map',
     style: usedOfflineStyle ? OFFLINE_STYLE : 'mapbox://styles/mapbox/outdoors-v12',
     center: [-89.73, 43.43],
     zoom: 11,
     attributionControl: false,
+    cooperativeGestures: IS_EMBED,
   });
   // Compact (ⓘ button) attribution — basemap credits flow in from the active
   // style/source; data + icon credits ride along as customAttribution.
@@ -2922,8 +2985,23 @@
       groupEl.className = 'layer-group' + (startOpen ? '' : ' collapsed');
       const header = document.createElement('div');
       header.className = 'layer-group-label';
-      header.innerHTML = `<span>${groupName}</span><i class="fa-solid fa-chevron-down ps-caret"></i>`;
+      header.innerHTML = `<span>${groupName}</span>`
+        + `<button class="group-toggle${startOpen ? '' : ' off'}" title="Show / hide all in ${groupName}" aria-label="Toggle ${groupName}"><i class="fa-solid ${startOpen ? 'fa-eye' : 'fa-eye-slash'}"></i></button>`
+        + `<i class="fa-solid fa-chevron-down ps-caret"></i>`;
       header.addEventListener('click', () => groupEl.classList.toggle('collapsed'));
+      // Group eye: toggle every layer row in this group at once (reusing each
+      // row's own click handler + side effects), like the global "All" button.
+      const gToggle = header.querySelector('.group-toggle');
+      gToggle.addEventListener('click', e => {
+        e.stopPropagation();
+        const rows = [...groupEl.querySelectorAll('.layer-row')];
+        if (!rows.length) return;
+        const turnOn = rows.some(r => !r.classList.contains('on'));
+        rows.forEach(r => { if (r.classList.contains('on') !== turnOn) r.click(); });
+        gToggle.classList.toggle('off', !turnOn);
+        gToggle.querySelector('i').className = `fa-solid ${turnOn ? 'fa-eye' : 'fa-eye-slash'}`;
+        if (turnOn) groupEl.classList.remove('collapsed');  // reveal just-enabled rows
+      });
       groupEl.appendChild(header);
       groupLayers.forEach(layerCfg => renderLayerRow(layerCfg, groupEl));
       listEl.appendChild(groupEl);
@@ -3135,20 +3213,63 @@
     });
   }
 
+  // True on phone-width screens — feature details render as a bottom sheet
+  // there instead of an anchored popup.
+  const isMobile = () => window.matchMedia('(max-width: 600px)').matches;
+
+  // Bottom-sheet surface for mobile. Exposes the subset of the mapboxgl.Popup
+  // API that openFeaturePopup's wire() uses (getElement/setHTML/remove), so the
+  // same content + handlers work on phones with no duplicated logic.
+  let _sheetWired = false;
+  function openFeatureSheet(html) {
+    const sheet = document.getElementById('feature-sheet');
+    const content = sheet.querySelector('.feature-sheet-content');
+    content.innerHTML = html;
+    content.scrollTop = 0;
+    requestAnimationFrame(() => sheet.classList.add('open'));
+    if (!_sheetWired) {
+      _sheetWired = true;
+      sheet.querySelector('.feature-sheet-close')
+        .addEventListener('click', () => sheet.classList.remove('open'));
+      // swipe the handle down to dismiss
+      const handle = sheet.querySelector('.feature-sheet-handle');
+      let startY = null;
+      handle.addEventListener('touchstart', e => {
+        startY = e.touches[0].clientY; sheet.style.transition = 'none';
+      }, { passive: true });
+      handle.addEventListener('touchmove', e => {
+        if (startY == null) return;
+        sheet.style.transform = `translateY(${Math.max(0, e.touches[0].clientY - startY)}px)`;
+      }, { passive: true });
+      handle.addEventListener('touchend', e => {
+        sheet.style.transition = ''; sheet.style.transform = '';
+        if (startY != null && e.changedTouches[0].clientY - startY > 80) sheet.classList.remove('open');
+        startY = null;
+      });
+    }
+    return {
+      getElement: () => sheet,
+      setHTML: (h) => { content.innerHTML = h; content.scrollTop = 0; },
+      remove: () => sheet.classList.remove('open'),
+    };
+  }
+
   // Open a feature popup and wire its interactive parts. Used by map clicks
   // and by in-popup navigation (area climb lists, prev/next stepping), which
-  // chain popups with a flyTo between them.
+  // chain popups with a flyTo between them. On mobile it renders as a bottom
+  // sheet (same content + wiring) instead of an anchored popup.
   function openFeaturePopup(feature, sourceKey, lngLat) {
-    const popup = new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '290px' })
-      .setLngLat(lngLat)
-      .setHTML(buildPopupHTML(feature.properties, sourceKey))
-      .addTo(map);
+    const html = buildPopupHTML(feature.properties, sourceKey);
+    const surface = isMobile()
+      ? openFeatureSheet(html)
+      : new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '290px' })
+          .setLngLat(lngLat).setHTML(html).addTo(map);
     let sortMode = 'alpha';   // survives grade-pill rebuilds
 
     // The popup body re-renders when a grade pill changes the shared filter
     // state, so all wiring lives in a re-runnable function.
     function wire() {
-      const el = popup.getElement();
+      const el = surface.getElement();
       const dirBtn = el.querySelector('.popup-directions-btn');
       if (dirBtn) dirBtn.addEventListener('click', () => {
         const dest = featureCentroid(feature.geometry)
@@ -3160,14 +3281,14 @@
       const areaBtn = el.querySelector('.popup-area-climbs-btn, .popup-area-link');
       if (areaBtn) areaBtn.addEventListener('click', () => {
         const key = areaBtn.getAttribute('data-area-key');
-        popup.remove();
+        surface.remove();
         if (key) selectClimbArea(key);
       });
       // Climb list rows (area popups) + prev/next steppers (climb popups)
       el.querySelectorAll('.pcl-row, .pcl-step').forEach(btn => {
         btn.addEventListener('click', () => {
           const { fsrc, fid } = btn.dataset;
-          popup.remove();
+          surface.remove();
           flyToClimb(fsrc, fid);
         });
       });
@@ -3211,13 +3332,13 @@
           const buckets = family === 'boulders' ? V_BUCKETS : R_BUCKETS;
           const setter = family === 'boulders' ? sliderSetters.v : sliderSetters.r;
           if (buckets[want] && setter) setter(...buckets[want]);
-          popup.setHTML(buildPopupHTML(feature.properties, sourceKey));
+          surface.setHTML(buildPopupHTML(feature.properties, sourceKey));
           wire();
         });
       });
     }
     wire();
-    return popup;
+    return surface;
   }
 
   // ── Area ↔ climb popup navigation ─────────────────────────────
