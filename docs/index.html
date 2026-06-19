@@ -206,24 +206,24 @@
     /* ─── Layer Manager ─── */
     .layer-group-label {
       display: flex; align-items: center; gap: 6px;
-      font-size: 7px; font-weight: 800;
-      letter-spacing: 1.8px; text-transform: uppercase;
-      color: rgba(155,194,60,0.4);
-      padding: 9px 2px 3px;
+      font-size: 10px; font-weight: 800;
+      letter-spacing: 0.6px; text-transform: uppercase;
+      color: rgba(155,194,60,0.85);
+      padding: 11px 2px 5px;
       margin-top: 2px;
       cursor: pointer; user-select: none;
       transition: color 0.15s;
     }
     .layer-group:first-child .layer-group-label { padding-top: 2px; margin-top: 0; }
     .layer-group-label > span { flex: 1; }
-    .layer-group-label:hover { color: rgba(155,194,60,0.65); }
+    .layer-group-label:hover { color: #9bc23c; }
+    /* Group header uses a switch toggle (turns the whole group on/off) */
     .group-toggle {
       flex: 0 0 auto; background: none; border: none; cursor: pointer;
-      color: rgba(155,194,60,0.5); font-size: 10px; line-height: 1; padding: 3px 6px;
-      transition: color 0.15s;
+      padding: 2px 4px; display: inline-flex; align-items: center;
     }
-    .group-toggle:hover { color: #9bc23c; }
-    .group-toggle.off { color: rgba(255,255,255,0.22); }
+    .group-toggle.on .layer-toggle { background: rgba(155,194,60,0.28); border-color: rgba(155,194,60,0.5); }
+    .group-toggle.on .layer-toggle::after { transform: translateX(12px); background: #9bc23c; }
     .layer-group-label .ps-caret {
       font-size: 8px; color: rgba(155,194,60,0.5);
       transition: transform 0.18s ease;
@@ -231,6 +231,9 @@
     .layer-group.collapsed .ps-caret { transform: rotate(-90deg); }
     .layer-group.collapsed .layer-row,
     .layer-group.collapsed .poi-filters { display: none; }
+    /* Climbing filters nested inside the Climbing group */
+    .layer-group #climbing-filter-panel { padding: 2px 2px 8px; border-bottom: none; }
+    .layer-group.collapsed #climbing-filter-panel { display: none !important; }
 
     .layer-row {
       display: flex; align-items: center;
@@ -250,7 +253,7 @@
 
     .layer-name {
       flex: 1;
-      font-size: 11.5px; font-weight: 600;
+      font-size: 9.5px; font-weight: 600;
       color: rgba(255,255,255,0.35);
       transition: color 0.15s;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -296,6 +299,13 @@
       transform: translateX(12px);
       background: #9bc23c;
     }
+
+    /* Layer rows use an eyeball for visibility (eye = shown, eye-slash = hidden) */
+    .layer-eye { flex-shrink: 0; width: 16px; text-align: center; font-size: 11px; color: rgba(255,255,255,0.25); }
+    .layer-eye .fa-eye { display: none; }
+    .layer-row.on .layer-eye { color: #9bc23c; }
+    .layer-row.on .layer-eye .fa-eye { display: inline; }
+    .layer-row.on .layer-eye .fa-eye-slash { display: none; }
 
     /* ── POI type filter chips ── */
     .poi-filters {
@@ -865,7 +875,7 @@
       display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
       background: rgba(14,22,12,0.92); backdrop-filter: blur(6px);
       border: 1px solid rgba(155,194,60,0.35); border-radius: 12px;
-      padding: 15px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.4);
+      padding: 15px 38px 15px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.4);   /* extra right room for the corner minimize icon */
     }
     .exp-search-wrap { position: relative; flex: 0 1 280px; display: flex; align-items: center; min-width: 0; }
     .exp-search-icon { position: absolute; left: 11px; font-size: 11px; color: rgba(155,194,60,0.7); pointer-events: none; }
@@ -886,6 +896,20 @@
     .exp-bar-btn:hover { background: rgba(155,194,60,0.24); }
     .exp-bar-btn.active { background: rgba(155,194,60,0.3); border-color: rgba(155,194,60,0.7); color: #cfe3a8; }
     .exp-count { font-size: 10px; opacity: 0.85; }
+    /* Collapse toggle: subtle caret when expanded; a labeled pill when collapsed */
+    #exp-collapse { position: absolute; top: 8px; right: 10px; z-index: 2; background: transparent; border: none; border-radius: 6px; color: rgba(155,194,60,0.7); padding: 5px 7px; }
+    #exp-collapse:hover { background: rgba(155,194,60,0.12); color: #9bc23c; }
+    .exp-c-caret { font-size: 10px; transition: transform 0.2s; }
+    .exp-c-open { display: none; }
+    #exp-bar.collapsed .exp-c-open { display: inline; }
+    #exp-bar.collapsed .exp-c-caret { transform: rotate(180deg); }
+    #exp-bar.collapsed #exp-collapse { position: static; background: rgba(155,194,60,0.14); border: 1px solid rgba(155,194,60,0.4); color: #b6d96a; }
+    #exp-bar.collapsed .exp-bar-row { padding: 7px 12px; }
+    #exp-bar.collapsed .exp-search-wrap,
+    #exp-bar.collapsed .exp-filters,
+    #exp-bar.collapsed #exp-list-btn,
+    #exp-bar.collapsed #exp-suggestions,
+    #exp-bar.collapsed #exp-list { display: none; }
 
     .exp-autocomplete {
       display: none; list-style: none; margin: 6px 0 0; padding: 4px;
@@ -905,7 +929,7 @@
     /* Filters stack to the right of the search: price label + value, a full-width
        slider across the top, then the chips beneath it. */
     .exp-filters { display: flex; flex-direction: column; gap: 12px; flex: 0 0 auto; min-width: 0; }
-    .exp-filters .camp-filters { display: flex; flex-direction: column; gap: 8px; }   /* vertical space between the slider and the chips */
+    .exp-filters .camp-filters { display: flex; flex-direction: column; gap: 11px; }   /* vertical space between the slider and the chips */
     .exp-filters .camp-price-filter.visible { display: block; }
     .exp-filters .camp-price-filter .df-row { margin: 0; display: flex; flex-direction: column; gap: 5px; }
     .exp-filters .camp-price-filter .df-label { margin: 0; font-size: 10px; }
@@ -938,6 +962,10 @@
     @media (max-width: 600px) {
       #exp-bar { top: calc(8px + env(safe-area-inset-top, 0px)); max-width: calc(100% - 16px); }
       .exp-bar-row { flex-wrap: wrap; }   /* allow wrapping only on phones */
+      .exp-search-wrap { order: 1; flex: 1 1 auto; }   /* search + List + collapse share row 1 */
+      #exp-list-btn { order: 2; }
+      #exp-collapse { order: 3; }
+      .exp-filters { order: 4; flex-basis: 100%; }      /* filters drop to a full-width row 2 */
       .exp-bar-btn { padding: 9px 10px; }
       /* List opens as a bottom sheet on phones; filters stay inline in the bar */
       .exp-list {
@@ -1171,8 +1199,13 @@
           <input type="text" id="exp-search" class="exp-search-input" autocomplete="off" placeholder="Search…" />
           <button id="exp-search-clear" class="exp-clear-btn" aria-label="Clear search" style="display:none">×</button>
         </div>
-        <div id="exp-filters" class="exp-filters"></div>
         <button id="exp-list-btn" class="exp-bar-btn"><i class="fa-solid fa-list-ul"></i> List <span id="exp-list-count" class="exp-count"></span></button>
+        <div id="exp-filters" class="exp-filters"></div>
+        <button id="exp-collapse" class="exp-bar-btn" aria-label="Collapse search & filters" title="Collapse">
+          <i class="fa-solid fa-magnifying-glass exp-c-open"></i>
+          <span class="exp-c-open">Search &amp; filters</span>
+          <i class="fa-solid fa-chevron-up exp-c-caret"></i>
+        </button>
       </div>
       <ul id="exp-suggestions" class="exp-autocomplete" role="listbox"></ul>
       <div id="exp-list" class="exp-list"></div>
@@ -2067,6 +2100,35 @@
       lBtn.classList.toggle('active', open);
       if (open) refreshExpList();
     });
+
+    // Collapse / expand the whole module (manual toggle).
+    const bar = document.getElementById('exp-bar');
+    const collapseBtn = document.getElementById('exp-collapse');
+    if (collapseBtn) collapseBtn.addEventListener('click', () => {
+      bar.classList.toggle('collapsed');
+      if (!bar.classList.contains('collapsed')) { /* re-expanding */ } else { listEl.classList.remove('open'); if (lBtn) lBtn.classList.remove('active'); closeSugg(); }
+      syncBarHeight();
+    });
+
+    // Auto-collapse while the layer panel (mobile drawer) is open; restore the
+    // prior state when it closes. Observing the class catches every open path.
+    const panel = document.getElementById('left-panel');
+    if (panel && bar) {
+      let savedCollapsed = null;
+      new MutationObserver(() => {
+        const open = panel.classList.contains('open');
+        if (open && savedCollapsed === null) {
+          savedCollapsed = bar.classList.contains('collapsed');
+          bar.classList.add('collapsed');
+          syncBarHeight();
+        } else if (!open && savedCollapsed !== null) {
+          bar.classList.toggle('collapsed', savedCollapsed);
+          savedCollapsed = null;
+          syncBarHeight();
+        }
+      }).observe(panel, { attributes: true, attributeFilter: ['class'] });
+    }
+
     window.addEventListener('resize', syncBarHeight);
   }
 
@@ -3214,6 +3276,10 @@
   // ── Build sidebar + add all map layers from experience config ─
   function buildLayersFromConfig(layers) {
     const listEl = document.getElementById('layer-list');
+    // Park the climbing-filter panel outside the list before clearing so a
+    // rebuild can't destroy it; it's re-homed into the Climbing group below.
+    const climbPanel = document.getElementById('climbing-filter-panel');
+    if (climbPanel) document.getElementById('left-panel').appendChild(climbPanel);
     listEl.innerHTML = '';
 
     // Pass 1 — metadata for every layer (incl. climbs, whose data still loads
@@ -3255,7 +3321,7 @@
       const header = document.createElement('div');
       header.className = 'layer-group-label';
       header.innerHTML = `<span>${groupName}</span>`
-        + `<button class="group-toggle${startOpen ? '' : ' off'}" title="Show / hide all in ${groupName}" aria-label="Toggle ${groupName}"><i class="fa-solid ${startOpen ? 'fa-eye' : 'fa-eye-slash'}"></i></button>`
+        + `<button class="group-toggle${startOpen ? ' on' : ''}" title="Show / hide all in ${groupName}" aria-label="Toggle ${groupName}"><span class="layer-toggle"></span></button>`
         + `<i class="fa-solid fa-chevron-down ps-caret"></i>`;
       header.addEventListener('click', () => groupEl.classList.toggle('collapsed'));
       // Group eye: toggle every layer row in this group at once (reusing each
@@ -3267,12 +3333,13 @@
         if (!rows.length) return;
         const turnOn = rows.some(r => !r.classList.contains('on'));
         rows.forEach(r => { if (r.classList.contains('on') !== turnOn) r.click(); });
-        gToggle.classList.toggle('off', !turnOn);
-        gToggle.querySelector('i').className = `fa-solid ${turnOn ? 'fa-eye' : 'fa-eye-slash'}`;
+        gToggle.classList.toggle('on', turnOn);
         if (turnOn) groupEl.classList.remove('collapsed');  // reveal just-enabled rows
       });
       groupEl.appendChild(header);
       groupLayers.forEach(layerCfg => renderLayerRow(layerCfg, groupEl));
+      // Climbing filters live inside the Climbing group, beneath its layer rows.
+      if (climbPanel && groupLayers.some(l => l.source_key === 'climbing_areas')) groupEl.appendChild(climbPanel);
       listEl.appendChild(groupEl);
     });
 
@@ -3335,7 +3402,7 @@
             <div class="layer-swatch" style="background:${swatch};border-radius:50%"></div>
             <span class="layer-name">${label}</span>
             <span class="layer-count" id="count-climbing_areas@${type}"></span>
-            <div class="layer-toggle"></div>`;
+            <span class="layer-eye" aria-hidden="true"><i class="fa-solid fa-eye"></i><i class="fa-solid fa-eye-slash"></i></span>`;
           row.addEventListener('click', () => {
             setLayerVisible(row.dataset.source, row.classList.toggle('on'));
           });
@@ -3353,7 +3420,7 @@
         <div class="layer-swatch" style="background:${color}${layerCfg.geom_type==='point'?';border-radius:50%':''}"></div>
         <span class="layer-name">${layerCfg.label}</span>
         <span class="layer-count" id="count-${layerCfg.source_key}">—</span>
-        <div class="layer-toggle"></div>`;
+        <span class="layer-eye" aria-hidden="true"><i class="fa-solid fa-eye"></i><i class="fa-solid fa-eye-slash"></i></span>`;
       row.addEventListener('click', () => {
         const nowOn = row.classList.toggle('on');
         setLayerVisible(layerCfg.source_key, nowOn);
