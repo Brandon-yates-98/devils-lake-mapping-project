@@ -853,6 +853,103 @@
     .feature-sheet-content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
     #feature-sheet .popup-header { border-radius: 0; }
 
+    /* ─── Experience top bar (primary functionality over the map) ─── */
+    #exp-bar {
+      position: absolute; z-index: 45;
+      top: calc(12px + env(safe-area-inset-top, 0px));
+      left: 0; right: 0; margin: 0 auto;   /* center WITHOUT transform — a transform here would re-anchor the position:fixed mobile sheets to the bar instead of the viewport */
+      width: fit-content; max-width: calc(100% - 24px);   /* size to content; the slider matches the chips' width */
+      font-family: 'Inter', sans-serif;
+    }
+    .exp-bar-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
+      background: rgba(14,22,12,0.92); backdrop-filter: blur(6px);
+      border: 1px solid rgba(155,194,60,0.35); border-radius: 12px;
+      padding: 15px 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.4);
+    }
+    .exp-search-wrap { position: relative; flex: 0 1 280px; display: flex; align-items: center; min-width: 0; }
+    .exp-search-icon { position: absolute; left: 11px; font-size: 11px; color: rgba(155,194,60,0.7); pointer-events: none; }
+    .exp-search-input {
+      width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 9px 28px; color: #fff; font-size: 12.5px; outline: none; font-family: inherit;
+    }
+    .exp-search-input::placeholder { color: rgba(255,255,255,0.3); }
+    .exp-search-input:focus { border-color: rgba(155,194,60,0.5); background: rgba(155,194,60,0.06); }
+    .exp-clear-btn { position: absolute; right: 6px; background: none; border: none; color: rgba(255,255,255,0.45); font-size: 16px; line-height: 1; cursor: pointer; padding: 4px 6px; }
+    .exp-bar-btn {
+      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(155,194,60,0.14); color: #b6d96a;
+      border: 1px solid rgba(155,194,60,0.4); border-radius: 8px;
+      padding: 8px 11px; font-size: 11px; font-weight: 800; cursor: pointer; font-family: inherit; white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .exp-bar-btn:hover { background: rgba(155,194,60,0.24); }
+    .exp-bar-btn.active { background: rgba(155,194,60,0.3); border-color: rgba(155,194,60,0.7); color: #cfe3a8; }
+    .exp-count { font-size: 10px; opacity: 0.85; }
+
+    .exp-autocomplete {
+      display: none; list-style: none; margin: 6px 0 0; padding: 4px;
+      background: rgba(14,22,12,0.97); border: 1px solid rgba(155,194,60,0.3);
+      border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 320px; overflow-y: auto;
+    }
+    .exp-autocomplete.open { display: block; }
+    .exp-autocomplete li {
+      display: flex; align-items: baseline; gap: 8px; justify-content: space-between;
+      padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 12.5px; color: #e6efd4;
+    }
+    .exp-autocomplete li:hover { background: rgba(155,194,60,0.16); }
+    .exp-autocomplete mark { background: rgba(155,194,60,0.4); color: #fff; border-radius: 2px; }
+    .exp-ac-meta { font-size: 11px; color: #9bc23c; font-weight: 700; flex: 0 0 auto; }
+
+    /* Inline, always-visible, compact filter cluster to the right of the search */
+    /* Filters stack to the right of the search: price label + value, a full-width
+       slider across the top, then the chips beneath it. */
+    .exp-filters { display: flex; flex-direction: column; gap: 12px; flex: 0 0 auto; min-width: 0; }
+    .exp-filters .camp-filters { display: flex; flex-direction: column; gap: 8px; }   /* vertical space between the slider and the chips */
+    .exp-filters .camp-price-filter.visible { display: block; }
+    .exp-filters .camp-price-filter .df-row { margin: 0; display: flex; flex-direction: column; gap: 5px; }
+    .exp-filters .camp-price-filter .df-label { margin: 0; font-size: 10px; }
+    .exp-filters .camp-price-filter .df-val { font-size: 11px; }
+    .exp-filters .df-slider { width: 100%; }   /* span the full width, across the top of the chips */
+    .exp-filters #df-result-count { display: none; }
+    .exp-filters .ff-presets { display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: center; }
+
+    .exp-list {
+      display: none; margin-top: 6px; padding: 4px;
+      background: rgba(14,22,12,0.97); border: 1px solid rgba(155,194,60,0.3);
+      border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 50dvh; overflow-y: auto;
+    }
+    .exp-list.open { display: block; }
+    .exp-row {
+      display: flex; align-items: center; gap: 8px; justify-content: space-between; width: 100%;
+      text-align: left; padding: 10px; border: none; border-radius: 7px; background: none;
+      color: #e6efd4; font-size: 12.5px; cursor: pointer; font-family: inherit;
+    }
+    .exp-row:hover { background: rgba(155,194,60,0.14); }
+    .exp-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .exp-row-meta { flex: 0 0 auto; font-size: 11px; font-weight: 700; color: #9bc23c; }
+    .exp-list-empty { padding: 14px; text-align: center; color: rgba(255,255,255,0.4); font-size: 12px; }
+
+    /* When the bar is present, push map controls below it so they never collide */
+    body.has-exp-bar .mapboxgl-ctrl-top-right,
+    body.has-exp-bar .mapboxgl-ctrl-top-left { top: calc(var(--exp-bar-h, 56px) + 20px + env(safe-area-inset-top, 0px)); }
+    body.embed #exp-bar { display: none !important; }
+
+    @media (max-width: 600px) {
+      #exp-bar { top: calc(8px + env(safe-area-inset-top, 0px)); max-width: calc(100% - 16px); }
+      .exp-bar-row { flex-wrap: wrap; }   /* allow wrapping only on phones */
+      .exp-bar-btn { padding: 9px 10px; }
+      /* List opens as a bottom sheet on phones; filters stay inline in the bar */
+      .exp-list {
+        position: fixed; left: 0; right: 0; bottom: 0; top: auto; margin: 0; display: block;
+        border-radius: 14px 14px 0 0; border: none; border-top: 2px solid #9bc23c;
+        max-height: 75dvh; overflow-y: auto; z-index: 46;
+        transform: translateY(110%); transition: transform 0.25s ease;
+        padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      }
+      .exp-list.open { transform: translateY(0); }
+    }
+
     /* ─── Error state ─── */
     #error-screen {
       display: none;
@@ -1063,6 +1160,23 @@
     <button id="climb-filter-chip" style="display:none" title="Clear climbing filters">
       <i class="fa-solid fa-filter"></i> <span id="cfc-label"></span> <span class="cfc-x">×</span>
     </button>
+
+    <!-- Experience top bar: an experience's primary functionality (search ·
+         filters · list) pinned to the top of the map. Shown when the experience
+         sets a primary_layer; built/wired in initExperienceBar(). -->
+    <div id="exp-bar" style="display:none">
+      <div class="exp-bar-row">
+        <div class="exp-search-wrap">
+          <i class="fa-solid fa-magnifying-glass exp-search-icon"></i>
+          <input type="text" id="exp-search" class="exp-search-input" autocomplete="off" placeholder="Search…" />
+          <button id="exp-search-clear" class="exp-clear-btn" aria-label="Clear search" style="display:none">×</button>
+        </div>
+        <div id="exp-filters" class="exp-filters"></div>
+        <button id="exp-list-btn" class="exp-bar-btn"><i class="fa-solid fa-list-ul"></i> List <span id="exp-list-count" class="exp-count"></span></button>
+      </div>
+      <ul id="exp-suggestions" class="exp-autocomplete" role="listbox"></ul>
+      <div id="exp-list" class="exp-list"></div>
+    </div>
   </div>
 
 </main>
@@ -1738,6 +1852,7 @@
     }
     const resetBtn = document.getElementById('df-reset');
     if (resetBtn) resetBtn.style.display = active.length ? 'block' : 'none';
+    refreshExpList();
   }
 
   function initCampFilter(layers) {
@@ -1827,6 +1942,159 @@
       });
     });
     return out;
+  }
+
+  // Generic name search over any layer's cached features (experience bar).
+  // Returns up to 8 unique {name, id, meta} matches.
+  function buildFeatureSuggestions(layerKey, q) {
+    if (!q) return [];
+    const ql = q.toLowerCase();
+    const seen = new Set();
+    const out = [];
+    (layerCache[layerKey] ? layerCache[layerKey].features : []).forEach(f => {
+      if (out.length >= 8) return;
+      const p = f.properties || {};
+      const name = (p.name || '').trim();
+      if (!name || seen.has(name.toLowerCase())) return;
+      if (!name.toLowerCase().includes(ql)) return;
+      seen.add(name.toLowerCase());
+      out.push({ name, id: p.id, meta: p.min_price != null ? `$${p.min_price}` : '' });
+    });
+    return out;
+  }
+
+  // ── Experience top bar (search · filters · list over the map) ──
+  // Generic for any experience that sets primary_layer. Reuses the price/preset
+  // filters, openFeaturePopup, and the condMatches predicate.
+  let expPrimaryLayer = null;
+  let _expBarWired = false;
+
+  // Read-side mirror of the active map filters (price range + presets), used to
+  // build the list + count. The map keeps using setData/setFilter as before.
+  function featureMatchesActiveFilters(props, layerKey) {
+    for (const s of CAMP_SLIDERS) {
+      if (campFilter[s.key] != null) {
+        const v = props[s.prop];
+        if (!(v != null && v <= campFilter[s.key])) return false;
+      }
+    }
+    for (const f of savedFilters) {
+      if (!activePresetIds.has(f.id) || f.target !== layerKey) continue;
+      const conds = f.conditions || [];
+      const ok = f.match === 'any' ? conds.some(c => condMatches(c, props)) : conds.every(c => condMatches(c, props));
+      if (!ok) return false;
+    }
+    return true;
+  }
+
+  // Rebuild the feature list (active filters + search query) and the List · N count.
+  function refreshExpList() {
+    if (!expPrimaryLayer) return;
+    const listEl = document.getElementById('exp-list');
+    const countEl = document.getElementById('exp-list-count');
+    const cached = layerCache[expPrimaryLayer];
+    const searchEl = document.getElementById('exp-search');
+    const q = (searchEl && searchEl.value || '').trim().toLowerCase();
+    let feats = (cached ? cached.features : []).filter(f => {
+      const p = f.properties || {};
+      if (q && !(p.name || '').toLowerCase().includes(q)) return false;
+      return featureMatchesActiveFilters(p, expPrimaryLayer);
+    });
+    feats = feats.slice().sort((a, b) => {
+      const an = (a.properties.name || '').trim(), bn = (b.properties.name || '').trim();
+      if (!an !== !bn) return an ? -1 : 1;   // named entries before unnamed
+      return an.localeCompare(bn, undefined, { numeric: true });
+    });
+    if (countEl) countEl.textContent = feats.length;
+    if (!listEl) return;
+    listEl.innerHTML = feats.length ? feats.map(f => {
+      const p = f.properties;
+      const meta = p.min_price != null ? `$${p.min_price}` : '';
+      return `<button class="exp-row" data-id="${escapeHtml(String(p.id))}">`
+        + `<span class="exp-row-name">${escapeHtml(p.name || '(unnamed)')}</span>`
+        + (meta ? `<span class="exp-row-meta">${escapeHtml(meta)}</span>` : '')
+        + '</button>';
+    }).join('') : '<div class="exp-list-empty">No matches</div>';
+    listEl.querySelectorAll('.exp-row').forEach(btn => btn.addEventListener('click', () => {
+      listEl.classList.remove('open');
+      document.getElementById('exp-list-btn').classList.remove('active');
+      flyToFeature(expPrimaryLayer, btn.dataset.id);
+    }));
+  }
+
+  function setupExperienceBar() {
+    if (_expBarWired) return;
+    _expBarWired = true;
+    const input = document.getElementById('exp-search');
+    const clearBtn = document.getElementById('exp-search-clear');
+    const sugg = document.getElementById('exp-suggestions');
+    const listEl = document.getElementById('exp-list');
+    const lBtn = document.getElementById('exp-list-btn');
+    const closeSugg = () => { sugg.classList.remove('open'); sugg.innerHTML = ''; };
+
+    function pick(name, id) {
+      input.value = name; clearBtn.style.display = '';
+      closeSugg();
+      if (id != null && id !== '') flyToFeature(expPrimaryLayer, id);
+      refreshExpList();
+    }
+    function render(q) {
+      const items = buildFeatureSuggestions(expPrimaryLayer, q);
+      if (!q || !items.length) { closeSugg(); return; }
+      sugg.innerHTML = items.map(it =>
+        `<li role="option" data-id="${escapeHtml(String(it.id))}" data-name="${escapeHtml(it.name)}">`
+        + `<span>${cfHighlight(it.name, q)}</span>`
+        + (it.meta ? `<span class="exp-ac-meta">${escapeHtml(it.meta)}</span>` : '')
+        + '</li>').join('');
+      sugg.classList.add('open');
+      sugg.querySelectorAll('li').forEach(li => li.addEventListener('mousedown', e => {
+        e.preventDefault(); pick(li.dataset.name, li.dataset.id);
+      }));
+    }
+    let deb = null;
+    input.addEventListener('input', e => {
+      const v = e.target.value;
+      clearBtn.style.display = v ? '' : 'none';
+      clearTimeout(deb); deb = setTimeout(() => render(v.trim()), 120);
+      refreshExpList();
+    });
+    input.addEventListener('focus', () => { if (input.value.trim()) render(input.value.trim()); });
+    clearBtn.addEventListener('click', () => { input.value = ''; clearBtn.style.display = 'none'; closeSugg(); refreshExpList(); });
+    document.addEventListener('click', e => { if (sugg && !sugg.contains(e.target) && e.target !== input) closeSugg(); });
+
+    if (lBtn) lBtn.addEventListener('click', () => {
+      const open = listEl.classList.toggle('open');
+      lBtn.classList.toggle('active', open);
+      if (open) refreshExpList();
+    });
+    window.addEventListener('resize', syncBarHeight);
+  }
+
+  // Publish the bar's actual height so the map controls can sit below it
+  // (the full-width bar would otherwise overlap the top-right controls).
+  function syncBarHeight() {
+    const bar = document.getElementById('exp-bar');
+    if (bar) document.documentElement.style.setProperty('--exp-bar-h', (bar.offsetHeight || 56) + 'px');
+  }
+
+  // Show + wire the bar for the experience's primary_layer (filters DOM is
+  // mounted into #exp-filters by buildLayersFromConfig). No-op if none set.
+  function initExperienceBar() {
+    const bar = document.getElementById('exp-bar');
+    if (!bar) return;
+    const exp = experienceConfig && experienceConfig.experience;
+    const pl = exp && exp.primary_layer;
+    expPrimaryLayer = (pl && layerCache[pl] && layerCache[pl].features && layerCache[pl].features.length) ? pl : null;
+    if (!expPrimaryLayer) { bar.style.display = 'none'; document.body.classList.remove('has-exp-bar'); return; }
+    bar.style.display = '';
+    document.body.classList.add('has-exp-bar');
+    const meta = layerMeta[expPrimaryLayer];
+    const label = (meta && meta.label) ? meta.label.toLowerCase() : 'features';
+    const input = document.getElementById('exp-search');
+    if (input) input.placeholder = `Search ${label}…`;
+    setupExperienceBar();
+    refreshExpList();
+    requestAnimationFrame(syncBarHeight);
   }
 
   // ── Climbing filter event wiring (called once) ────────────────
@@ -2793,6 +3061,7 @@
     const anyActive = activePresetIds.size > 0 || !!(adhocFilter && adhocFilter.expr);
     const clearBtn = document.getElementById('ff-clear');
     if (clearBtn) clearBtn.style.display = anyActive ? 'block' : 'none';
+    refreshExpList();
   }
 
   function clearAllFeatureFilters() {
@@ -3011,16 +3280,23 @@
     // (#camp-filter-section, outside the Layers list), shown only when the
     // campsites layer is present. Rebuilt with the list so #ff-presets is
     // recreated fresh each time and the init passes that run afterward find it.
+    // Where the price slider + presets live: in the top-of-map experience bar
+    // when the experience sets a primary_layer, else the sidebar section
+    // (fallback). Built in exactly one place so #df-price / #ff-presets are unique.
     const campSection = document.getElementById('camp-filter-section');
     const campBody = document.getElementById('camp-filter-body');
-    if (campSection && campBody) {
-      campBody.innerHTML = '';
-      if (layers.some(l => l.source_key === CAMPING_SOURCE)) {
-        campBody.appendChild(buildCampingFilters());
-        campSection.style.display = '';
-      } else {
-        campSection.style.display = 'none';
-      }
+    const expFiltersEl = document.getElementById('exp-filters');
+    const primaryLayer = (experienceConfig.experience && experienceConfig.experience.primary_layer) || null;
+    if (campBody) campBody.innerHTML = '';
+    if (expFiltersEl) expFiltersEl.innerHTML = '';
+    if (primaryLayer && expFiltersEl) {
+      expFiltersEl.appendChild(buildCampingFilters());           // top-of-map bar hosts the filters
+      if (campSection) campSection.style.display = 'none';
+    } else if (campSection && campBody && layers.some(l => l.source_key === CAMPING_SOURCE)) {
+      campBody.appendChild(buildCampingFilters());               // sidebar fallback
+      campSection.style.display = '';
+    } else if (campSection) {
+      campSection.style.display = 'none';
     }
 
     // The max-price slider + the predefined filter presets (populated later by
@@ -3035,7 +3311,6 @@
             <input type="range" id="df-price" class="df-slider" min="0" max="100" step="5" value="100" />
           </div>
           <div id="df-result-count" class="cf-result-count"></div>
-          <button id="df-reset" class="cf-reset-btn" style="display:none">Reset</button>
         </div>
         <div id="ff-presets" class="ff-presets"></div>`;
       return box;
@@ -3381,7 +3656,9 @@
     return out.sort(byClimbName);
   }
 
-  function flyToClimb(src, fid) {
+  // Center a feature and open its popup — used by climbing nav, the experience
+  // bar search, and the feature list. Source-agnostic (looks up by id in cache).
+  function flyToFeature(src, fid) {
     const f = (layerCache[src] || { features: [] }).features
       .find(x => String(x.properties.id) === String(fid));
     if (!f) return;
@@ -3390,6 +3667,7 @@
     map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 16), speed: 1.4 });
     openFeaturePopup(f, src, coords);
   }
+  const flyToClimb = flyToFeature;  // back-compat alias for existing climbing callers
 
   // Direct climb counts per area, baked into the cached area features so
   // every setData path (initial load, style switch, filters) carries them.
@@ -3635,6 +3913,7 @@
     initClimbingFilters(layers);
     initCampFilter(layers);
     initFeatureFilters(layers);
+    initExperienceBar();
 
     document.getElementById('feature-count-badge').innerHTML =
       `<i class="fa-solid fa-layer-group"></i> ${total.toLocaleString()} Features`;
