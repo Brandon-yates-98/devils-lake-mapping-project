@@ -129,6 +129,7 @@
         transform: translateX(-100%);
         box-shadow: none;
         padding-bottom: env(safe-area-inset-bottom, 0px);
+        z-index: 55;   /* above the experience bar (45) so the drawer sits in front of search & filters */
       }
       #left-panel.open {
         transform: translateX(0);
@@ -638,6 +639,47 @@
     #submit-status.ok { color: #27ae60; font-weight: 700; }
     #submit-status.err { color: #e74c3c; }
 
+    /* ─── GoingToCamp date picker modal ─── */
+    #gtc-modal {
+      display: none; position: fixed; inset: 0; z-index: 10000;
+      background: rgba(0,0,0,0.6); align-items: center; justify-content: center;
+      padding: env(safe-area-inset-top,0px) 12px env(safe-area-inset-bottom,0px);
+    }
+    #gtc-modal.open { display: flex; }
+    #gtc-box {
+      background: #fff; border-radius: 10px; width: 340px; max-width: 94vw;
+      overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); font-family: 'Inter', sans-serif;
+    }
+    #gtc-box-header {
+      background: linear-gradient(135deg,#162914,#24401f);
+      padding: 11px 14px; display: flex; align-items: center; gap: 8px;
+      border-bottom: 2px solid #9bc23c;
+    }
+    #gtc-box-header span { flex: 1; font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 7px; }
+    #gtc-box-header i { color: #9bc23c; }
+    #gtc-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 18px; cursor: pointer; padding: 2px 6px; }
+    #gtc-close:hover { color: #fff; }
+    #gtc-box-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+    #gtc-feature-name { font-size: 13px; font-weight: 800; color: #2f5d1e; }
+    .gtc-fields { display: flex; gap: 10px; }
+    .gtc-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .gtc-field-nights { flex: 0 0 88px; }
+    .gtc-field span { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #888; }
+    .gtc-field input {
+      width: 100%; box-sizing: border-box; border: 1px solid #d8e0cd; border-radius: 7px;
+      padding: 9px 10px; font-size: 13px; font-family: inherit; color: #1a2418; outline: none;
+    }
+    .gtc-field input:focus { border-color: #9bc23c; }
+    #gtc-go {
+      width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 11px; border: none; border-radius: 7px; cursor: pointer; font-family: inherit;
+      font-size: 12.5px; font-weight: 800; color: #fff;
+      background: linear-gradient(135deg,#7cae2f,#5f9221); box-shadow: 0 2px 8px rgba(95,146,33,0.35);
+      transition: transform 0.08s ease, box-shadow 0.15s ease;
+    }
+    #gtc-go:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(95,146,33,0.45); }
+    #gtc-note { font-size: 10px; color: #9aa694; text-align: center; line-height: 1.4; }
+
     /* ─── Lightbox ─── */
     #lb-overlay {
       display: none; position: fixed; inset: 0; z-index: 9999;
@@ -862,6 +904,15 @@
     .feature-sheet-close:active { background: rgba(255,255,255,0.16); }
     .feature-sheet-content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
     #feature-sheet .popup-header { border-radius: 0; }
+    /* Popup content is authored for the narrow desktop popup (e.g. custom
+       templates set .cp { width: 262px }). In the full-width bottom sheet, let
+       it fill the available width instead of sitting left-aligned with a gap. */
+    #feature-sheet .dl-popup-custom,
+    #feature-sheet .dl-popup-custom > * { width: 100% !important; max-width: 100%; box-sizing: border-box; }
+    #feature-sheet .mapboxgl-popup-content { min-width: 0; }
+    /* Keep the title clear of the absolute close button (44px) in the sheet. */
+    #feature-sheet .popup-header,
+    #feature-sheet .cp-head { padding-right: 52px; }
 
     /* ─── Experience top bar (primary functionality over the map) ─── */
     #exp-bar {
@@ -1034,6 +1085,26 @@
   </div>
 </div>
 
+<!-- GoingToCamp date picker — collects dates, then deep-links to the official
+     Wisconsin State Parks reservation site (goingtocamp.com) in a new tab. -->
+<div id="gtc-modal" role="dialog" aria-modal="true" aria-label="Choose reservation dates">
+  <div id="gtc-box">
+    <div id="gtc-box-header">
+      <span><i class="fa-solid fa-calendar-check"></i> Choose your dates</span>
+      <button id="gtc-close" aria-label="Close">&#x2715;</button>
+    </div>
+    <div id="gtc-box-body">
+      <div id="gtc-feature-name"></div>
+      <div class="gtc-fields">
+        <label class="gtc-field"><span>Arrival</span><input type="date" id="gtc-start" /></label>
+        <label class="gtc-field gtc-field-nights"><span>Nights</span><input type="number" id="gtc-nights" min="1" max="30" step="1" value="1" /></label>
+      </div>
+      <button id="gtc-go"><i class="fa-solid fa-arrow-up-right-from-square"></i> Search availability</button>
+      <div id="gtc-note">Opens the official Wisconsin State Parks reservation site in a new tab.</div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ HEADER ══════════════════════════════════════════════════ -->
 <header id="site-header">
   <button id="menu-toggle" aria-label="Toggle layer panel">
@@ -1095,8 +1166,7 @@
          (built in renderLayerRow); drive-time filters were removed. -->
 
     <!-- Climbing search + filters — shown only when climbing layers are in the experience -->
-    <div id="climbing-filter-panel" class="panel-section collapsible collapsed">
-      <div class="panel-section-title">Climbing Filters<i class="fa-solid fa-chevron-down ps-caret"></i></div>
+    <div id="climbing-filter-panel" class="panel-section">
 
       <div class="cf-search-wrap">
         <i class="fa-solid fa-magnifying-glass cf-search-icon"></i>
@@ -1548,6 +1618,70 @@
       const scoped = s.split(',').map(part => `${scopeSel} ${part.trim()}`).join(', ');
       return `${scoped}{${body}}`;
     });
+  }
+
+  // ── GoingToCamp (Wisconsin State Parks) reservation deep links ───────
+  // The reserve link is gated on the goingtocamp.com host; a campground is
+  // deep-linkable only if its stored URL carries the location IDs (some DNR
+  // parks are seeded with just the bare site URL until their IDs are captured).
+  const GTC_DATE = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  function parseGoingToCamp(url) {
+    if (!url || !/goingtocamp\.com/i.test(url)) return null;
+    let q;
+    try { q = new URL(url).searchParams; } catch { return null; }
+    const txId = q.get('transactionLocationId');
+    const mapId = q.get('mapId');
+    if (!txId || !mapId) return null;   // need location identity to deep-link
+    return { txId, resId: q.get('resourceLocationId') || txId, mapId };
+  }
+  function goingToCampUrl({ txId, resId, mapId }, { startDate, nights = 1 } = {}) {
+    const today = new Date();
+    const start = startDate ? new Date(startDate + 'T00:00:00')
+      : (() => { const d = new Date(today); d.setDate(d.getDate() + 1); return d; })();
+    const n = Math.max(1, Math.min(30, Math.round(nights) || 1));
+    const end = new Date(start); end.setDate(end.getDate() + n);
+    const monthAnchor = new Date(today.getFullYear(), today.getMonth(), 1);
+    const p = new URLSearchParams({
+      transactionLocationId: txId, resourceLocationId: resId, mapId,
+      searchTabGroupId: 0, bookingCategoryId: 0,
+      startDate: GTC_DATE(start), endDate: GTC_DATE(end), nights: n,
+      isReserving: true, equipmentId: -32768, subEquipmentId: -32768,
+      peopleCapacityCategoryCounts: '[[-32768,null,1,null]]',
+      filterData: '{"-32768":"[[1],0,0,0]"}',
+      searchTime: new Date().toISOString(),
+      flexibleSearch: `[false,false,"${GTC_DATE(monthAnchor)}",1]`,
+      view: 'map',
+    });
+    return `https://wisconsin.goingtocamp.com/create-booking/results?${p}`;
+  }
+  // Date-picker modal: collect arrival + nights, then open the deep link.
+  let _gtcWired = false;
+  function openGtcModal(ids, featureName) {
+    const modal = document.getElementById('gtc-modal');
+    const startInput = document.getElementById('gtc-start');
+    const nightsInput = document.getElementById('gtc-nights');
+    const today = new Date();
+    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+    startInput.min = GTC_DATE(today);
+    startInput.value = GTC_DATE(tomorrow);
+    nightsInput.value = 1;
+    document.getElementById('gtc-feature-name').textContent = featureName || 'Wisconsin State Park';
+    modal.classList.add('open');
+    if (!_gtcWired) {
+      _gtcWired = true;
+      const close = () => modal.classList.remove('open');
+      document.getElementById('gtc-close').addEventListener('click', close);
+      modal.addEventListener('click', e => { if (e.target === modal) close(); });
+      document.getElementById('gtc-go').addEventListener('click', () => {
+        const url = goingToCampUrl(openGtcModal._ids, {
+          startDate: startInput.value || undefined,
+          nights: +nightsInput.value || 1,
+        });
+        window.open(url, '_blank', 'noopener');
+        close();
+      });
+    }
+    openGtcModal._ids = ids;
   }
 
   // ── Climbing grade helpers ────────────────────────────────────
@@ -3165,10 +3299,16 @@
     // Custom (ad-hoc) filter panel — shown only when some layer exposes a
     // filterable field (presets now live in the Camping footer above).
     const panel = document.getElementById('feature-filter-panel');
-    const filterableLayers = layers.filter(l => layerFieldNames(l.source_key).length);
+    // Climbing has its own dedicated filter UI (search / area / type / grade) in
+    // the Climbing group — exclude climbing layers from the custom filter builder.
+    const filterableLayers = layers.filter(l =>
+      layerFieldNames(l.source_key).length && !CLIMBING_SOURCES.includes(l.source_key));
     const adhocBox = document.getElementById('ff-adhoc');
     const layerSel = document.getElementById('ff-layer');
-    if (!filterableLayers.length) {
+    // Experiences with a primary_layer (e.g. Campsites) surface their filtering
+    // in the top experience bar — hide the sidebar custom filter builder there.
+    const hasPrimaryLayer = !!(experienceConfig.experience && experienceConfig.experience.primary_layer);
+    if (!filterableLayers.length || hasPrimaryLayer) {
       panel.style.display = 'none';
     } else {
       panel.style.display = 'block';
@@ -3339,7 +3479,10 @@
       groupEl.appendChild(header);
       groupLayers.forEach(layerCfg => renderLayerRow(layerCfg, groupEl));
       // Climbing filters live inside the Climbing group, beneath its layer rows.
-      if (climbPanel && groupLayers.some(l => l.source_key === 'climbing_areas')) groupEl.appendChild(climbPanel);
+      if (climbPanel && groupLayers.some(l => l.source_key === 'climbing_areas')) {
+        climbPanel.classList.remove('collapsed');   // no own heading inside the group — keep content open
+        groupEl.appendChild(climbPanel);
+      }
       listEl.appendChild(groupEl);
     });
 
@@ -3544,14 +3687,39 @@
       map.on('mouseleave', lid, () => { map.getCanvas().style.cursor = ''; });
     });
 
-    Object.keys(layerToSource).forEach(lid => {
-      if (lid.endsWith('-glow') || lid.endsWith('-case') || lid.endsWith('-outline')) return;
-      if (lid.startsWith('campground_hulls-')) return;  // derived geometry — not interactive
+    const interactiveLayerIds = Object.keys(layerToSource).filter(lid =>
+      !lid.endsWith('-glow') && !lid.endsWith('-case') && !lid.endsWith('-outline')
+      && !lid.startsWith('campground_hulls-'));
+    interactiveLayerIds.forEach(lid => {
       map.on('click', lid, (e) => {
         if (e.originalEvent._popupHandled) return;
         openFeaturePopup(e.features[0], layerToSource[lid], e.lngLat);
         e.originalEvent._popupHandled = true;
       });
+    });
+
+    // Larger tap target — fingers are imprecise. If an exact tap missed every
+    // marker, re-query a padded box around the tap (much wider on touch screens)
+    // and open the nearest feature in it.
+    map.on('click', (e) => {
+      if (e.originalEvent._popupHandled) return;
+      const r = isMobile() ? 22 : 6;   // half-size of the hit box, in screen px
+      const layers = interactiveLayerIds.filter(id => map.getLayer(id));
+      if (!layers.length) return;
+      const box = [[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]];
+      const feats = map.queryRenderedFeatures(box, { layers });
+      if (!feats.length) return;
+      // prefer the point marker closest to the finger; fall back to topmost
+      let best = feats[0], bestD = Infinity;
+      for (const f of feats) {
+        if (f.geometry && f.geometry.type === 'Point') {
+          const p = map.project(f.geometry.coordinates);
+          const d = (p.x - e.point.x) ** 2 + (p.y - e.point.y) ** 2;
+          if (d < bestD) { bestD = d; best = f; }
+        }
+      }
+      openFeaturePopup(best, layerToSource[best.layer.id], e.lngLat);
+      e.originalEvent._popupHandled = true;
     });
   }
 
@@ -3618,6 +3786,16 @@
           || (Array.isArray(lngLat) ? lngLat : [lngLat.lng, lngLat.lat]);
         openDirections(dest);
       });
+      // GoingToCamp reserve links: if the URL carries location IDs, intercept
+      // the click to collect dates and deep-link to the live availability page.
+      const gtcLink = el.querySelector('a[href*="goingtocamp.com"]');
+      if (gtcLink) {
+        const gtcIds = parseGoingToCamp(gtcLink.getAttribute('href'));
+        if (gtcIds) gtcLink.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          openGtcModal(gtcIds, feature.properties && feature.properties.name);
+        });
+      }
       // OpenBeta area association: jump to an area's climbs (from an area
       // marker's "Show climbs" button or a climb's area chip).
       const areaBtn = el.querySelector('.popup-area-climbs-btn, .popup-area-link');
