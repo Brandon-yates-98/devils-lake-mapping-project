@@ -22,7 +22,7 @@ any payment or donation.
 ## Suggested support for local nonprofits (voluntary, direct)
 Separately and independently from any gift, the operator may **suggest** that a
 recipient who found the project useful consider supporting a **local outdoor
-nonprofit**. Any such donation is:
+nonprofit of their choosing**. Any such donation is:
 - entirely **voluntary** and never a condition of receiving anything;
 - paid **directly by the donor to the nonprofit**; and
 - **never routed through, or received by, the operator**.

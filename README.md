@@ -2,7 +2,7 @@
 
 An installable, offline-capable web map for outdoor recreation around **Devil's Lake / Baraboo / Sauk County, Wisconsin** — trails, climbing, campsites, and points of interest. No app store, no native code: one HTML file, Mapbox GL JS, and Supabase.
 
-This is an **independent, noncommercial community project** — ownership and liability stay with the project itself (see [Independence](#independence)).
+This is an **independent community project, maintained by a single developer** and not run for profit — ownership and liability stay with the project itself (see [Independence](#independence)).
 
 **Live map:** https://brandon-yates-98.github.io/devils-lake-mapping-project/
 
@@ -17,16 +17,17 @@ This is an **independent, noncommercial community project** — ownership and li
 2. **Support local businesses** — surface local outdoor businesses (campgrounds, shops, guides, outfitters) and send visitors their way.
 3. **Collect community photos & local knowledge** — let the people who actually use these places contribute photos and on-the-ground detail back into the map.
 4. **Contribute back to open source** — upstream verifiable facts (campsite locations, trail details) to OpenStreetMap and OpenBeta so the wider commons improves, not just this map.
+5. **Give back to the area** — the map is free and stays free; it surfaces local outdoor orgs, and any business that gets value from a custom experience is encouraged (never required) to donate to one directly. The developer takes nothing.
 
-### Noncommercial by design
+### Not run for money
 
-This project is **not for commercial use**, and it isn't run for money:
+This project is maintained by a **single developer**, in his spare time, for the love of the area — it isn't a business:
 
-- It's built and run by an **unpaid volunteer**; **no** wages, fees, or donations flow to the operator, and incidental running costs are covered personally.
-- "Custom map experiences" for local businesses or organizations are provided **free, as a gift** — never sold, and never conditioned on a payment or donation.
-- The operator may *suggest* supporting a **local outdoor nonprofit**, but any such donation is entirely **voluntary**, paid **directly to the nonprofit**, and **never a condition of — or routed through — the project**.
+- The map is **free** — no ads, paywall, or account.
+- **Custom map experiences** for local businesses or organizations are built at the developer's **own discretion and motivation, free of charge**. Being featured is **not for sale** and **not an endorsement** — it's just one person choosing what to build.
+- If a business gets value from one, it's **encouraged (never required)** to give back by donating to a **local outdoor org of its choice** — paid **directly to the org**. The **developer takes nothing**: no wages, fees, or donations, and nothing is routed through the project.
 
-No one earns a wage or sells access from operating this map. Full operator model: [`licensing/PERMITTED-USES.md`](licensing/PERMITTED-USES.md).
+Full operator model and the gift/donation reasoning: [`licensing/PERMITTED-USES.md`](licensing/PERMITTED-USES.md).
 
 ### Independence
 
