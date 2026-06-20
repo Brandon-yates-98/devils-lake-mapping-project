@@ -1048,7 +1048,7 @@
           <input type="checkbox" id="snap-toggle" /> Snap to nearby features
         </label>
         <div style="font-size:11px;color:rgba(255,255,255,0.25);font-style:italic;margin-top:4px">
-          When on, points and line vertices you draw or move snap to the nearest vertex of a nearby feature.
+          When on, a dragged point or line vertex snaps live onto the nearest nearby feature vertex (a blue ring marks the target); newly drawn features snap on save.
         </div>
       </div>
 
@@ -1560,12 +1560,67 @@
       paint: { 'circle-radius': 5, 'circle-color': '#404040' } },
   ];
 
+  // ── Live vertex snapping ────────────────────────────────────────
+  // Custom select modes: after the default drag moves a vertex/point to the
+  // cursor, snap it onto a nearby feature vertex (when the Snap toggle is on) and
+  // show a ring on the target. snapEnabled/snapOneCoord are defined further down
+  // (called only at drag time). Best-effort + try/catch so a Draw internals
+  // change can never break editing — the default drag has already run.
+  const _drawTarget = () => (document.getElementById('draw-target-select') || {}).value || '';
+  function updateSnapIndicator(coord) {
+    const SRC = '_snap_target';
+    if (!map.getSource(SRC)) {
+      map.addSource(SRC, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({ id: SRC + '-ring', type: 'circle', source: SRC, paint: {
+        'circle-radius': 9, 'circle-color': 'rgba(37,99,235,0.12)',
+        'circle-stroke-color': '#2563eb', 'circle-stroke-width': 3 } });
+    }
+    map.getSource(SRC).setData(coord
+      ? { type: 'Feature', geometry: { type: 'Point', coordinates: [coord[0], coord[1]] }, properties: {} }
+      : { type: 'FeatureCollection', features: [] });
+  }
+  const SnapDirectSelect = Object.assign({}, MapboxDraw.modes.direct_select);
+  SnapDirectSelect.onDrag = function (state, e) {
+    MapboxDraw.modes.direct_select.onDrag.call(this, state, e);
+    if (!snapEnabled()) return;
+    try {
+      const paths = state.selectedCoordPaths || [];
+      if (paths.length !== 1 || !state.feature) { updateSnapIndicator(null); return; }
+      const s = snapOneCoord(state.feature.getCoordinate(paths[0]), _drawTarget(), state.feature.id);
+      if (s) { state.feature.updateCoordinate(paths[0], s[0], s[1]); updateSnapIndicator(s); }
+      else updateSnapIndicator(null);
+    } catch (_) { /* never break the drag */ }
+  };
+  SnapDirectSelect.onMouseUp = function (state, e) {
+    updateSnapIndicator(null);
+    return MapboxDraw.modes.direct_select.onMouseUp.call(this, state, e);
+  };
+  const SnapSimpleSelect = Object.assign({}, MapboxDraw.modes.simple_select);
+  SnapSimpleSelect.onDrag = function (state, e) {
+    MapboxDraw.modes.simple_select.onDrag.call(this, state, e);
+    if (!snapEnabled()) return;
+    try {
+      const ids = this.getSelectedIds();
+      if (ids.length !== 1) { updateSnapIndicator(null); return; }
+      const feature = this.getFeature(ids[0]);
+      if (!feature || feature.type !== 'Point') { updateSnapIndicator(null); return; }
+      const s = snapOneCoord(feature.getCoordinate(), _drawTarget(), ids[0]);
+      if (s) { feature.setCoordinates(s); updateSnapIndicator(s); }
+      else updateSnapIndicator(null);
+    } catch (_) { /* never break the drag */ }
+  };
+  SnapSimpleSelect.onMouseUp = function (state, e) {
+    updateSnapIndicator(null);
+    return MapboxDraw.modes.simple_select.onMouseUp.call(this, state, e);
+  };
+
   const draw = new MapboxDraw({
     displayControlsDefault: false,
     userProperties: true,
     clickBuffer: 8,    // forgiving grab radius for mouse (default 2px)
     touchBuffer: 30,   // and for touch (default 25px)
     styles: DRAW_STYLES,
+    modes: Object.assign({}, MapboxDraw.modes, { direct_select: SnapDirectSelect, simple_select: SnapSimpleSelect }),
   });
   map.addControl(draw);
 
