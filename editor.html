@@ -939,6 +939,7 @@
   <div id="basemap-switcher">
     <button class="bm-btn active" data-bm="outdoors">Outdoors</button>
     <button class="bm-btn" data-bm="satellite-streets">Satellite</button>
+    <button class="bm-btn" data-bm="aerial-hd">Aerial HD</button>
     <button class="bm-btn" data-bm="streets">Streets</button>
     <button class="bm-btn" data-bm="dark">Dark</button>
   </div>
@@ -4413,9 +4414,35 @@
 
   // ══ Basemap Switcher ═══════════════════════════════════════════
 
+  // WI DNR "Latest Leaf-Off" orthoimagery — WROC 2020/2025 statewide mosaic, up to
+  // 3-inch (0.076 m) GSD, ~8x sharper than NAIP/Mapbox Satellite (~0.6 m). Leaf-off,
+  // so rock, talus and trails read clearly through the canopy at Devil's Lake.
+  // It's a dynamic ImageServer (cache is in WI Transverse Mercator, unusable as XYZ),
+  // so we template the exportImage op — it reprojects to 3857 to match Mapbox's
+  // {bbox-epsg-3857} raster token. glyphs+sprite are borrowed from a Mapbox style so
+  // our symbol (label/icon) layers still render once style.load re-adds them over the
+  // imagery.
+  const AERIAL_HD_STYLE = {
+    version: 8,
+    glyphs: 'mapbox://fonts/mapbox/{fontstack}/{range}.pbf',
+    sprite: 'mapbox://sprites/mapbox/satellite-streets-v12',
+    sources: {
+      'aerial-hd': {
+        type: 'raster',
+        tiles: ['https://dnrmaps.wi.gov/arcgis_image/rest/services/DW_Imagery/EN_Image_Basemap_Latest_Leaf_Off/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=jpgpng&f=image'],
+        tileSize: 256,
+        attribution: 'WI DNR / WROC leaf-off orthoimagery',
+      },
+    },
+    layers: [
+      { id: 'aerial-hd-raster', type: 'raster', source: 'aerial-hd' },
+    ],
+  };
+
   const BM_STYLES = {
     'outdoors':          'mapbox://styles/mapbox/outdoors-v12',
     'satellite-streets': 'mapbox://styles/mapbox/satellite-streets-v12',
+    'aerial-hd':         AERIAL_HD_STYLE,
     'streets':           'mapbox://styles/mapbox/streets-v12',
     'dark':              'mapbox://styles/mapbox/dark-v11',
   };
