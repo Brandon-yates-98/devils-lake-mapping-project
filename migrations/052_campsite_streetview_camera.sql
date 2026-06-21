@@ -4,15 +4,21 @@
 --
 -- Precomputes, for every campsite_sites point, where a Street View camera should
 -- stand and which way it should face so the first frame looks AT the campsite:
---   * sv_lng / sv_lat : the closest point on the nearest real road (the spur/road
---     intersection for spurred sites; the nearest road point otherwise).
---   * sv_heading       : bearing from that standing point toward the campsite
---     (degrees, 0=N clockwise — same convention as the Maps Embed API `heading`).
+--   * sv_lng / sv_lat : the standing point on the road network.
+--   * sv_heading       : bearing from that point toward the campsite (degrees,
+--     0=N clockwise — same convention as the Maps Embed API `heading`).
 --
--- Standing point = the spur's actual road end when a spur exists (the literal
--- spur/road intersection the user sees on the map), else the closest point on the
--- nearest real road. On-road sites (standing point == campsite, azimuth undefined)
--- get no heading -> default facing. Heading is reset each run so it never goes stale.
+-- Standing point is chosen in priority order:
+--   1. The spur's road end (the spur/road intersection) when a _spur exists.
+--   2. Else, for a campsite that is the dead-end tip of a short (<80 m) non-spur
+--      access road, that road's FAR endpoint (its junction with the bigger road)
+--      — so the camera stands at the junction and looks UP the access road at the
+--      site. (Migration 045 snapped these campsites onto the road, erasing their
+--      offset, so without this they'd get no heading and Street View would face
+--      its arbitrary default "down the road".)
+--   3. Else the closest point on the nearest road.
+-- Heading is omitted only if the standing point ends up within 1 m of the site
+-- (azimuth undefined). Heading is reset each run so it never goes stale.
 --
 -- Re-runnable: re-invoke after roads/spurs change. service_role-only.
 -- ============================================================
@@ -21,14 +27,29 @@ create or replace function public.set_campsite_streetview_camera()
 returns int language sql security definer set search_path = public, extensions as $fn$
   with spur as (
     select properties->>'campsite' as campsite, st_endpoint(geometry) as endpt
-    from osm_geometries
-    where source = 'roads' and (properties->>'_spur')::bool is true
+    from osm_geometries where source = 'roads' and (properties->>'_spur')::bool is true
+  ),
+  -- non-spur road whose endpoint coincides with the campsite (an access stub);
+  -- far_end = the road's other end (its junction with the larger road)
+  access as (
+    select cs.id,
+      first_value(case when st_dwithin(st_startpoint(r.geometry)::geography, cs.geometry::geography, 2)
+                       then st_endpoint(r.geometry) else st_startpoint(r.geometry) end)
+        over (partition by cs.id order by st_length(r.geometry::geography)) as far_end
+    from osm_geometries cs
+    join osm_geometries r
+      on r.source = 'roads' and coalesce((r.properties->>'_spur')::bool, false) = false
+     and st_length(r.geometry::geography) < 80
+     and (st_dwithin(st_startpoint(r.geometry)::geography, cs.geometry::geography, 2)
+          or st_dwithin(st_endpoint(r.geometry)::geography, cs.geometry::geography, 2))
+    where cs.source = 'campsite_sites'
   ),
   cam as (
     select cs.id, cs.geometry as site,
       coalesce(
-        (select sp.endpt from spur sp where sp.campsite = cs.name limit 1),  -- spur/road intersection
-        st_closestpoint(r.geom, cs.geometry)                                 -- else nearest road point
+        (select sp.endpt from spur sp where sp.campsite = cs.name limit 1),  -- 1. spur/road intersection
+        (select a.far_end from access a where a.id = cs.id limit 1),         -- 2. access-stub junction
+        st_closestpoint(r.geom, cs.geometry)                                 -- 3. nearest road point
       ) as stand
     from osm_geometries cs
     cross join lateral (
@@ -49,7 +70,7 @@ returns int language sql security definer set search_path = public, extensions a
           'sv_lat', round(st_y(cam.stand)::numeric, 7),
           'sv_heading', case when st_distance(cam.stand::geography, cam.site::geography) > 1
                              then round(degrees(st_azimuth(cam.stand::geography, cam.site::geography))::numeric, 1)
-                             else null end))   -- omit heading for on-road sites (azimuth undefined)
+                             else null end))   -- omit heading only if standing on the site
     from cam
     where o.id = cam.id
     returning 1

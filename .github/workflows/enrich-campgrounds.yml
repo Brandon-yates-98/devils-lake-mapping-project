@@ -1,9 +1,10 @@
-name: Enrich campgrounds (Google Places)
+name: Refresh Google data (campgrounds + campsite Street View)
 
-# Refreshes Google Places data for the campgrounds layer on a 30-day cycle.
-# The DB function only returns rows whose cache is missing or >30 days old, so
-# running on the 1st of each month re-fetches each campground roughly monthly;
-# running more often is harmless (fresh rows are skipped, no API calls spent).
+# Refreshes Google Places data for the campgrounds layer on a 30-day cycle, then
+# precomputes campsite Street View coverage (sv_status). The campground enrich
+# function only returns rows whose cache is missing or >30 days old, so running
+# monthly re-fetches each roughly monthly; running more often is harmless. The
+# Street View coverage sweep uses the FREE metadata endpoint (no per-call charge).
 
 on:
   schedule:
@@ -11,7 +12,7 @@ on:
   workflow_dispatch:           # manual run from the Actions tab
     inputs:
       dry_run:
-        description: 'Dry run (no DB writes, no Google calls)'
+        description: 'Dry run: no DB writes (still calls Google to preview data)'
         type: boolean
         default: true
 
@@ -33,11 +34,23 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Script is stdlib-only — nothing to pip install.
-      - name: Run enrichment
+      # Scripts are stdlib-only — nothing to pip install.
+      - name: Enrich campgrounds (Google Places)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}            # service_role key
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
         run: |
           python scripts/enrich_campgrounds_google.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+
+      # Campsite Street View coverage (free metadata sweep). Refreshes sv_lat/lng/
+      # heading then writes sv_status. Skipped on dry runs since it writes to the DB.
+      - name: Precompute campsite Street View coverage
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}            # service_role key
+          GOOGLE_STREETVIEW_KEY: ${{ secrets.GOOGLE_STREETVIEW_KEY }}
+          GOOGLE_STREETVIEW_REFERER: ${{ secrets.GOOGLE_STREETVIEW_REFERER }}
+        run: |
+          python scripts/precompute_streetview_coverage.py

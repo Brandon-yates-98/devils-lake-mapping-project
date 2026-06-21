@@ -613,6 +613,43 @@
       font-size: 9.5px; color: #999; margin-bottom: 6px; margin-top: 1px;
     }
 
+    /* ─── Campsite popup (Street View static hero + clean header) ─── */
+    .cs-pop { width: 300px; max-width: 100%; }
+    .cs-pop-hero {
+      position: relative; display: block; width: 100%; height: 158px;
+      cursor: pointer; background: #16210f; overflow: hidden;
+    }
+    .cs-pop-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cs-pop-hero .cs-pop-expand {
+      position: absolute; bottom: 8px; right: 8px; display: flex;
+      align-items: center; justify-content: center; width: 26px; height: 26px;
+      border-radius: 6px; background: rgba(0,0,0,0.5); color: #fff;
+      font-size: 11px; transition: background 0.15s;
+    }
+    .cs-pop-hero:hover .cs-pop-expand { background: rgba(0,0,0,0.72); }
+    .cs-pop-hero--placeholder { cursor: default; }
+    .cs-pop-placeholder {
+      display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;
+      background: linear-gradient(135deg,#1b2c16,#24401f); color: rgba(255,255,255,0.45);
+    }
+    .cs-pop-placeholder i { font-size: 34px; }
+    .cs-pop-svcap { font-size: 10.5px; color: #7a8a5a; text-align: center; padding: 5px 0 0; }
+    .cs-pop-svcap i { font-size: 10px; }
+    .cs-pop-head { padding: 11px 13px 4px; }
+    .cs-pop-title { font-size: 15px; font-weight: 800; color: #1a2418; line-height: 1.2; }
+    .cs-pop-sub { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    .cs-pop-cg { font-size: 12px; font-weight: 600; color: #5a6a4a; }
+    .cs-pop-type {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700;
+    }
+    .cs-type-standard   { background: #e7f3e2; color: #2f6b2a; }
+    .cs-type-electrical { background: #fdeede; color: #b45e12; }
+    .cs-type-accessible { background: #e4edfb; color: #1f57c4; }
+    .cs-type-walkin     { background: #e0f1ee; color: #157a6a; }
+    .cs-type-group      { background: #efe7f7; color: #6b3aa0; }
+    .cs-pop-actions { padding: 8px 13px 12px; }
+
     /* ─── Submit photo button (in popup) ─── */
     .popup-submit-btn {
       display: flex; align-items: center; justify-content: center; gap: 5px;
@@ -2568,6 +2605,66 @@
     if (heading != null && heading !== '') url += `&heading=${heading}`;
     return url;
   }
+  // Plain Street View photo (Street View Static API) — no controls, used as the
+  // campsite popup hero. Billed per request (unlike the free Embed API), so it's
+  // only built when a campsite popup opens. Requires "Street View Static API"
+  // enabled on the key; scale=2 keeps it crisp on retina.
+  function streetViewStaticURL(lng, lat, heading, w, h) {
+    let url = 'https://maps.googleapis.com/maps/api/streetview'
+      + `?size=${w}x${h}&scale=2&fov=90&pitch=0`
+      + `&location=${lat},${lng}`
+      + `&key=${encodeURIComponent(STREETVIEW_EMBED_KEY)}`;
+    if (heading != null && heading !== '') url += `&heading=${heading}`;
+    return url;
+  }
+  // Prettified labels for the campsite popup.
+  const CAMPGROUND_LABEL = { northern_lights: 'Northern Lights', quartzite: 'Quartzite' };
+  const SITE_TYPE_META = {
+    standard:    { label: 'Standard',   icon: 'fa-tent',          cls: 'standard' },
+    electrical:  { label: 'Electric',   icon: 'fa-plug',          cls: 'electrical' },
+    handicapped: { label: 'Accessible', icon: 'fa-wheelchair',    cls: 'accessible' },
+    walk_in:     { label: 'Walk-in',    icon: 'fa-person-hiking', cls: 'walkin' },
+    group:       { label: 'Group',      icon: 'fa-people-group',  cls: 'group' },
+  };
+  function prettifyCampground(v) {
+    if (!v) return '';
+    return CAMPGROUND_LABEL[v] || String(v).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+  // Campsite popup: a plain Street View photo hero (tap -> full-screen interactive),
+  // a clean header (site name + campground + styled type), and no plain-text rows.
+  // The hero is a fixed-height frame so the popup never collapses: covered sites
+  // (sv_status='ok', precomputed via the free metadata sweep) show the Street View
+  // photo; everything else shows a branded placeholder (the site-type glyph on the
+  // dark panel) — never a gray "no imagery" tile, never an empty box.
+  function buildCampsitePopupHTML(props) {
+    const name = props.name || (props.ref ? `Site ${props.ref}` : 'Campsite');
+    const cg = prettifyCampground(props.campground);
+    const t = SITE_TYPE_META[props.site_type];
+    const phIcon = t ? t.icon : 'fa-tent';
+    const hasSV = STREETVIEW_EMBED_KEY && props.sv_lng != null && props.sv_lat != null
+      && props.sv_status === 'ok';
+    const hero = hasSV
+      ? `<div class="cs-pop-hero" role="button" tabindex="0" aria-label="Open Street View">
+          <img src="${escapeHtml(streetViewStaticURL(props.sv_lng, props.sv_lat, props.sv_heading, 600, 320))}" alt="Street View of ${escapeHtml(name)}" loading="lazy" />
+          <span class="cs-pop-expand"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+        </div>`
+      : `<div class="cs-pop-hero cs-pop-hero--placeholder"><div class="cs-pop-placeholder"><i class="fa-solid ${phIcon}"></i></div></div>`;
+    const sub = [
+      cg ? `<span class="cs-pop-cg">${escapeHtml(cg)}</span>` : '',
+      t ? `<span class="cs-pop-type cs-type-${t.cls}"><i class="fa-solid ${t.icon}"></i> ${t.label}</span>` : '',
+    ].filter(Boolean).join('');
+    return `<div class="dl-popup-custom"><div class="cs-pop">
+      ${hero}
+      ${hasSV ? `<div class="cs-pop-svcap"><i class="fa-solid fa-street-view"></i> Click for Street View</div>` : ''}
+      <div class="cs-pop-head">
+        <div class="cs-pop-title">${escapeHtml(name)}</div>
+        ${sub ? `<div class="cs-pop-sub">${sub}</div>` : ''}
+      </div>
+      <div class="cs-pop-actions">
+        <button class="popup-directions-btn"><i class="fa-solid fa-route"></i> Directions</button>
+      </div>
+    </div></div>`;
+  }
 
   // Photo gallery strip (thumbs + count), shared by the generic and custom-template
   // popup paths. Returns '' when the feature has no photos. The lightbox binding in
@@ -2603,6 +2700,7 @@
       const style = cfg.popup_css ? `<style>${scopePopupCss(cfg.popup_css)}</style>` : '';
       return `${style}<div class="dl-popup-custom">${body}</div>`;
     }
+    if (sourceKey === 'campsite_sites') return buildCampsitePopupHTML(props);
     const name = props.name || null;
     const tagKeys = PRIMARY_TAG_KEYS[sourceKey] || [];
     let badgeKey = null, badgeVal = null;
@@ -3953,11 +4051,11 @@
           || (Array.isArray(lngLat) ? lngLat : [lngLat.lng, lngLat.lat]);
         openDirections(dest);
       });
-      // Street View: open the panorama in a larger full-screen modal. The
-      // (free, unlimited) Embed-API iframe is built lazily on open, so opening
-      // a campsite popup fires no Google request until the user asks to see it.
-      const svBtn = el.querySelector('.popup-streetview-btn');
-      if (svBtn) svBtn.addEventListener('click', () => {
+      // Street View: open the interactive panorama in a full-screen modal. The
+      // (free, unlimited) Embed-API iframe is built lazily on open, so nothing
+      // fires until the user taps. Triggered by the campsite popup's static-photo
+      // hero (.cs-pop-hero) or, for any other layer, a .popup-streetview-btn.
+      const openSV = () => {
         const p = feature.properties || {};
         // Prefer the precomputed camera (sv_lng/sv_lat = road standing point,
         // sv_heading = bearing toward the site); fall back to the feature centroid.
@@ -3966,7 +4064,31 @@
           : (featureCentroid(feature.geometry)
              || (Array.isArray(lngLat) ? lngLat : [lngLat.lng, lngLat.lat]));
         if (c) openStreetView(c[0], c[1], p.name, p.sv_heading);
-      });
+      };
+      const svBtn = el.querySelector('.popup-streetview-btn');
+      if (svBtn) svBtn.addEventListener('click', openSV);
+      const svHero = el.querySelector('.cs-pop-hero[role="button"]');
+      if (svHero) {
+        svHero.addEventListener('click', openSV);
+        svHero.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSV(); }
+        });
+        // If the precomputed-OK photo transiently fails (propagation/edge error),
+        // swap the hero to the branded placeholder so it never shows a broken image.
+        // It stays tappable — the interactive panorama may still load. naturalWidth
+        // guards the case where the error fired before this listener attached.
+        const heroImg = svHero.querySelector('img');
+        if (heroImg) {
+          const meta = SITE_TYPE_META[(feature.properties || {}).site_type];
+          const icon = meta ? meta.icon : 'fa-tent';
+          const toPlaceholder = () => {
+            svHero.classList.add('cs-pop-hero--placeholder');
+            svHero.innerHTML = `<div class="cs-pop-placeholder"><i class="fa-solid ${icon}"></i></div>`;
+          };
+          heroImg.addEventListener('error', toPlaceholder);
+          if (heroImg.complete && heroImg.naturalWidth === 0) toPlaceholder();
+        }
+      }
       // Reserve links: intercept supported providers to collect dates (+ rig /
       // site type) and deep-link to the live availability page.
       const featName = feature.properties && feature.properties.name;
