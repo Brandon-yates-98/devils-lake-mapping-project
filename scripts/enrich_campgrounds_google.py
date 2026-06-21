@@ -29,7 +29,7 @@ Required env (locally via 1Password `op`; in CI via GitHub Actions secrets):
   SUPABASE_KEY            service_role key (bypasses RLS for the write RPC)
   GOOGLE_PLACES_API_KEY   server key, restricted to the Places API (New)
 """
-import os, sys, json, time, urllib.request, urllib.error
+import os, sys, json, time, re, urllib.request, urllib.error
 
 # ── Config / guardrails ──────────────────────────────────────────────────────
 SUPABASE_URL  = os.environ.get('SUPABASE_URL', '').rstrip('/')
@@ -40,7 +40,8 @@ REFRESH_DAYS       = 30      # match the ToS 30-day cache cycle
 PHOTOS_PER_SITE    = 3       # Place Photo calls per campground
 MAX_REVIEWS        = 3       # top-N reviews flattened into properties
 PHOTO_MAX_WIDTH    = 1200
-MAX_CALLS_PER_RUN  = 200     # hard backstop against a runaway loop
+MAX_CALLS_PER_RUN  = 600     # backstop vs runaway loop; first run is ~5 calls/site
+                             # (resolve + details + 3 photos) = ~285 for 57 sites
 SEARCH_RADIUS_M    = 500     # location bias when resolving place_id by name
 
 DRY_RUN = '--dry-run' in sys.argv
@@ -106,8 +107,28 @@ def apply_enrichment(row_id, props, photo_meta, place_id):
 
 
 # ── Google Places (New) ──────────────────────────────────────────────────────
+# Generic camp words carry no identity — strip them before comparing names so
+# "Snuffy's Family Campground" vs "Skillet Creek Campground" share nothing and the
+# mismatch is caught (Text Search by name+location can return the wrong place).
+_GENERIC_WORDS = {'campground', 'campsite', 'camp', 'camping', 'resort', 'rv',
+                  'park', 'the', 'and', 'of', 'a', 'dca', 'llc', 'inc', 'co',
+                  'state', 'county'}
+
+def _name_tokens(s):
+    s = (s or '').lower().replace('&', ' and ').replace("'", '')
+    return {t for t in re.findall(r'[a-z0-9]+', s)
+            if len(t) >= 3 and t not in _GENERIC_WORDS}
+
+def _name_matches(want, got):
+    """True if the Google name shares a distinctive token with the campground name."""
+    wt = _name_tokens(want)
+    if not wt:
+        return True               # nothing distinctive to verify — accept
+    return bool(wt & _name_tokens(got))
+
 def resolve_place_id(name, lat, lng):
-    """Text Search (New) — minimal field mask keeps this on the cheap SKU."""
+    """Text Search (New) — minimal field mask keeps this on the cheap SKU.
+    Returns the first candidate whose name matches; skips (None) if none do."""
     _budget('text_search')
     url = f'{PLACES_BASE}/places:searchText'
     headers = {'Content-Type': 'application/json', 'X-Goog-Api-Key': GOOGLE_KEY,
@@ -117,7 +138,15 @@ def resolve_place_id(name, lat, lng):
                                         'radius': SEARCH_RADIUS_M}}}
     data = _request(url, method='POST', headers=headers, body=body)
     places = (data or {}).get('places') or []
-    return places[0]['id'] if places else None
+    for p in places[:5]:
+        got = (p.get('displayName') or {}).get('text', '')
+        if _name_matches(name, got):
+            return p['id']
+    if places:
+        top = (places[0].get('displayName') or {}).get('text', '?')
+        sys.stderr.write(f'  name mismatch for "{name}": top result "{top}" — skipping '
+                         '(set custom_data.google.place_id manually to override)\n')
+    return None
 
 def place_details(place_id):
     _budget('place_details')
