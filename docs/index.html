@@ -648,7 +648,14 @@
     .cs-type-accessible { background: #e4edfb; color: #1f57c4; }
     .cs-type-walkin     { background: #e0f1ee; color: #157a6a; }
     .cs-type-group      { background: #efe7f7; color: #6b3aa0; }
-    .cs-pop-actions { padding: 8px 13px 12px; }
+    .cs-pop-actions { padding: 8px 13px 12px; display: flex; flex-direction: column; gap: 7px; }
+    .cs-pop-reserve {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      width: 100%; padding: 9px; border: none; border-radius: 7px; cursor: pointer;
+      font-family: inherit; font-size: 12px; font-weight: 800; color: #fff;
+      background: linear-gradient(135deg,#7cae2f,#5f9221); transition: filter 0.15s;
+    }
+    .cs-pop-reserve:hover { filter: brightness(1.06); }
 
     /* ─── Submit photo button (in popup) ─── */
     .popup-submit-btn {
@@ -742,6 +749,25 @@
       background: #fff;
     }
     .gtc-field input:focus, .gtc-field select:focus { border-color: #9bc23c; }
+    /* ─── Reservation range calendar ─── */
+    #gtc-cal { user-select: none; }
+    .gtc-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .gtc-cal-title { font-size: 12.5px; font-weight: 800; color: #1a2418; }
+    .gtc-cal-nav { background: none; border: none; cursor: pointer; color: #5f9221; font-size: 13px; padding: 4px 9px; border-radius: 6px; }
+    .gtc-cal-nav:hover:not(:disabled) { background: #eef3e6; }
+    .gtc-cal-nav:disabled { color: #d0d0d0; cursor: default; }
+    .gtc-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .gtc-cal-dow { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #aaa; text-align: center; padding: 2px 0; }
+    .gtc-cal-day { aspect-ratio: 1 / 1; border: none; background: none; cursor: pointer; font-size: 12px;
+      color: #1a2418; border-radius: 6px; font-family: inherit; padding: 0; }
+    .gtc-cal-day:hover:not(:disabled) { background: #eef3e6; }
+    .gtc-cal-day:disabled { color: #d3d3d3; cursor: default; }
+    .gtc-cal-day.gtc-empty { visibility: hidden; }
+    .gtc-cal-day.in-range { background: #eef3e6; border-radius: 0; }
+    .gtc-cal-day.range-start { background: #5f9221; color: #fff; border-radius: 6px 0 0 6px; }
+    .gtc-cal-day.range-end { background: #5f9221; color: #fff; border-radius: 0 6px 6px 0; }
+    .gtc-cal-day.range-start.range-end { border-radius: 6px; }
+    #gtc-range-summary { font-size: 11.5px; color: #5a6a4a; text-align: center; font-weight: 600; min-height: 15px; }
     #gtc-go {
       width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
       padding: 11px; border: none; border-radius: 7px; cursor: pointer; font-family: inherit;
@@ -749,7 +775,8 @@
       background: linear-gradient(135deg,#7cae2f,#5f9221); box-shadow: 0 2px 8px rgba(95,146,33,0.35);
       transition: transform 0.08s ease, box-shadow 0.15s ease;
     }
-    #gtc-go:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(95,146,33,0.45); }
+    #gtc-go:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(95,146,33,0.45); }
+    #gtc-go:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
     #gtc-note { font-size: 10px; color: #9aa694; text-align: center; line-height: 1.4; }
 
     /* ─── Lightbox ─── */
@@ -982,6 +1009,11 @@
     #feature-sheet .dl-popup-custom,
     #feature-sheet .dl-popup-custom > * { width: 100% !important; max-width: 100%; box-sizing: border-box; }
     #feature-sheet .mapboxgl-popup-content { min-width: 0; }
+    /* Campsite popup header text sits on the dark sheet on mobile (no white card
+       behind it like the desktop popup) — lighten it for contrast. */
+    #feature-sheet .cs-pop-title { color: #fff; }
+    #feature-sheet .cs-pop-cg { color: rgba(255,255,255,0.72); }
+    #feature-sheet .cs-pop-svcap { color: rgba(255,255,255,0.6); }
     /* Keep the title clear of the absolute close button (44px) in the sheet. */
     #feature-sheet .popup-header,
     #feature-sheet .cp-head { padding-right: 52px; }
@@ -1180,10 +1212,8 @@
     </div>
     <div id="gtc-box-body">
       <div id="gtc-feature-name"></div>
-      <div class="gtc-fields">
-        <label class="gtc-field"><span>Arrival</span><input type="date" id="gtc-start" /></label>
-        <label class="gtc-field gtc-field-nights"><span>Nights</span><input type="number" id="gtc-nights" min="1" max="30" step="1" value="1" /></label>
-      </div>
+      <div id="gtc-cal"></div>
+      <div id="gtc-range-summary"></div>
       <label class="gtc-field"><span id="gtc-type-label">Equipment</span><select id="gtc-equip"></select></label>
       <button id="gtc-go"><i class="fa-solid fa-arrow-up-right-from-square"></i> Search availability</button>
       <div id="gtc-note">Opens the official Wisconsin State Parks reservation site in a new tab.</div>
@@ -1788,13 +1818,71 @@
     return u;
   }
 
-  // Date-picker modal: collect arrival + nights (+ rig / site type), then open
-  // the provider's deep link. Shared by GoingToCamp and Campspot.
+  // Reservation modal: pick check-in then check-out on a single inline range
+  // calendar (+ rig / site type), then open the provider's deep link. Shared by
+  // GoingToCamp and Campspot.
   let _reserveWired = false;
+  const reserveSel = { view: null, start: null, end: null };  // Dates at local midnight
+  const _MS_DAY = 86400000;
+  const _MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const _midnight = dt => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  const _parseLocal = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+
+  function renderReserveCalendar() {
+    const cal = document.getElementById('gtc-cal');
+    const sum = document.getElementById('gtc-range-summary');
+    const go = document.getElementById('gtc-go');
+    const v = reserveSel.view, y = v.getFullYear(), m = v.getMonth();
+    const today = _midnight(new Date());
+    const firstDow = new Date(y, m, 1).getDay();
+    const ndays = new Date(y, m + 1, 0).getDate();
+    const atFirstMonth = y === today.getFullYear() && m === today.getMonth();
+    const s = reserveSel.start, e = reserveSel.end;
+    let cells = '';
+    for (let i = 0; i < firstDow; i++) cells += '<button class="gtc-cal-day gtc-empty" disabled tabindex="-1"></button>';
+    for (let d = 1; d <= ndays; d++) {
+      const cur = new Date(y, m, d);
+      const past = cur < today;
+      let cls = 'gtc-cal-day';
+      if (s && +cur === +s) cls += ' range-start';
+      if (e && +cur === +e) cls += ' range-end';
+      if (s && e && cur > s && cur < e) cls += ' in-range';
+      cells += `<button class="${cls}"${past ? ' disabled' : ` data-date="${GTC_DATE(cur)}"`}>${d}</button>`;
+    }
+    cal.innerHTML =
+      `<div class="gtc-cal-head">
+        <button class="gtc-cal-nav" data-nav="prev"${atFirstMonth ? ' disabled' : ''} aria-label="Previous month"><i class="fa-solid fa-chevron-left"></i></button>
+        <span class="gtc-cal-title">${_MONTHS[m]} ${y}</span>
+        <button class="gtc-cal-nav" data-nav="next" aria-label="Next month"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+      <div class="gtc-cal-grid">
+        ${['Su','Mo','Tu','We','Th','Fr','Sa'].map(w => `<div class="gtc-cal-dow">${w}</div>`).join('')}
+        ${cells}
+      </div>`;
+    const fmt = dt => `${_MONTHS[dt.getMonth()].slice(0, 3)} ${dt.getDate()}`;
+    if (s && e) {
+      const nights = Math.round((e - s) / _MS_DAY);
+      sum.textContent = `${fmt(s)} → ${fmt(e)} · ${nights} night${nights === 1 ? '' : 's'}`;
+      go.disabled = false;
+    } else if (s) {
+      sum.textContent = `Check-in ${fmt(s)} — now pick check-out`;
+      go.disabled = true;
+    } else {
+      sum.textContent = 'Tap your check-in, then check-out date';
+      go.disabled = true;
+    }
+  }
+
+  function _reserveDayClick(iso) {
+    const d = _parseLocal(iso), s = reserveSel;
+    if (!s.start || (s.start && s.end)) { s.start = d; s.end = null; }   // start a new range
+    else if (d <= s.start) { s.start = d; s.end = null; }                // tapped before check-in → restart
+    else { s.end = d; }                                                  // complete the range
+    renderReserveCalendar();
+  }
+
   function openReserveModal(provider, cfg, featureName) {
     const modal = document.getElementById('gtc-modal');
-    const startInput = document.getElementById('gtc-start');
-    const nightsInput = document.getElementById('gtc-nights');
     const typeSel = document.getElementById('gtc-equip');
     const typeLabel = document.getElementById('gtc-type-label');
     const note = document.getElementById('gtc-note');
@@ -1808,21 +1896,30 @@
       typeSel.innerHTML = GTC_EQUIPMENT.map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
       note.textContent = 'Opens the official Wisconsin State Parks reservation site in a new tab.';
     }
-    const today = new Date();
-    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-    startInput.min = GTC_DATE(today);
-    startInput.value = GTC_DATE(tomorrow);
-    nightsInput.value = 1;
+    // Default to a 1-night range starting tomorrow.
+    const start = _midnight(new Date()); start.setDate(start.getDate() + 1);
+    const end = new Date(start); end.setDate(end.getDate() + 1);
+    reserveSel.start = start; reserveSel.end = end;
+    reserveSel.view = new Date(start.getFullYear(), start.getMonth(), 1);
     document.getElementById('gtc-feature-name').textContent = featureName || '';
+    renderReserveCalendar();
     modal.classList.add('open');
     if (!_reserveWired) {
       _reserveWired = true;
       const close = () => modal.classList.remove('open');
       document.getElementById('gtc-close').addEventListener('click', close);
       modal.addEventListener('click', e => { if (e.target === modal) close(); });
+      document.getElementById('gtc-cal').addEventListener('click', e => {
+        const nav = e.target.closest('[data-nav]');
+        if (nav) { reserveSel.view.setMonth(reserveSel.view.getMonth() + (nav.dataset.nav === 'next' ? 1 : -1)); renderReserveCalendar(); return; }
+        const day = e.target.closest('[data-date]');
+        if (day) _reserveDayClick(day.dataset.date);
+      });
       document.getElementById('gtc-go').addEventListener('click', () => {
         const { provider, cfg } = openReserveModal._ctx;
-        const opts = { startDate: startInput.value || undefined, nights: +nightsInput.value || 1 };
+        if (!reserveSel.start || !reserveSel.end) return;
+        const nights = Math.max(1, Math.round((reserveSel.end - reserveSel.start) / _MS_DAY));
+        const opts = { startDate: GTC_DATE(reserveSel.start), nights };
         const url = provider === 'campspot'
           ? campspotUrl(cfg, { ...opts, category: typeSel.value || '' })
           : goingToCampUrl(cfg.ids, { ...opts, subEquipmentId: +typeSel.value || -32768 });
@@ -2630,6 +2727,13 @@
     if (!v) return '';
     return CAMPGROUND_LABEL[v] || String(v).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
+  // Devil's Lake GoingToCamp deep-link IDs per campground (migration 038): campsites
+  // reserve through their campground's loop. tx == res for the whole park; mapId is
+  // the loop. Lets campsite popups open the same date-range reservation modal.
+  const CAMPSITE_RESERVATION = {
+    quartzite:       { txId: '-2147483634', resId: '-2147483634', mapId: '-2147483636' },
+    northern_lights: { txId: '-2147483634', resId: '-2147483634', mapId: '-2147483635' },
+  };
   // Campsite popup: a plain Street View photo hero (tap -> full-screen interactive),
   // a clean header (site name + campground + styled type), and no plain-text rows.
   // The hero is a fixed-height frame so the popup never collapses: covered sites
@@ -2661,6 +2765,9 @@
         ${sub ? `<div class="cs-pop-sub">${sub}</div>` : ''}
       </div>
       <div class="cs-pop-actions">
+        ${CAMPSITE_RESERVATION[props.campground]
+          ? `<button class="cs-pop-reserve" data-cg="${escapeHtml(props.campground)}"><i class="fa-solid fa-calendar-check"></i> Reserve</button>`
+          : ''}
         <button class="popup-directions-btn"><i class="fa-solid fa-route"></i> Directions</button>
       </div>
     </div></div>`;
@@ -4089,6 +4196,13 @@
           if (heroImg.complete && heroImg.naturalWidth === 0) toPlaceholder();
         }
       }
+      // Campsite Reserve -> same date-range modal, deep-linking to the campground's
+      // GoingToCamp loop (mapped from the campsite's `campground`).
+      const csReserve = el.querySelector('.cs-pop-reserve');
+      if (csReserve) csReserve.addEventListener('click', () => {
+        const ids = CAMPSITE_RESERVATION[csReserve.dataset.cg];
+        if (ids) openReserveModal('goingtocamp', { ids }, (feature.properties || {}).name);
+      });
       // Reserve links: intercept supported providers to collect dates (+ rig /
       // site type) and deep-link to the live availability page.
       const featName = feature.properties && feature.properties.name;
