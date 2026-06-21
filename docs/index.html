@@ -575,11 +575,30 @@
     }
     .popup-streetview-btn:hover { filter: brightness(1.08); }
     .popup-streetview-btn i { font-size: 11px; }
-    .popup-streetview { margin-top: 7px; }
-    .popup-streetview[hidden] { display: none; }
-    .popup-streetview iframe {
-      width: 100%; height: 200px; border: 0; border-radius: 6px; display: block;
+    /* Street View opens in a full-screen modal (mirrors #lb-overlay) rather
+       than inline, so the panorama gets room to pan/zoom. */
+    #sv-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.92); backdrop-filter: blur(4px);
+      flex-direction: column; align-items: center; justify-content: center; gap: 10px;
     }
+    #sv-overlay.open { display: flex; }
+    #sv-title {
+      color: rgba(255,255,255,0.9); font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 700; letter-spacing: 0.3px;
+    }
+    #sv-frame-wrap {
+      width: min(1100px, 92vw); height: min(680px, 80vh);
+      border-radius: 10px; overflow: hidden; background: #111;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.5);
+    }
+    #sv-frame-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+    #sv-close {
+      position: absolute; top: 16px; right: 20px;
+      background: none; border: none; color: rgba(255,255,255,0.7);
+      font-size: 26px; cursor: pointer; line-height: 1; padding: 4px 8px;
+    }
+    #sv-close:hover { color: #fff; }
     .popup-photos {
       display: flex; gap: 5px; overflow-x: auto;
       margin: 2px 0 2px; padding-bottom: 3px;
@@ -1075,6 +1094,13 @@
   <div id="lb-caption"></div>
   <div id="lb-counter"></div>
   <button id="lb-next" aria-label="Next photo">&#8250;</button>
+</div>
+
+<!-- ── Street View modal (larger panorama; mounted from the campsite popup button) ── -->
+<div id="sv-overlay" role="dialog" aria-modal="true" aria-label="Street View">
+  <button id="sv-close" aria-label="Close">&#x2715;</button>
+  <div id="sv-title"></div>
+  <div id="sv-frame-wrap"></div>
 </div>
 
 <!-- ── Mobile feature bottom-sheet (replaces anchored popups on small screens;
@@ -2531,7 +2557,7 @@
   // ships in the client, so in the Google Cloud console restrict it to (1) the
   // Maps Embed API only and (2) this site's HTTP referrer. Leave '' to hide the
   // Street View control entirely. Only campsite sources get the control.
-  const STREETVIEW_EMBED_KEY = '';
+  const STREETVIEW_EMBED_KEY = 'AIzaSyD7ogMBpHRomETaw_BypsdbB40HQ4CM220';
   const STREETVIEW_SOURCES = new Set(['campsite_sites']);
   function streetViewEmbedURL(lng, lat) {
     return 'https://www.google.com/maps/embed/v1/streetview'
@@ -2539,10 +2565,37 @@
       + `&location=${lat},${lng}&fov=90`;
   }
 
+  // Photo gallery strip (thumbs + count), shared by the generic and custom-template
+  // popup paths. Returns '' when the feature has no photos. The lightbox binding in
+  // wire() attaches to .popup-photo-thumb regardless of which path emitted it.
+  function buildPhotoGalleryHTML(props) {
+    let photos = props.photos;
+    if (typeof photos === 'string') { try { photos = JSON.parse(photos); } catch { photos = []; } }
+    if (!Array.isArray(photos)) photos = [];
+    let photoMeta = props.photo_meta;
+    if (typeof photoMeta === 'string') { try { photoMeta = JSON.parse(photoMeta); } catch { photoMeta = []; } }
+    if (!Array.isArray(photoMeta)) photoMeta = [];
+    const lbData = photoMeta.length
+      ? photoMeta.map(m => ({ url: m.url || '', caption: m.caption || '' }))
+      : photos.map(u => ({ url: u, caption: '' }));
+    if (!lbData.length) return '';
+    return `<div class="popup-photos" data-photos="${escapeHtml(JSON.stringify(lbData))}">${
+        lbData.slice(0, 12).map((m, i) =>
+          `<img class="popup-photo-thumb" src="${escapeHtml(m.url)}" data-idx="${i}" loading="lazy" alt="" />`
+        ).join('')
+      }</div><div class="popup-photo-count">${lbData.length} photo${lbData.length === 1 ? '' : 's'}</div>`;
+  }
+
   function buildPopupHTML(props, sourceKey) {
     const cfg = layerMeta[sourceKey] || { label: 'Feature', color: '#7f8c8d' };
     if (cfg.popup_template && cfg.popup_template.trim()) {
-      const body = renderPopupTemplate(cfg.popup_template, buildCtx(props));
+      let body = renderPopupTemplate(cfg.popup_template, buildCtx(props));
+      // Inject the photo gallery at the template's <!--DL_PHOTOS--> marker (or
+      // append it) — custom templates can't emit the lightbox data attributes.
+      const gallery = buildPhotoGalleryHTML(props);
+      body = body.includes('<!--DL_PHOTOS-->')
+        ? body.replace('<!--DL_PHOTOS-->', gallery)
+        : body + gallery;
       const style = cfg.popup_css ? `<style>${scopePopupCss(cfg.popup_css)}</style>` : '';
       return `${style}<div class="dl-popup-custom">${body}</div>`;
     }
@@ -2623,22 +2676,7 @@
       .join('');
 
     // Feature photos — gallery strip; click opens lightbox
-    let photos = props.photos;
-    if (typeof photos === 'string') { try { photos = JSON.parse(photos); } catch { photos = []; } }
-    if (!Array.isArray(photos)) photos = [];
-    let photoMeta = props.photo_meta;
-    if (typeof photoMeta === 'string') { try { photoMeta = JSON.parse(photoMeta); } catch { photoMeta = []; } }
-    if (!Array.isArray(photoMeta)) photoMeta = [];
-    const lbData = photoMeta.length
-      ? photoMeta.map(m => ({ url: m.url || '', caption: m.caption || '' }))
-      : photos.map(u => ({ url: u, caption: '' }));
-    const photosHTML = lbData.length
-      ? `<div class="popup-photos" data-photos="${escapeHtml(JSON.stringify(lbData))}">${
-          lbData.slice(0, 12).map((m, i) =>
-            `<img class="popup-photo-thumb" src="${escapeHtml(m.url)}" data-idx="${i}" loading="lazy" alt="" />`
-          ).join('')
-        }</div><div class="popup-photo-count">${lbData.length} photo${lbData.length === 1 ? '' : 's'}</div>`
-      : '';
+    const photosHTML = buildPhotoGalleryHTML(props);
     // OpenBeta area association: areas get a "show climbs" button + an
     // in-popup climb browser; climbs get an area chip and prev/next stepping
     // through the same wall. selectClimbArea / flyToClimb wired in
@@ -2742,8 +2780,7 @@
           : ''}
         <button class="popup-directions-btn"><i class="fa-solid fa-route"></i> Directions</button>
         ${STREETVIEW_EMBED_KEY && STREETVIEW_SOURCES.has(sourceKey)
-          ? `<button class="popup-streetview-btn" type="button" aria-expanded="false"><i class="fa-solid fa-street-view"></i> Street View</button>
-             <div class="popup-streetview" hidden></div>`
+          ? `<button class="popup-streetview-btn" type="button"><i class="fa-solid fa-street-view"></i> Street View</button>`
           : ''}
         <button class="popup-submit-btn"
           data-source="${escapeHtml(sourceKey)}"
@@ -3912,33 +3949,14 @@
           || (Array.isArray(lngLat) ? lngLat : [lngLat.lng, lngLat.lat]);
         openDirections(dest);
       });
-      // Street View: toggle the panorama; build the (free, unlimited) Embed-API
-      // iframe lazily on first open so opening a campsite popup fires no Google
-      // request until the user asks to see it.
+      // Street View: open the panorama in a larger full-screen modal. The
+      // (free, unlimited) Embed-API iframe is built lazily on open, so opening
+      // a campsite popup fires no Google request until the user asks to see it.
       const svBtn = el.querySelector('.popup-streetview-btn');
       if (svBtn) svBtn.addEventListener('click', () => {
-        const box = el.querySelector('.popup-streetview');
-        if (!box) return;
-        if (box.hasAttribute('hidden')) {
-          if (!box.dataset.loaded) {
-            const c = featureCentroid(feature.geometry)
-              || (Array.isArray(lngLat) ? lngLat : [lngLat.lng, lngLat.lat]);
-            if (c) {
-              const iframe = document.createElement('iframe');
-              iframe.src = streetViewEmbedURL(c[0], c[1]);
-              iframe.loading = 'lazy';
-              iframe.allowFullscreen = true;
-              iframe.referrerPolicy = 'no-referrer-when-downgrade';
-              box.appendChild(iframe);
-              box.dataset.loaded = '1';
-            }
-          }
-          box.removeAttribute('hidden');
-          svBtn.setAttribute('aria-expanded', 'true');
-        } else {
-          box.setAttribute('hidden', '');
-          svBtn.setAttribute('aria-expanded', 'false');
-        }
+        const c = featureCentroid(feature.geometry)
+          || (Array.isArray(lngLat) ? lngLat : [lngLat.lng, lngLat.lat]);
+        if (c) openStreetView(c[0], c[1], feature.properties && feature.properties.name);
       });
       // Reserve links: intercept supported providers to collect dates (+ rig /
       // site type) and deep-link to the live availability page.
@@ -4720,6 +4738,33 @@
     if (e.key === 'Escape') closeLightbox();
     if (e.key === 'ArrowLeft' && lbPhotos.length > 1) { lbIdx = (lbIdx - 1 + lbPhotos.length) % lbPhotos.length; updateLb(); }
     if (e.key === 'ArrowRight' && lbPhotos.length > 1) { lbIdx = (lbIdx + 1) % lbPhotos.length; updateLb(); }
+  });
+
+  // ── Street View modal ───────────────────────────────────────────
+  function openStreetView(lng, lat, title) {
+    const wrap = document.getElementById('sv-frame-wrap');
+    wrap.innerHTML = '';
+    const iframe = document.createElement('iframe');
+    iframe.src = streetViewEmbedURL(lng, lat);
+    iframe.loading = 'lazy';
+    iframe.allowFullscreen = true;
+    iframe.referrerPolicy = 'no-referrer-when-downgrade';
+    wrap.appendChild(iframe);
+    document.getElementById('sv-title').textContent = title || '';
+    document.getElementById('sv-overlay').classList.add('open');
+  }
+
+  function closeStreetView() {
+    document.getElementById('sv-overlay').classList.remove('open');
+    document.getElementById('sv-frame-wrap').innerHTML = '';  // stop the panorama loading
+  }
+
+  document.getElementById('sv-close').addEventListener('click', closeStreetView);
+  document.getElementById('sv-overlay').addEventListener('click', e => {
+    if (e.target.id === 'sv-overlay') closeStreetView();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('sv-overlay').classList.contains('open')) closeStreetView();
   });
 
 </script>
