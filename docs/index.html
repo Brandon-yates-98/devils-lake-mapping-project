@@ -3935,7 +3935,7 @@
     const html = buildPopupHTML(feature.properties, sourceKey);
     const surface = isMobile()
       ? openFeatureSheet(html)
-      : new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '290px' })
+      : new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '320px' })
           .setLngLat(lngLat).setHTML(html).addTo(map);
     let sortMode = 'alpha';   // survives grade-pill rebuilds
 
