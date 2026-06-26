@@ -1,43 +1,53 @@
 # Operator Model & Permitted Uses (DRAFT)
 
-> ⚠️ **DRAFT — pending legal review.** This describes how the project is run and
-> confirms those activities are noncommercial; it expands/clarifies the PolyForm
-> Noncommercial License in `LICENSE.md`. The gift-vs-exchange characterization
-> and any tax angle should be confirmed by counsel.
+> ⚠️ **DRAFT — pending legal review.** This expands/clarifies the PolyForm
+> Noncommercial License in [`../LICENSE.md`](../LICENSE.md) and describes the
+> operator's separate commercial offering. The commercial terms summarized here
+> are governed by [`COMMERCIAL-SUBSCRIPTION.md`](./COMMERCIAL-SUBSCRIPTION.md);
+> have counsel review both before publishing or charging.
 
-This project is run by an **unpaid volunteer** ("the operator"), built in the
-operator's free time as a community resource.
+This project is run by a single operator ("the operator"). The public map is a
+free community resource; the operator separately offers a paid commercial service
+to businesses.
 
-## No money flows to the operator
-The operator receives **no** money, wages, salary, fees, donations, or in-kind
-compensation for the project. Any incidental costs are covered by the operator
-personally; the project does not solicit or route funds through the operator.
+## The public map is free
 
-## Custom experiences are volunteer gifts
-The operator may create "custom map experiences" for local businesses or
-organizations and provide them **free of charge, as a gift**. A custom
-experience is **not** conditioned on, and is **not** provided in exchange for,
-any payment or donation.
+The public map is free to use — no ads, paywall, or account. Under the PolyForm
+Noncommercial License, the software is also free to copy, adapt, and self-host for
+any **noncommercial purpose**, including by governments, nonprofits, educational /
+research / public-safety / environmental organizations, and personal or community
+projects.
 
-## Suggested support for local nonprofits (voluntary, direct)
-Separately and independently from any gift, the operator may **suggest** that a
-recipient who found the project useful consider supporting a **local outdoor
-nonprofit of their choosing**. Any such donation is:
-- entirely **voluntary** and never a condition of receiving anything;
-- paid **directly by the donor to the nonprofit**; and
-- **never routed through, or received by, the operator**.
+## Commercial use is reserved (possible future offering)
 
-> Keeping the gift and the donation suggestion **decoupled** is intentional: it
-> keeps the experience a genuine gift rather than a sale-by-proxy.
+The operator owns the project's copyright, and the PolyForm Noncommercial License
+grants **no** commercial rights — so all commercial use is **reserved to the operator**.
+This keeps open the option to offer, **in the future**, hosted **custom branded map
+experiences** to businesses on a **subscription** (a private, branded experience —
+selected layers and data, a custom basemap, and an embeddable view for the business's
+own site).
 
-## Recipient (business) use of their custom experience
-Because a recipient may be for-profit, a recipient's own **promotional use** of
-a custom experience is authorized only by a **separate, bespoke written
-permission** the operator issues for that specific experience — **not** by the
-public PolyForm Noncommercial License. Such a grant is limited,
-non-transferable, and provided as-is without warranty.
+**No paid offering is active today.** If one launches, it would be provided under a
+separate written agreement — see the draft template in
+[`COMMERCIAL-SUBSCRIPTION.md`](./COMMERCIAL-SUBSCRIPTION.md) — and would require the
+operator to first hold the necessary commercial upstream licenses (see
+[`ATTRIBUTION.md`](./ATTRIBUTION.md)). Any other commercial use of the software also
+requires a separate commercial license from the operator.
+
+## Free experiences for governments, nonprofits & community groups
+
+The operator may provide a custom experience **free of charge** to a government,
+nonprofit, or community organization, at the operator's discretion. Any such free
+experience is provided as-is, without warranty, and creates no obligation.
+
+## Featuring on the free public map is editorial, not for sale
+
+Appearing on (or being linked from) the **free public map** is **editorial** — it
+is **not for sale** and is **not an endorsement**. The paid offering is a separate,
+hosted custom experience, not placement on the public map.
 
 ## What this does NOT restrict
-- **Featuring or linking to** local businesses, partners, or booking sites
-  (referral/editorial — not commercial use of the project).
-- The volunteer operating model described above.
+
+- **Featuring or linking to** local businesses, partners, or booking sites on the
+  public map (editorial / referral).
+- Noncommercial use of the software by anyone, per the license.

@@ -17,17 +17,17 @@ This is an **independent community project, maintained by a single developer** a
 2. **Support local businesses** — surface local outdoor businesses (campgrounds, shops, guides, outfitters) and send visitors their way.
 3. **Collect community photos & local knowledge** — let the people who actually use these places contribute photos and on-the-ground detail back into the map.
 4. **Contribute back to open source** — upstream verifiable facts (campsite locations, trail details) to OpenStreetMap and OpenBeta so the wider commons improves, not just this map.
-5. **Give back to the area** — the map is free and stays free; it surfaces local outdoor orgs, and any business that gets value from a custom experience is encouraged (never required) to donate to one directly. The developer takes nothing.
+5. **Keep the public map free** — the public map stays free for everyone, and free to use and adapt for any noncommercial purpose (governments, nonprofits, community, personal). Commercial rights are reserved, leaving room to offer paid custom experiences for businesses in the future.
 
-### Not run for money
+### Free map; commercial use reserved
 
-This project is maintained by a **single developer**, in his spare time, for the love of the area — it isn't a business:
+The public map is **free** — no ads, paywall, or account — and free to use, adapt, and self-host for any **noncommercial** purpose (governments, nonprofits, community, personal).
 
-- The map is **free** — no ads, paywall, or account.
-- **Custom map experiences** for local businesses or organizations are built at the developer's **own discretion and motivation, free of charge**. Being featured is **not for sale** and **not an endorsement** — it's just one person choosing what to build.
-- If a business gets value from one, it's **encouraged (never required)** to give back by donating to a **local outdoor org of its choice** — paid **directly to the org**. The **developer takes nothing**: no wages, fees, or donations, and nothing is routed through the project.
+**Commercial use is not granted by the license; the project reserves it.** That keeps the door open to offer, **in the future**, hosted **custom branded map experiences** for businesses on a subscription (a private, branded view — chosen layers, custom basemap, embeddable). **No paid offering is active today.** If one launches, governments, nonprofits, and community organizations could still get a custom experience free, at the operator's discretion.
 
-Full operator model and the gift/donation reasoning: [`licensing/PERMITTED-USES.md`](licensing/PERMITTED-USES.md).
+Being featured on the **free public map** is **not for sale** and **not an endorsement** — that's editorial.
+
+Operator model and what counts as noncommercial: [`licensing/PERMITTED-USES.md`](licensing/PERMITTED-USES.md). A draft template for a possible future business subscription: [`licensing/COMMERCIAL-SUBSCRIPTION.md`](licensing/COMMERCIAL-SUBSCRIPTION.md).
 
 ### Independence
 
@@ -35,19 +35,17 @@ This is an independent project and is **not affiliated with, operated by, or the
 
 ## License — please read before reusing
 
-This project is **source-available** and is **moving to a noncommercial license** (not OSI "open source").
+This project is **source-available** under a **noncommercial license** (not OSI "open source").
 
-**What's operative today:** the root [`LICENSE.md`](LICENSE.md) — **PolyForm Shield 1.0.0**, which is source-available and permits use *except* building a competing product. The intended end state is the **[PolyForm Noncommercial License 1.0.0](licensing/LICENSE.md)** plus the per-layer scaffold in [`licensing/`](licensing/) (code, data/content, trademarks, disclaimer, attribution, community-submission terms). **Those files are DRAFTS pending legal review and are not yet in force** (see [`licensing/README.md`](licensing/README.md)).
+The root [`LICENSE.md`](LICENSE.md) is the **[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)**, alongside the per-layer scaffold in [`licensing/`](licensing/) (code, data/content, trademarks, disclaimer, attribution, community-submission terms). **The copyright holder must be set and the promotion + business terms reviewed by counsel before this is published or relied upon** (see [`licensing/README.md`](licensing/README.md)).
 
-**Plain-English summary of the _intended_ noncommercial license** (the license text governs):
+**Plain-English summary** (the license text governs):
 
-> ✅ Running an outdoors community somewhere else? Use it freely for **noncommercial** purposes — copy it, adapt it, build your own community's map from it. That's why it's published.
+> ✅ Running an outdoors community somewhere else? Use it freely for **noncommercial** purposes — copy it, adapt it, build your own community's map from it. Governments, nonprofits, schools, and community groups all qualify. That's why it's published.
 >
-> ❌ Don't use it for **commercial** purposes — selling access, or operating it for profit or wages.
+> 💼 Want it for a **business / commercial** purpose? The license doesn't grant that — the owner reserves commercial rights. A commercial license or a hosted business subscription may be offered in the future ([draft terms](licensing/COMMERCIAL-SUBSCRIPTION.md)); contact the owner.
 
-The project's own custom-experience and donation activities are deliberately structured to stay noncommercial (gifts + voluntary, decoupled donations) — they are **not** a commercial exception. See [`licensing/PERMITTED-USES.md`](licensing/PERMITTED-USES.md).
-
-If you're unsure whether your use qualifies, open an issue or get in touch — permission for genuine noncommercial uses is the default answer.
+If you're unsure whether your use qualifies as noncommercial, open an issue or get in touch.
 
 ### Data attribution (your obligations, not ours to waive)
 
