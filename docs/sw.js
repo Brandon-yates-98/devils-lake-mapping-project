@@ -1,22 +1,22 @@
-/* Devil's Lake Mapping Project — service worker for the public map.
+/* Devil's Lake Mapping Project, service worker for the public map.
  *
  * Caching policy:
  *  - App shell (the HTML page, manifest, icons): precached at install (so the
  *    app opens offline even on a fresh home-screen install), refreshed
- *    network-first on navigation. Navigations NEVER reject — worst case they
+ *    network-first on navigation. Navigations NEVER reject, worst case they
  *    get a friendly offline page; a rejected navigation hangs iOS PWAs on the
  *    splash screen forever.
  *  - CDN libraries & fonts (Mapbox GL JS itself, supabase-js, Font Awesome,
- *    Google Fonts, site logos): cache-first — versioned/immutable URLs.
+ *    Google Fonts, site logos): cache-first, versioned/immutable URLs.
  *  - Supabase REST reads (experience list, etc.): network-first, cache fallback.
  *  - Supabase Storage (feature photos): cache-first.
- *  - Open-source basemap tiles (OpenTopoMap/OSM): cache-first — "Save offline"
+ *  - Open-source basemap tiles (OpenTopoMap/OSM): cache-first, "Save offline"
  *    prefetches the experience area; these MAY be cached, unlike Mapbox tiles.
- *  - Mapbox APIs (styles, tiles, glyphs, sprites, telemetry): NEVER cached —
+ *  - Mapbox APIs (styles, tiles, glyphs, sprites, telemetry): NEVER cached -
  *    persisting Mapbox map content offline is not permitted by their TOS.
  *    Only the GL JS library files under /mapbox-gl-js/ are cached.
  *  - Layer GeoJSON arrives via Supabase RPC (POST), which Cache Storage can't
- *    key — the page persists those to IndexedDB itself (see rpcCached()).
+ *    key, the page persists those to IndexedDB itself (see rpcCached()).
  */
 
 const VERSION = 'v3';
@@ -27,7 +27,7 @@ const MEDIA = `dl-media-${VERSION}`;
 const TILES = `dl-tiles-${VERSION}`;
 const ALL_CACHES = [SHELL, CDN, DATA, MEDIA, TILES];
 
-// Canonical cache key for the app shell — the scope directory URL ('/…/').
+// Canonical cache key for the app shell, the scope directory URL ('/…/').
 // Navigations are stored and matched under this single string key; URL-string
 // keys avoid WebKit quirks with navigation Request objects, and one key covers
 // every ?experience= variant (the HTML is identical).
@@ -57,7 +57,7 @@ self.addEventListener('install', event => {
     try {
       const resp = await fetch('./', { cache: 'no-cache' });
       if (resp.ok) await shell.put(SHELL_KEY, resp);
-    } catch (e) { /* offline install — runtime caching will fill in */ }
+    } catch (e) { /* offline install, runtime caching will fill in */ }
     await Promise.allSettled(
       SHELL_PRECACHE.slice(1).map(u => shell.add(u))
     );
@@ -82,13 +82,13 @@ self.addEventListener('activate', event => {
 
 const OFFLINE_FALLBACK_HTML = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Offline — Devil's Lake Mapping Project</title></head>
+<title>Offline, Devil's Lake Mapping Project</title></head>
 <body style="background:#0a140a;color:rgba(255,255,255,0.7);font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;padding:24px">
 <div><h2 style="color:#9bc23c">You're offline</h2>
 <p>This map hasn't been saved on this device yet.<br>Connect once and tap "Save map for offline use".</p></div>
 </body></html>`;
 
-// Navigations must always resolve — a rejected navigation strands the user
+// Navigations must always resolve, a rejected navigation strands the user
 // (iOS PWAs hang on the splash screen). Network first, then the precached
 // shell, then a friendly offline page.
 async function handleNavigation(request) {
@@ -96,7 +96,7 @@ async function handleNavigation(request) {
   try {
     const resp = await fetch(request);
     if (resp && resp.ok) {
-      try { await cache.put(SHELL_KEY, resp.clone()); } catch (e) { /* quota/etc — non-fatal */ }
+      try { await cache.put(SHELL_KEY, resp.clone()); } catch (e) { /* quota/etc, non-fatal */ }
     }
     return resp;
   } catch (err) {
@@ -153,7 +153,7 @@ self.addEventListener('fetch', event => {
   }
   if (url.hostname === 'events.mapbox.com') return;
 
-  // Open-source basemap tiles (OpenTopoMap/OSM) — unlike Mapbox tiles, these
+  // Open-source basemap tiles (OpenTopoMap/OSM), unlike Mapbox tiles, these
   // may be cached; "Save offline" prefetches the experience area into here.
   if (url.hostname.endsWith('tile.opentopomap.org') || url.hostname === 'tile.openstreetmap.org') {
     event.respondWith(cacheFirst(TILES, req));

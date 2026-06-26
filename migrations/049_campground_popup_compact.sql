@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campground popup: compact header + collapsible reviews
+-- Devil's Lake Mapping Project, campground popup: compact header + collapsible reviews
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Builds on migration 048. Changes:

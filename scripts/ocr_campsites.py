@@ -1,5 +1,5 @@
 """
-Campsite digitizer — sites pre-identified by Claude vision.
+Campsite digitizer, sites pre-identified by Claude vision.
 
 Workflow:
   1. Open the editor → Image Overlay → load the campground PNG.
@@ -40,7 +40,7 @@ SITE_RE       = re.compile(r'^\d{1,3}[eE]?$')
 
 SITES_DATA = [
     # ══ QUARTZITE CAMPGROUND ══════════════════════════════════════════════════
-    # West road — left column (west/outside of road), going south
+    # West road, left column (west/outside of road), going south
     ("3",    "quartzite",  175,  88),
     ("5",    "quartzite",  163, 109),
     ("6",    "quartzite",  163, 122),
@@ -56,7 +56,7 @@ SITES_DATA = [
     ("32",   "quartzite",  170, 420),
     ("34",   "quartzite",  166, 425),
     ("36",   "quartzite",  168, 464),
-    # West road — middle column (east/inside of road), going south
+    # West road, middle column (east/inside of road), going south
     ("1e",   "quartzite",  213, 100),
     ("2e",   "quartzite",  205, 109),
     ("7e",   "quartzite",  205, 122),
@@ -76,7 +76,7 @@ SITES_DATA = [
     ("33",   "quartzite",  196, 453),
     ("35",   "quartzite",  198, 482),
     ("37",   "quartzite",  196, 497),
-    # West road — outer electrical spurs
+    # West road, outer electrical spurs
     ("87e",  "quartzite",  228, 258),
     ("93e",  "quartzite",  232, 353),
     ("95e",  "quartzite",  228, 378),
@@ -99,7 +99,7 @@ SITES_DATA = [
     ("48",   "quartzite",  368, 473),
     ("49e",  "quartzite",  315, 458),
     ("50",   "quartzite",  370, 444),
-    # Top outer loop — going east from entrance
+    # Top outer loop, going east from entrance
     ("80",   "quartzite",  219,  82),
     ("79",   "quartzite",  234,  82),
     ("78e",  "quartzite",  247,  82),
@@ -109,7 +109,7 @@ SITES_DATA = [
     ("72",   "quartzite",  302,  82),
     ("70",   "quartzite",  322,  82),
     ("68",   "quartzite",  358,  82),
-    # Inner ring top — going east
+    # Inner ring top, going east
     ("74",   "quartzite",  273, 115),
     ("73",   "quartzite",  289, 115),
     ("71",   "quartzite",  308, 115),
@@ -387,7 +387,7 @@ class App:
 
         tk.Button(tb, text='Load GCPs…', command=self._prompt_load_gcps,
                   bg='#2d2d4a', fg='white', font=('Arial', 9)).pack(side='left', padx=4, pady=2)
-        self.lbl_xform = tk.Label(tb, text='No transform — GPS export disabled',
+        self.lbl_xform = tk.Label(tb, text='No transform, GPS export disabled',
                                    fg='#e74c3c', bg='#1a1a1a', font=('Arial', 9))
         self.lbl_xform.pack(side='left', padx=4)
 
@@ -520,7 +520,7 @@ class App:
         self._render()
         s = self.sites[hit]
         menu = tk.Menu(self.root, tearoff=0)
-        menu.add_command(label=f'Site {s["name"].upper()} — {s["campground"]}', state='disabled')
+        menu.add_command(label=f'Site {s["name"].upper()}, {s["campground"]}', state='disabled')
         menu.add_separator()
         menu.add_command(label='Edit…',  command=lambda: self._edit(hit))
         menu.add_command(label='Delete', command=lambda: self._delete(hit))
@@ -562,7 +562,7 @@ class App:
 
     def _add_site_at(self, cx, cy):
         px, py = self._ti(cx, cy)
-        # Campground from position — Quartzite is west, Northern Lights east (split x≈470).
+        # Campground from position, Quartzite is west, Northern Lights east (split x≈470).
         cg     = 'quartzite' if px < 470 else 'northern_lights'
         name   = simpledialog.askstring(
             'Site number', f'Number (e.g. 26 or 28e)   [{cg}]:', parent=self.root)
@@ -570,7 +570,7 @@ class App:
             self._exit_add(); return
         name = name.strip().lower()
         if not SITE_RE.match(name):           # bad entry -> stay in add mode, ignore click
-            self.status.config(text=f'"{name}" is not a valid site number — try again.')
+            self.status.config(text=f'"{name}" is not a valid site number, try again.')
             return
         stype = 'electrical' if name.endswith('e') else 'standard'
         self.sites.append({'name': name, 'campground': cg, 'site_type': stype,

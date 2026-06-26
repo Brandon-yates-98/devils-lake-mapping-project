@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — Edit any feature in place (drawn or imported)
+-- Devil's Lake Mapping Project, Edit any feature in place (drawn or imported)
 -- Run in Supabase: Dashboard → SQL Editor → New query
 -- REQUIRES 006_audit_log.sql (audit_log table + audit_actor()).
 --

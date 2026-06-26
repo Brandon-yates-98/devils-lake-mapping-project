@@ -1,7 +1,7 @@
 """
 Precompute Street View coverage for campsites and store it as properties.sv_status
 ('ok' = imagery exists, 'none' = ZERO_RESULTS) so the public map can show the
-Street View hero only where it'll actually render — and a branded placeholder
+Street View hero only where it'll actually render, and a branded placeholder
 otherwise (never a gray "no imagery" tile).
 
 Uses the Street View **metadata** endpoint, which is FREE (no per-request charge),
@@ -9,9 +9,9 @@ so a full sweep of all campsites costs nothing. Run after set_campsite_streetvie
 (it reads the sv_lat/sv_lng that function writes); re-run when coverage may have changed.
 
 Two modes:
-  * default      — write sv_status via the set_campsite_sv_status RPC (needs the
+  * default     , write sv_status via the set_campsite_sv_status RPC (needs the
                    service_role key). Use this on a schedule / locally with secrets.
-  * --emit-sql   — print one UPDATE…FROM VALUES to stdout instead of writing, so it
+  * --emit-sql  , print one UPDATE…FROM VALUES to stdout instead of writing, so it
                    can run with only a read key (apply the SQL via Supabase MCP).
 
 Usage:
@@ -49,7 +49,7 @@ def fetch_campsites():
 
 def coverage(lat, lng):
     """Return 'ok' if Street View imagery exists near (lat,lng), 'none' if not,
-    or None to skip (auth/quota error — don't overwrite)."""
+    or None to skip (auth/quota error, don't overwrite)."""
     url = f'{META_URL}?location={lat},{lng}&key={SV_KEY}'
     headers = {}
     if SV_REFERER:
@@ -64,7 +64,7 @@ def coverage(lat, lng):
         return 'ok'
     if status in ('ZERO_RESULTS', 'NOT_FOUND'):
         return 'none'
-    sys.stderr.write(f'  metadata status {status} at {lat},{lng} — skipping\n')
+    sys.stderr.write(f'  metadata status {status} at {lat},{lng}, skipping\n')
     return None
 
 

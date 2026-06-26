@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — rename Wheeler's Campground to Skillet Creek Campground
+-- Devil's Lake Mapping Project, rename Wheeler's Campground to Skillet Creek Campground
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- The campground (id 13056, Campspot slug skillet-creek-campground) is now

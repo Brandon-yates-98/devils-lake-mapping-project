@@ -1,5 +1,5 @@
 """
-Campsite coordinate picker — works for any campground PNG.
+Campsite coordinate picker, works for any campground PNG.
 
 Hover over a site number on the map and click to record it.
 Each click asks: site number + campground name (two pieces of info read
@@ -54,7 +54,7 @@ class Picker:
     def __init__(self, root):
         self.root = root
         img_name = os.path.basename(IMG)
-        root.title(f'Campsite Picker — {img_name}')
+        root.title(f'Campsite Picker, {img_name}')
         root.geometry('1400x860')
 
         if not os.path.exists(IMG):

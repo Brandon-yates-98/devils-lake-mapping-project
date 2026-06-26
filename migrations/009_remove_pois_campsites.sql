@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — One-time cleanup: remove campsites from 'pois'
+-- Devil's Lake Mapping Project, One-time cleanup: remove campsites from 'pois'
 -- Run in Supabase: Dashboard → SQL Editor → New query
 --
 -- Campsites now live in the dedicated 'pois_camping' layer (all 68),

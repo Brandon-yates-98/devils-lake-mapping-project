@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — rebrand marker glyph ids
+-- Devil's Lake Mapping Project, rebrand marker glyph ids
 -- Run in Supabase: Dashboard → SQL Editor → New query
 --
 -- drawMapGlyph() in both maps now answers to 'dl-*' names

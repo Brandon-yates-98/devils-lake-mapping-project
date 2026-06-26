@@ -1,11 +1,11 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campground popup: group price + drive times into columns
+-- Devil's Lake Mapping Project, campground popup: group price + drive times into columns
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Wraps the price (+ "prices checked") in .cp-pricecol and the drive-time lines
 -- in .cp-drivecol, both inside .cp-summary. Desktop renders them stacked as
 -- before (block flow); the mobile bottom sheet lays the two columns side by side
--- (price left, drive times stacked on the right) — see #feature-sheet .cp-summary
+-- (price left, drive times stacked on the right), see #feature-sheet .cp-summary
 -- in docs/index.html. Structural change only; popup_css is unchanged.
 -- ============================================================
 

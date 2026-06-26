@@ -1,10 +1,10 @@
 -- ============================================================
--- Devil's Lake Mapping Project — normalize campsite ref/site_type/campground
+-- Devil's Lake Mapping Project, normalize campsite ref/site_type/campground
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- The map's campsite icon + label expressions read TOP-LEVEL properties
 -- (['get','site_type'], ['get','ref']). Imported sites (migration 026) store
--- those there, but sites created in the editor stored them in custom_data — so
+-- those there, but sites created in the editor stored them in custom_data, so
 -- editor-made accessible sites (A1/A2/A3) rendered as plain tents with no label.
 --
 -- 1. Move ref / site_type / campground from custom_data up to top-level

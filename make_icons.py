@@ -5,7 +5,7 @@ corners and Android maskable cropping. Run: python make_icons.py
 """
 from PIL import Image
 
-BG = (10, 20, 10, 255)  # #0a140a — matches the app background
+BG = (10, 20, 10, 255)  # #0a140a, matches the app background
 SIZES = [512, 192, 180]
 
 logo = Image.open("docs/icons/_logo_src.png").convert("RGBA")

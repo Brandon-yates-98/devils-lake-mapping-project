@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — Add field_schema to layer_templates
+-- Devil's Lake Mapping Project, Add field_schema to layer_templates
 -- Adds structured field definitions for custom/climbing layers.
 -- Updates get_experience_config to return field_schema.
 -- Safe to re-run (IF NOT EXISTS / CREATE OR REPLACE).

@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — seed Ice Age Campground's GoingToCamp deep link
+-- Devil's Lake Mapping Project, seed Ice Age Campground's GoingToCamp deep link
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- The pois_camping reserve button is gated on the goingtocamp.com host: a

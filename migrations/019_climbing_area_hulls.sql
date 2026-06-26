@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — parent-area hull polygons
+-- Devil's Lake Mapping Project, parent-area hull polygons
 -- Run in Supabase: Dashboard → SQL Editor → New query
 --
 -- Semantic clustering: leaf walls render as point badges; every

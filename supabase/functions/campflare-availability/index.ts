@@ -1,4 +1,4 @@
-// campflare-availability — live per-site availability for the public map, via Campflare.
+// campflare-availability, live per-site availability for the public map, via Campflare.
 //
 // Replaces the WAF-blocked direct GoingToCamp path (see gtc-availability): GoingToCamp
 // sits behind a Cloudflare WAF that 403s server IPs, so we source availability from
@@ -7,7 +7,7 @@
 //
 // Availability is keyed by Campflare's campsite_id. Each of our campsite features
 // stores its campflare_id (precomputed by enrich_campsites_campflare.py), so the
-// frontend joins on that id — robust against Campflare's site-name quirks (e.g. it
+// frontend joins on that id, robust against Campflare's site-name quirks (e.g. it
 // labels electric sites "109E" while our ref is "109").
 //
 // Request (POST JSON):
@@ -15,10 +15,10 @@
 // Response:
 //   { availability: { [campgroundId]: { [campsiteId]: Roll } }, start_date, end_date, fetchedAt }
 //   Roll = "available" | "partial" | "unavailable" | "unknown"
-//     available   — open every night in the range
-//     partial     — open some nights, not all
-//     unavailable — open no nights (reserved/closed/first-come every night)
-//     unknown     — only unknown / not-yet-released nights
+//     available  , open every night in the range
+//     partial    , open some nights, not all
+//     unavailable, open no nights (reserved/closed/first-come every night)
+//     unknown    , only unknown / not-yet-released nights
 
 const API_BASE = "https://api.campflare.com/v2";
 const AVAIL_TTL_MS = 90_000; // availability changes constantly; brief cache only
@@ -138,7 +138,7 @@ Deno.serve(async (req: Request) => {
     }
     return json({ availability, start_date, end_date, fetchedAt: new Date().toISOString() });
   } catch (e) {
-    // Never block the map — frontend renders "unknown" on error.
+    // Never block the map, frontend renders "unknown" on error.
     return json({ error: String((e as Error)?.message ?? e) }, 502);
   }
 });

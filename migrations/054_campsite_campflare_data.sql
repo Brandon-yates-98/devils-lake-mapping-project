@@ -1,16 +1,16 @@
 -- ============================================================
--- Devil's Lake Mapping Project — write Campflare per-site data onto campsites
+-- Devil's Lake Mapping Project, write Campflare per-site data onto campsites
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Used by scripts/enrich_campsites_campflare.py to stamp each campsite_sites row
 -- with the static Campflare attributes used to enrich the public popup:
---   properties.campflare_id   — the Campflare campsite id (join key for availability)
---   properties.campflare      — { kind, firepit, water/electric/sewer_hookups,
+--   properties.campflare_id  , the Campflare campsite id (join key for availability)
+--   properties.campflare     , { kind, firepit, water/electric/sewer_hookups,
 --                                 ada_accessible, max_people, price_per_night,
 --                                 check_in, check_out, photos[], reservation_url }
 -- and a custom_data.campflare = { fetched_at } stamp so refreshes are auditable.
 --
--- Availability is NOT stored here — it changes constantly and is fetched live by
+-- Availability is NOT stored here, it changes constantly and is fetched live by
 -- the campflare-availability edge function. This is the slow-moving site metadata.
 --
 -- Re-runnable (last write wins). service_role-only, mirroring set_campsite_sv_status

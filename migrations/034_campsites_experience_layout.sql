@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — Campsites experience sidebar layout
+-- Devil's Lake Mapping Project, Campsites experience sidebar layout
 -- Reorders the campsites experience's layers so each layer_group is
 -- contiguous and camping-first, and declutters default visibility on the
 -- satellite basemap. Climbing is kept but pushed to the bottom and off by

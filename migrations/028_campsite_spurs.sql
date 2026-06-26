@@ -1,8 +1,8 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campsite spurs (folded into the roads layer)
+-- Devil's Lake Mapping Project, campsite spurs (folded into the roads layer)
 -- A short connector ("driveway") line from each campsite to the
 -- closest point on the nearest road. Campsites already within 5 m of
--- a road are skipped — they effectively sit on the road and need no spur.
+-- a road are skipped, they effectively sit on the road and need no spur.
 --
 -- Spurs are stored as ordinary roads (source='roads', highway='service')
 -- so they toggle, style, and load with the rest of the road network. The

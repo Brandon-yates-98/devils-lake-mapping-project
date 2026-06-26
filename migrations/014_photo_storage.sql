@@ -1,12 +1,12 @@
     -- ============================================================
-    -- Devil's Lake Mapping Project — Photo storage + usage tracking
+    -- Devil's Lake Mapping Project, Photo storage + usage tracking
     -- Run in Supabase: Dashboard → SQL Editor → New query
     --
     -- 1. Public "photos" bucket: anyone can view (the map hotlinks them),
     --    only signed-in editors can upload/modify.
     -- 2. set_feature_photos(): persists a feature's photo URL list into the
     --    osm_geometries.photos COLUMN (get_layer_geojson serves photos from
-    --    the column, overriding any properties.photos key — writing the
+    --    the column, overriding any properties.photos key, writing the
     --    column is the only way edits surface on the map).
     -- 3. storage_usage(): total bytes across all buckets, for the editor's
     --    free-tier usage meter (1 GB limit on the Supabase free plan).

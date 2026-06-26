@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campground Google Places enrichment
+-- Devil's Lake Mapping Project, campground Google Places enrichment
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Adds the read/write plumbing for scripts/enrich_campgrounds_google.py and
@@ -19,7 +19,7 @@
 --   * place_id is the only Places field cacheable indefinitely; everything else
 --     is treated as a 30-day delete-and-refetch cycle (refresh_days default 30).
 --   * Google photo URIs are time-limited, so they MUST be refreshed on that same
---     cycle — storing them long-term is both a ToS and a broken-link problem.
+--     cycle, storing them long-term is both a ToS and a broken-link problem.
 --   * Photo author attribution + "Powered by Google" are rendered in the popup.
 -- ============================================================
 
@@ -111,7 +111,7 @@ begin
 end;
 $fn$;
 
--- Only service_role (the batch job) may call these. Revoke from PUBLIC too —
+-- Only service_role (the batch job) may call these. Revoke from PUBLIC too -
 -- functions grant EXECUTE to PUBLIC by default, so revoking from anon/authenticated
 -- alone leaves the public path open.
 revoke execute on function public.campgrounds_needing_google_enrichment(int) from public, anon, authenticated;

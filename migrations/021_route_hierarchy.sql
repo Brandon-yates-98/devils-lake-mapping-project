@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — synthetic route hierarchy
+-- Devil's Lake Mapping Project, synthetic route hierarchy
 -- Run in Supabase: Dashboard → SQL Editor → New query
 --
 -- The bouldering tree has one root (Devil's Lake Bouldering) the
@@ -111,7 +111,7 @@ begin
       'depth', (properties->>'depth')::int + 1)
     where source = 'climbing_areas' and properties->'area_path'->>0 = any(other);
 
-  -- ── climbs' chains (both sources — mixed walls carry a few climbs of
+  -- ── climbs' chains (both sources, mixed walls carry a few climbs of
   --    the other family) ──
   update osm_geometries
     set properties = properties || jsonb_build_object(

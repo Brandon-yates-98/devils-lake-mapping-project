@@ -1,7 +1,7 @@
 """
 Generate labeled grid crops at high zoom for campsite coordinate reading.
 Each crop shows pixel bounds and grid every 25px (major lines every 100px).
-Reading the site number AND its pixel position from a crop is one operation —
+Reading the site number AND its pixel position from a crop is one operation -
 that's why there's no separate OCR pass.
 
 Usage:

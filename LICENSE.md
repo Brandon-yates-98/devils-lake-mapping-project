@@ -1,6 +1,6 @@
 <!--
   Before publishing/relying on this: (1) set the copyright holder below to the
-  confirmed legal entity (you, or an entity you form — do NOT name a third party),
+  confirmed legal entity (you, or an entity you form, do NOT name a third party),
   and (2) have counsel review this promotion + licensing/COMMERCIAL-SUBSCRIPTION.md.
   See licensing/README.md for the promotion steps.
 -->
@@ -8,24 +8,24 @@
 Copyright (c) 2026 [PROJECT OWNER]
 
 This software is licensed under the **PolyForm Noncommercial License 1.0.0**
-(full text below). Any **noncommercial** purpose is free — including use by
+(full text below). Any **noncommercial** purpose is free, including use by
 governments, nonprofits, educational/research/public-safety/environmental
 organizations, and personal/community projects.
 
 **Commercial use is not granted by this license; the owner reserves all commercial
 rights.** This leaves open a possible future offering of paid, hosted **custom map
-experiences** for businesses — see the draft terms in
+experiences** for businesses, see the draft terms in
 [`licensing/COMMERCIAL-SUBSCRIPTION.md`](licensing/COMMERCIAL-SUBSCRIPTION.md) and the
 operator model in [`licensing/PERMITTED-USES.md`](licensing/PERMITTED-USES.md). For any
 commercial use, contact the owner for a commercial license.
 
-Names, logos, and other brand features are **not** licensed here — see
+Names, logos, and other brand features are **not** licensed here, see
 [`licensing/TRADEMARKS.md`](licensing/TRADEMARKS.md). Data and content are licensed
-separately — see [`licensing/DATA-AND-CONTENT-LICENSE.md`](licensing/DATA-AND-CONTENT-LICENSE.md)
+separately, see [`licensing/DATA-AND-CONTENT-LICENSE.md`](licensing/DATA-AND-CONTENT-LICENSE.md)
 and [`licensing/ATTRIBUTION.md`](licensing/ATTRIBUTION.md). This is an independent
-community project — see [`licensing/DISCLAIMER.md`](licensing/DISCLAIMER.md).
+community project, see [`licensing/DISCLAIMER.md`](licensing/DISCLAIMER.md).
 
-> Required Notice: Copyright [PROJECT OWNER] — Devil's Lake Mapping Project
+> Required Notice: Copyright [PROJECT OWNER], Devil's Lake Mapping Project
 
 ---
 

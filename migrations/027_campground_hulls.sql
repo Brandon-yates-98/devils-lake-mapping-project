@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campground_hulls
+-- Devil's Lake Mapping Project, campground_hulls
 -- One convex-hull polygon per campground, computed from its
 -- campsite_sites points and padded ~25 m so edge sites sit inside.
 -- Rendered as a low-zoom "footprint" that hands off to individual

@@ -1,16 +1,16 @@
 -- ============================================================
--- Devil's Lake Mapping Project — photo gallery infrastructure
+-- Devil's Lake Mapping Project, photo gallery infrastructure
 --
--- 1. photo_meta jsonb column on osm_geometries — ordered list of
+-- 1. photo_meta jsonb column on osm_geometries, ordered list of
 --    {url, caption} objects; authoritative order for the gallery.
 --    photos text[] kept for backward compat.
--- 2. pending_images table — anonymous public submissions awaiting
+-- 2. pending_images table, anonymous public submissions awaiting
 --    editor approval.
--- 3. pending-photos storage bucket — private until approved.
--- 4. set_feature_photos_v2() — updates both photos[] and photo_meta.
--- 5. submit_pending_image()  — anon-accessible INSERT.
--- 6. approve_pending_image() — auth-only; moves to approved photos.
--- 7. nearby_features_for_image() — spatial lookup for batch uploader.
+-- 3. pending-photos storage bucket, private until approved.
+-- 4. set_feature_photos_v2(), updates both photos[] and photo_meta.
+-- 5. submit_pending_image() , anon-accessible INSERT.
+-- 6. approve_pending_image(), auth-only; moves to approved photos.
+-- 7. nearby_features_for_image(), spatial lookup for batch uploader.
 -- ============================================================
 
 -- ── 1. photo_meta column ────────────────────────────────────

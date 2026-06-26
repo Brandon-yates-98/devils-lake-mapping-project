@@ -1,10 +1,10 @@
 -- ============================================================
--- Devil's Lake Mapping Project — split mixed walls by climb type
+-- Devil's Lake Mapping Project, split mixed walls by climb type
 -- Run in Supabase: Dashboard → SQL Editor → New query
 --
 -- 16 walls carry both routes and boulders. The majority type keeps
 -- the original area (ties → routes); the minority type's climbs move
--- to a duplicate area with the same name, parent, path and depth —
+-- to a duplicate area with the same name, parent, path and depth -
 -- every leaf area becomes single-type while parent hulls, subtree
 -- counts, and the dropdown tree are unchanged by construction
 -- (ancestor chains are preserved).
@@ -18,7 +18,7 @@
 --
 -- Duplicate ids derive deterministically (md5(id || ':split') as a
 -- uuid) and carry split_of/split_type + empty custom_data (no
--- openbeta_id — the client aliases ids through it and would collapse
+-- openbeta_id, the client aliases ids through it and would collapse
 -- the duplicate into the original). Safe to re-run: prior splits are
 -- unwound, shifts reversed. Re-run after importer refreshes (with 021).
 -- ============================================================

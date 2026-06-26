@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Devil's Lake Mapping Project</title>
-  <meta name="description" content="Interactive map of Devil's Lake — trails, climbing, camping, and more. Works offline — save the map and take it to the crag." />
+  <meta name="description" content="Interactive map of Devil's Lake, trails, climbing, camping, and more. Works offline, save the map and take it to the crag." />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Devil's Lake Mapping Project" />
   <meta property="og:description" content="Interactive trail, climbing, and adventure maps. Works offline on your phone." />
@@ -615,7 +615,7 @@
     /* ≤3 photos: flex to fill the row so they fit with no scrollbar or arrows */
     .popup-photos--fit { overflow: visible; }
     .popup-photos--fit img { flex: 1 1 0; width: auto; min-width: 0; }
-    /* hide the scrollbar on both galleries — navigation is arrows (desktop) / drag (touch) */
+    /* hide the scrollbar on both galleries, navigation is arrows (desktop) / drag (touch) */
     .popup-photos, .cp-amen { scrollbar-width: none; -ms-overflow-style: none; }
     .popup-photos::-webkit-scrollbar, .cp-amen::-webkit-scrollbar { display: none; }
     .popup-photo-count {
@@ -1140,7 +1140,7 @@
     #feature-sheet .dl-popup-custom > * { width: 100% !important; max-width: 100%; box-sizing: border-box; }
     #feature-sheet .mapboxgl-popup-content { min-width: 0; }
     /* Campsite popup header text sits on the dark sheet on mobile (no white card
-       behind it like the desktop popup) — lighten it for contrast. */
+       behind it like the desktop popup), lighten it for contrast. */
     #feature-sheet .cs-pop-title { color: #fff; }
     #feature-sheet .cs-pop-cg { color: rgba(255,255,255,0.72); }
     #feature-sheet .cs-pop-price-amt { color: #cfe3a8; }
@@ -1162,7 +1162,7 @@
     #exp-bar {
       position: absolute; z-index: 45;
       top: calc(12px + env(safe-area-inset-top, 0px));
-      left: 0; right: 0; margin: 0 auto;   /* center WITHOUT transform — a transform here would re-anchor the position:fixed mobile sheets to the bar instead of the viewport */
+      left: 0; right: 0; margin: 0 auto;   /* center WITHOUT transform, a transform here would re-anchor the position:fixed mobile sheets to the bar instead of the viewport */
       width: fit-content; max-width: calc(100% - 24px);   /* size to content; the slider matches the chips' width */
       font-family: 'Inter', sans-serif;
     }
@@ -1342,7 +1342,7 @@
   </div>
 </div>
 
-<!-- GoingToCamp date picker — collects dates, then deep-links to the official
+<!-- GoingToCamp date picker, collects dates, then deep-links to the official
      Wisconsin State Parks reservation site (goingtocamp.com) in a new tab. -->
 <div id="gtc-modal" role="dialog" aria-modal="true" aria-label="Choose reservation dates">
   <div id="gtc-box">
@@ -1422,13 +1422,13 @@
 
   <!-- Left Sidebar (built dynamically from experience config) -->
   <aside id="left-panel">
-    <!-- Experience switcher — shown when more than one public experience exists -->
+    <!-- Experience switcher, shown when more than one public experience exists -->
     <div class="panel-section" id="experience-section" style="display:none">
       <div class="panel-section-title">Experience</div>
       <select id="experience-select" class="cf-select"></select>
     </div>
 
-    <!-- Campsite filters — their own section at the top of the sidebar, above
+    <!-- Campsite filters, their own section at the top of the sidebar, above
          Layers. Body populated by buildLayersFromConfig when campsites exist. -->
     <div class="panel-section" id="camp-filter-section" style="display:none">
       <div class="panel-section-title">Campground Filters</div>
@@ -1443,7 +1443,7 @@
     <!-- Campsite price filter renders inline under the Campsites layer toggle
          (built in renderLayerRow); drive-time filters were removed. -->
 
-    <!-- Climbing search + filters — shown only when climbing layers are in the experience -->
+    <!-- Climbing search + filters, shown only when climbing layers are in the experience -->
     <div id="climbing-filter-panel" class="panel-section">
 
       <div class="cf-search-wrap">
@@ -1531,7 +1531,7 @@
     <button id="basemap-switcher" title="Switch basemap" aria-label="Switch basemap">
       <span id="bms-label">Satellite</span>
     </button>
-    <!-- Floating clear-filter pill — the always-visible way out of a climbing
+    <!-- Floating clear-filter pill, the always-visible way out of a climbing
          filter, even on mobile where the sidebar drawer is closed -->
     <button id="climb-filter-chip" style="display:none" title="Clear climbing filters">
       <i class="fa-solid fa-filter"></i> <span id="cfc-label"></span> <span class="cfc-x">×</span>
@@ -1594,7 +1594,7 @@
 
   // ── Offline store ────────────────────────────────────────────
   // Supabase RPCs are POSTs, which the service worker's Cache Storage can't
-  // key — so RPC results are persisted here (IndexedDB) instead. Everything
+  // key, so RPC results are persisted here (IndexedDB) instead. Everything
   // else (page, libs, REST GETs, photos) is cached by sw.js transparently.
   const idb = {
     _db: null,
@@ -1638,7 +1638,7 @@
 
   // Network-first RPC: persist good responses, serve the last good copy when
   // the NETWORK fails. An authoritative null (e.g. an unpublished experience)
-  // is returned as null and purges the stale offline copy — otherwise a draft
+  // is returned as null and purges the stale offline copy, otherwise a draft
   // would keep resurrecting from IndexedDB on devices that saw it when public.
   async function rpcCached(fn, fnArgs, cacheKey) {
     try {
@@ -1673,12 +1673,12 @@
   // Counts are injected into the cached area features by enrichAreaBadges.
   const AREA_BADGE_FILTER = ['>', ['coalesce', ['get', '_climbs'], 0], 0];
   // Zoom bands for semantic clustering: hierarchy depth d owns
-  // [BAND[d], BAND[d+1]) for its family. Integer edges — ['zoom'] in
+  // [BAND[d], BAND[d+1]) for its family. Integer edges, ['zoom'] in
   // filters is only re-evaluated at integer zoom levels. The route root's
-  // depth-0 band is empty — its park-wide hull was more noise than signal,
+  // depth-0 band is empty, its park-wide hull was more noise than signal,
   // so the East/West Bluff group hulls own the low zooms instead.
   const BAND_START = { routes: [0, 0, 14, 15, 16], boulders: [0, 12, 13, 14, 15] };
-  // Areas whose climbs span geographically unrelated walls — a convex hull
+  // Areas whose climbs span geographically unrelated walls, a convex hull
   // overreaches, so they render as a single point badge (subtree count)
   // during their band instead.
   const HULL_AS_POINT = new Set([
@@ -1689,12 +1689,12 @@
   // Sources whose features ARE areas (markers + hull polygons share the
   // same area_id/area_path association).
   const AREA_SOURCES = new Set(['climbing_areas', 'climbing_area_hulls']);
-  // Slider ceilings — top of range means "no upper cap" (V13+/5.13+).
+  // Slider ceilings, top of range means "no upper cap" (V13+/5.13+).
   const V_TOP = 13;
   const R_TOP = 13;
   const climbFilter = { search: '', area: 'all', types: new Set(),
     rmin: 0, rmax: R_TOP, vmin: 0, vmax: V_TOP };
-  // Popup grade pills are shortcuts into the same slider ranges — one shared
+  // Popup grade pills are shortcuts into the same slider ranges, one shared
   // filter state between the sidebar and the popups.
   const R_BUCKETS = { all: [0, R_TOP], easy: [0, 8], mod: [9, 10], hard: [11, 11], proj: [12, R_TOP] };
   const V_BUCKETS = { all: [0, V_TOP], easy: [0, 3], mod: [4, 6], hard: [7, 9], proj: [10, V_TOP] };
@@ -1726,7 +1726,7 @@
   function areaKeyOf(p) { return p.area_id || p.name || ''; }
   // Rows from older importer runs identify areas by a different id than the
   // climbs' area_path (openbeta uuid vs row area_id). buildClimbAreaIndex
-  // fills this alias map so every known id resolves to one canonical key —
+  // fills this alias map so every known id resolves to one canonical key -
   // without it the tree splits into a flat list and counts read 0.
   let areaAlias = {};
   const canonicalAreaKey = k => areaAlias[k] || k;
@@ -1904,7 +1904,7 @@
       const arr = Array.isArray(ctx[key]) ? ctx[key] : [];
       return arr.map(item => inner.replace(/\{\{\s*this\s*\}\}/g, escapeHtml(item))).join('');
     });
-    // #if — supports nesting: a block's content may not contain another {{#if}},
+    // #if, supports nesting: a block's content may not contain another {{#if}},
     // so the regex matches innermost blocks first; loop until stable to unwind
     // outer blocks too.
     const ifRe = /\{\{\s*#if\s+(\w+)\s*\}\}((?:(?!\{\{\s*#if\s)[\s\S])*?)\{\{\s*\/if\s*\}\}/g;
@@ -1925,7 +1925,7 @@
     return out;
   }
   // Scope author CSS to the popup wrapper so it can't bleed into other Mapbox popups.
-  // NOTE: simple rules only — @media / @keyframes headers are left untouched (their inner
+  // NOTE: simple rules only, @media / @keyframes headers are left untouched (their inner
   // rules won't be scoped), which is acceptable for popup styling.
   function scopePopupCss(css, scopeSel) {
     scopeSel = scopeSel || '.dl-popup-custom';
@@ -1968,7 +1968,7 @@
     const end = new Date(start); end.setDate(end.getDate() + n);
     const monthAnchor = new Date(today.getFullYear(), today.getMonth(), 1);
     // searchTime must be LOCAL time with no timezone suffix (e.g.
-    // 2026-06-19T15:31:23.031) — the booking SPA silently refuses to run the
+    // 2026-06-19T15:31:23.031), the booking SPA silently refuses to run the
     // search if given a UTC "...Z" value, so don't use toISOString().
     const z = (nn, l = 2) => String(nn).padStart(l, '0');
     const searchTime = `${GTC_DATE(today)}T${z(today.getHours())}:${z(today.getMinutes())}:${z(today.getSeconds())}.${z(today.getMilliseconds(), 3)}`;
@@ -2058,7 +2058,7 @@
       sum.textContent = `${fmt(s)} → ${fmt(e)} · ${nights} night${nights === 1 ? '' : 's'}`;
       go.disabled = false;
     } else if (s) {
-      sum.textContent = `Check-in ${fmt(s)} — now pick check-out`;
+      sum.textContent = `Check-in ${fmt(s)}, now pick check-out`;
       go.disabled = true;
     } else {
       sum.textContent = 'Tap your check-in, then check-out date';
@@ -2125,7 +2125,7 @@
 
   // ── DNR campsite availability (Campflare) ───────────────────────
   // Static site data is precomputed (properties.campflare); this is the volatile
-  // part — live per-site availability over a date range, fetched on demand from the
+  // part, live per-site availability over a date range, fetched on demand from the
   // campflare-availability edge function and colored onto the campsite markers.
   // Reuses the reserve calendar's CSS (.gtc-cal-*) and date helpers.
   const AVAIL_COLORS = { available: '#27ae60', partial: '#e6a817', unavailable: '#c0392b', unknown: '#9aa0a6' };
@@ -2169,7 +2169,7 @@
       sum.textContent = `${fmt(s)} → ${fmt(e)} · ${nights} night${nights === 1 ? '' : 's'}`;
       go.disabled = false;
     } else if (s) {
-      sum.textContent = `Check-in ${fmt(s)} — now pick check-out`;
+      sum.textContent = `Check-in ${fmt(s)}, now pick check-out`;
       go.disabled = true;
     } else {
       sum.textContent = 'Tap your check-in, then check-out date';
@@ -2248,7 +2248,7 @@
 
   async function applyAvailability(startDate, endDate) {
     const ids = Object.values(CAMPFLARE_CAMPGROUNDS).filter(Boolean);
-    if (!ids.length) { console.warn('CAMPFLARE_CAMPGROUNDS not configured — run --discover'); return; }
+    if (!ids.length) { console.warn('CAMPFLARE_CAMPGROUNDS not configured, run --discover'); return; }
     const label = document.getElementById('avc-label');
     document.getElementById('avail-chip').style.display = '';
     if (label) label.textContent = 'Loading availability…';
@@ -2300,7 +2300,7 @@
     const m = String(g).match(/^[Vv](\d+)/);
     return m ? parseInt(m[1]) : -1;
   }
-  // Combined bucket test — display only (grade pill colors).
+  // Combined bucket test, display only (grade pill colors).
   function gradeInBucket(grade, bucket) {
     if (!grade || bucket === 'all') return true;
     const r = ydsRank(grade), v = vRank(grade);
@@ -2340,7 +2340,7 @@
 
   // ── Climbing filter apply ─────────────────────────────────────
   // Does a climb pass the sidebar's climb-level filters (search / type /
-  // grade)? The area criterion stays separate — popups define their own
+  // grade)? The area criterion stays separate, popups define their own
   // area scope. Each grade filter constrains only its own family.
   function climbMatchesFilter(p, srcKey) {
     const { search, types, rmin, rmax, vmin, vmax } = climbFilter;
@@ -2361,9 +2361,9 @@
     const { search, area, types, rmin, rmax, vmin, vmax } = climbFilter;
     const hasFilter = search || area !== 'all' || types.size > 0
       || rmin > 0 || rmax < R_TOP || vmin > 0 || vmax < V_TOP;
-    let climbTotal = 0;   // matching routes + boulders — the results
+    let climbTotal = 0;   // matching routes + boulders, the results
 
-    // Climbs have no map layers — filtering them recomputes the area badge
+    // Climbs have no map layers, filtering them recomputes the area badge
     // counts (a wall with zero matches loses its badge).
     const filteredClimbs = {};
     CLIMB_SOURCES.forEach(srcKey => {
@@ -2378,7 +2378,7 @@
     enrichAreaBadges(hasFilter ? filteredClimbs : null);
 
     // Areas narrow only by the area dropdown; search/type/grade describe
-    // climbs — their visible effect is badge counts dropping (to zero).
+    // climbs, their visible effect is badge counts dropping (to zero).
     const areasSrc = map.getSource('climbing_areas');
     const areasCache = layerCache['climbing_areas'];
     if (areasSrc && areasCache) {
@@ -2407,7 +2407,7 @@
     updateClimbFilterChip(climbTotal);
   }
 
-  // Floating pill mirroring the active climbing filter — without it, a filter
+  // Floating pill mirroring the active climbing filter, without it, a filter
   // applied from a popup is invisible (and on mobile, irreversible) because
   // the sidebar panel with the reset lives in a closed drawer.
   function updateClimbFilterChip(total) {
@@ -2437,7 +2437,7 @@
     panel.style.display = hasClimbing ? 'block' : 'none';
     if (!hasClimbing) return;
 
-    // Climbing layers follow their own visible_by_default (off by default) — the
+    // Climbing layers follow their own visible_by_default (off by default), the
     // filter section is collapsed initially, so we don't force the layers on.
 
     buildClimbAreaIndex();
@@ -2449,7 +2449,7 @@
   function buildClimbAreaIndex() {
     const areaFeats = (layerCache['climbing_areas'] || { features: [] }).features;
 
-    // Pass 1: alias map — register every id an area is known by (openbeta_id,
+    // Pass 1: alias map, register every id an area is known by (openbeta_id,
     // area_id) under one canonical key, openbeta_id first since climbs'
     // area_path chains use openbeta uuids. Older importer runs wrote a
     // different area_id scheme; without aliasing the tree shatters into a
@@ -2467,7 +2467,7 @@
       [ob, p.area_id].forEach(a => { if (a) areaAlias[a] = canon; });
     });
 
-    // Pass 2: counts — each climb counts toward its whole (canonical) chain.
+    // Pass 2: counts, each climb counts toward its whole (canonical) chain.
     climbCountByKey = {};
     CLIMB_SOURCES.forEach(srcKey => {
       (layerCache[srcKey] || { features: [] }).features.forEach(f => {
@@ -2478,7 +2478,7 @@
     });
 
     // Pass 3: nodes + parent links (canonicalized on both sides). Key derives
-    // exactly as in pass 1 — routing through areaKeyOf (area_id-first) would
+    // exactly as in pass 1, routing through areaKeyOf (area_id-first) would
     // misfile old-scheme rows whose area_id aliases to a different area.
     climbAreaNodes = {};
     areaFeats.forEach(f => {
@@ -2501,7 +2501,7 @@
   }
 
   // Fill #cf-area with a tree-ordered, indented option per area (+ climb count).
-  // Areas whose whole sub-tree has no climbs are noise in a filter — hidden.
+  // Areas whose whole sub-tree has no climbs are noise in a filter, hidden.
   function populateAreaSelect() {
     const sel = document.getElementById('cf-area');
     if (!sel) return;
@@ -2521,7 +2521,7 @@
     };
     roots.forEach(calcEff);
 
-    // Only prune when climb data is actually loaded — an experience with just
+    // Only prune when climb data is actually loaded, an experience with just
     // the areas layer (no routes/boulders) would otherwise empty the list.
     const haveClimbs = Object.keys(climbCountByKey).length > 0;
 
@@ -2543,7 +2543,7 @@
   // reveal + expand the climbing UI, filter to its sub-tree, and zoom to it.
   function selectClimbArea(areaKey) {
     if (areaKey !== 'all') areaKey = canonicalAreaKey(areaKey); // popups/markers may carry an alias id
-    // Climbs render through the area badges — the filter shows something
+    // Climbs render through the area badges, the filter shows something
     // only if the areas layer exists and climb data is loaded. Otherwise
     // just zoom to the area.
     const canShowClimbs = !!map.getSource('climbing_areas')
@@ -2582,7 +2582,7 @@
       map.fitBounds(b, { padding: 80, maxZoom: 16 });
       return;
     }
-    // No climbs loaded for this area — fly to the area marker itself.
+    // No climbs loaded for this area, fly to the area marker itself.
     const areaFeat = (layerCache['climbing_areas'] || { features: [] }).features
       .find(f => canonicalAreaKey(areaKeyOf(f.properties)) === want);
     if (areaFeat && areaFeat.geometry.type === 'Point') {
@@ -2634,7 +2634,7 @@
     const hasCamping = layers.some(l => l.source_key === CAMPING_SOURCE) && cached && cached.features.length;
     if (!hasCamping) { panel.classList.remove('visible'); return; }
 
-    // Enable the camping layer + reveal its inline price filter — a populated
+    // Enable the camping layer + reveal its inline price filter, a populated
     // campsites experience implies intent to browse it.
     if (layerMeta[CAMPING_SOURCE]) {
       setLayerVisible(CAMPING_SOURCE, true);
@@ -2923,7 +2923,7 @@
       climbFilter.search = name;
       closeSuggestions();
       applyClimbingFilters();
-      // climbs render through their area's badge — jump straight to the
+      // climbs render through their area's badge, jump straight to the
       // matched climb and open its popup instead of leaving the user to
       // hunt for which wall lit up
       for (const src of CLIMB_SOURCES) {
@@ -3050,8 +3050,8 @@
   }
 
   // ── Street View (Google Maps Embed API, Street View mode) ───────
-  // The Embed API is free with UNLIMITED usage — no per-view charge, no quota
-  // tier — and the embedded panorama is interactive (pan/zoom/step). The key
+  // The Embed API is free with UNLIMITED usage, no per-view charge, no quota
+  // tier, and the embedded panorama is interactive (pan/zoom/step). The key
   // ships in the client, so in the Google Cloud console restrict it to (1) the
   // Maps Embed API only and (2) this site's HTTP referrer. Leave '' to hide the
   // Street View control entirely. Only campsite sources get the control.
@@ -3066,7 +3066,7 @@
     if (heading != null && heading !== '') url += `&heading=${heading}`;
     return url;
   }
-  // Plain Street View photo (Street View Static API) — no controls, used as the
+  // Plain Street View photo (Street View Static API), no controls, used as the
   // campsite popup hero. Billed per request (unlike the free Embed API), so it's
   // only built when a campsite popup opens. Requires "Street View Static API"
   // enabled on the key; scale=2 keeps it crisp on retina.
@@ -3110,7 +3110,7 @@
   // The hero is a fixed-height frame so the popup never collapses: covered sites
   // (sv_status='ok', precomputed via the free metadata sweep) show the Street View
   // photo; everything else shows a branded placeholder (the site-type glyph on the
-  // dark panel) — never a gray "no imagery" tile, never an empty box.
+  // dark panel), never a gray "no imagery" tile, never an empty box.
   // Campflare per-site facts (amenity chips + a details line) for the campsite popup.
   // Reads the slow-moving blob stamped by enrich_campsites_campflare.py.
   function campflareData(props) {
@@ -3277,7 +3277,7 @@
     if (cfg.popup_template && cfg.popup_template.trim()) {
       let body = renderPopupTemplate(cfg.popup_template, buildCtx(props));
       // Inject the photo gallery at the template's <!--DL_PHOTOS--> marker (or
-      // append it) — custom templates can't emit the lightbox data attributes.
+      // append it), custom templates can't emit the lightbox data attributes.
       const gallery = buildPhotoGalleryHTML(props);
       let afterPhotos = gallery;
       // DNR campgrounds carry a Campflare blob: swap the Google amenity chips for
@@ -3324,7 +3324,7 @@
     } catch {}
 
     // Climbing sources get purpose-built styling (grade chip, type pills,
-    // stats, description) instead of generic label/value rows — the keys
+    // stats, description) instead of generic label/value rows, the keys
     // rendered here are suppressed from the row sections below.
     const isClimb = sourceKey === 'climbing_routes' || sourceKey === 'climbing_boulders';
     const isAreaSrc = AREA_SOURCES.has(sourceKey);
@@ -3377,7 +3377,7 @@
       .map(([k, v]) => `<div class="popup-row"><span class="popup-label">${fmtKey(k)}</span><span class="popup-value">${fmtVal(k, v)}</span></div>`)
       .join('');
 
-    // Feature photos — gallery strip; click opens lightbox
+    // Feature photos, gallery strip; click opens lightbox
     const photosHTML = buildPhotoGalleryHTML(props);
     // OpenBeta area association: areas get a "show climbs" button + an
     // in-popup climb browser; climbs get an area chip and prev/next stepping
@@ -3389,17 +3389,17 @@
     let climbCountHTML = '';   // count chip in the popup header (area popups)
     if (isAreaSrc) {
       const ak = areaKeyOf(props);
-      // the list respects the sidebar's climb filters (search/type/grade) —
+      // the list respects the sidebar's climb filters (search/type/grade) -
       // same subset the area's badge count reflects
       const climbs = (ak ? climbsForArea(ak) : [])
         .filter(({ f, src }) => climbMatchesFilter(f.properties, src));
       if (ak && climbs.length) {
-        // Without the areas layer the button can only zoom — label it so.
+        // Without the areas layer the button can only zoom, label it so.
         const canShowClimbs = !!map.getSource('climbing_areas');
         climbAssocHTML = canShowClimbs
           ? `<button class="popup-area-climbs-btn" data-area-key="${escapeHtml(ak)}"><i class="fa-solid fa-mountain-sun"></i> Filter map to this area</button>`
           : `<button class="popup-area-climbs-btn" data-area-key="${escapeHtml(ak)}"><i class="fa-solid fa-magnifying-glass-location"></i> Zoom to this area</button>`;
-        // areas are single-type (migration 023 split the mixed walls) —
+        // areas are single-type (migration 023 split the mixed walls) -
         // a boulder area is simply one with no routes
         const family = climbs.some(c => c.src === 'climbing_routes') ? 'routes' : 'boulders';
         const headLabel = family === 'routes' ? 'Routes' : 'Boulders';
@@ -3434,7 +3434,7 @@
                 data-cname="${escapeHtml((p.name || '').toLowerCase())}">
                 <i class="fa-solid ${CLIMB_TYPE_ICON[src] || 'fa-location-dot'}"></i>
                 <span class="pcl-name">${escapeHtml(p.name || '(unnamed)')}</span>
-                <span class="pcl-grade ${gradeBucketClass(g)}">${escapeHtml(g) || '—'}</span>
+                <span class="pcl-grade ${gradeBucketClass(g)}">${escapeHtml(g) || '-'}</span>
               </button>`;
             }).join('')}
           </div>`;
@@ -3494,7 +3494,7 @@
   }
 
   // ── Map init ─────────────────────────────────────────────────
-  // Offline basemap: open-source raster tiles (OpenTopoMap — OSM data with
+  // Offline basemap: open-source raster tiles (OpenTopoMap, OSM data with
   // contours, CC-BY-SA). Unlike Mapbox tiles these MAY be cached for offline
   // use; "Save offline" prefetches the experience area into the SW tile cache.
   // One fixed subdomain so cache keys always match the style's requests.
@@ -3520,7 +3520,7 @@
   };
 
   // navigator.onLine is unreliable (iOS often reports true in airplane mode),
-  // so it only picks the optimistic first try — the error handler below is
+  // so it only picks the optimistic first try, the error handler below is
   // the real offline detection, and usedOfflineStyle the real offline signal.
   let usedOfflineStyle = navigator.onLine === false;
 
@@ -3537,11 +3537,11 @@
     attributionControl: false,
     cooperativeGestures: IS_EMBED,
   });
-  // Compact (ⓘ button) attribution — basemap credits flow in from the active
+  // Compact (ⓘ button) attribution, basemap credits flow in from the active
   // style/source; data + icon credits ride along as customAttribution.
   map.addControl(new mapboxgl.AttributionControl({
     compact: true,
-    customAttribution: '© <a href="https://openbeta.io" target="_blank" rel="noopener">OpenBeta</a> contributors (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) | Trails © <a href="https://www.co.sauk.wi.us" target="_blank" rel="noopener">Sauk County GIS</a> | Street View imagery © Google | <a href="https://www.flaticon.com/free-icons/carabiner" title="carabiner icons" target="_blank" rel="noopener">Carabiner icon by narak0rn — Flaticon</a> | <a href="https://thenounproject.com/icon/rock-5301957/" target="_blank" rel="noopener">Rock icon by Brad — Noun Project</a>',
+    customAttribution: '© <a href="https://openbeta.io" target="_blank" rel="noopener">OpenBeta</a> contributors (<a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>) | Trails © <a href="https://www.co.sauk.wi.us" target="_blank" rel="noopener">Sauk County GIS</a> | Street View imagery © Google | <a href="https://www.flaticon.com/free-icons/carabiner" title="carabiner icons" target="_blank" rel="noopener">Carabiner icon by narak0rn, Flaticon</a> | <a href="https://thenounproject.com/icon/rock-5301957/" target="_blank" rel="noopener">Rock icon by Brad, Noun Project</a>',
   }));
 
   // If the remote style fails before anything has loaded (offline, blocked
@@ -3558,7 +3558,7 @@
   map.addControl(new mapboxgl.NavigationControl(), 'top-right');
   map.addControl(new mapboxgl.ScaleControl({ unit: 'imperial' }), 'bottom-right');
 
-  // Geolocation — "center on me" map control (navigation itself is delegated
+  // Geolocation, "center on me" map control (navigation itself is delegated
   // to the device maps app, so this no longer feeds a routing start point)
   geolocate = new mapboxgl.GeolocateControl({
     positionOptions: { enableHighAccuracy: true },
@@ -3599,7 +3599,7 @@
 
   // Custom marker glyphs + fallback for any icon name the style sprite lacks.
   // Drawn in canvas (no sprite dependency) so they survive basemap switches
-  // and render offline. White on transparent — they sit on the colored circle.
+  // and render offline. White on transparent, they sit on the colored circle.
   function drawMapGlyph(id) {
     const S = 64; // drawn 4x, registered at pixelRatio 4 → crisp 16px logical
     // 'dl-foo@#e74c3c' bakes the marker circle into the image in that color,
@@ -3646,7 +3646,7 @@
       ctx.stroke();
     } else if (name === 'dl-boulder') {
       // boulder silhouette traced from Icons/noun-rock-5301957.svg (rock by
-      // Brad, Noun Project) — solid shape, survives atlas minification.
+      // Brad, Noun Project), solid shape, survives atlas minification.
       // Path lives in a 24x30 viewBox; scaled and centered into the disc.
       ctx.translate(32 - 12.29 * 3, 32 - 12.08 * 3);
       ctx.scale(3, 3);
@@ -3669,22 +3669,22 @@
       ctx.moveTo(22, 40); ctx.lineTo(44, 38);
       ctx.stroke();
     } else if (name === 'dl-tent') {
-      // campsite tent — Maki `campsite` (CC0). Icons/vendor/maki/campsite.svg
+      // campsite tent, Maki `campsite` (CC0). Icons/vendor/maki/campsite.svg
       svgGlyph('M14 10V11C14 11.5523 13.5523 12 13 12H2C1.44772 12 1 11.5523 1 11V10C1 9.44772 1.44772 9.00001 2 9.00001H2.25L7.03206 1.25762C7.24699 0.90965 7.75302 0.909651 7.96794 1.25762L12.75 9.00001H13C13.5523 9.00001 14 9.44772 14 10ZM10.5 9.00001L7.5 4.00001L4.5 9.00001H10.5Z', 7.5, 6.5, 2.7);
     } else if (name === 'dl-rv') {
-      // camper trailer — Temaki `camper_trailer` (CC0). Icons/vendor/temaki/camper_trailer.svg
+      // camper trailer, Temaki `camper_trailer` (CC0). Icons/vendor/temaki/camper_trailer.svg
       svgGlyph('M10.5 11C10.5 9.9 9.6 9 8.5 9C7.4 9 6.5 9.9 6.5 11L0.5 11C0.22 11 0 10.78 0 10.5C0 10.22 0.22 10 0.5 10L3 10C1.9 10 1 9.1 1 8L1 5.29C1 4.26 1.78 3.4 2.8 3.3L2.8 3.3C4.73 3.1 6.46 3 8 3C9.54 3 11.27 3.1 13.2 3.3C14.22 3.4 15 4.26 15 5.29L15 9C15 10.1 14.1 11 13 11L10.5 11ZM5.5 7C5.78 7 6 6.78 6 6.5L6 5.5C6 5.22 5.78 5 5.5 5L3.5 5C3.22 5 3 5.22 3 5.5L3 6.5C3 6.78 3.22 7 3.5 7L5.5 7ZM12.5 7C12.78 7 13 6.78 13 6.5L13 5.5C13 5.22 12.78 5 12.5 5L8.5 5C8.22 5 8 5.22 8 5.5L8 6.5C8 6.78 8.22 7 8.5 7L12.5 7ZM8.5 12.5C7.67 12.5 7 11.83 7 11C7 10.17 7.67 9.5 8.5 9.5C9.33 9.5 10 10.17 10 11C10 11.83 9.33 12.5 8.5 12.5Z', 7.5, 7.75, 2.4);
     } else if (name === 'dl-parking') {
-      // parking "P" — Maki `parking` (CC0). Icons/vendor/maki/parking.svg
+      // parking "P", Maki `parking` (CC0). Icons/vendor/maki/parking.svg
       svgGlyph('M4 2V13H6V9H8.5C10.433 9 12 7.433 12 5.5C12 3.567 10.433 2 8.5 2H4ZM6 7V4H8.5C9.32843 4 10 4.67157 10 5.5C10 6.32843 9.32843 7 8.5 7H6Z', 8, 7.5, 3.2);
     } else if (name === 'dl-restroom') {
-      // restroom — Maki `toilet` (CC0). Icons/vendor/maki/toilet.svg
+      // restroom, Maki `toilet` (CC0). Icons/vendor/maki/toilet.svg
       svgGlyph('M3 1.5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0ZM11.5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM3.29 4a1 1 0 0 0-.868.504L.566 7.752a.5.5 0 1 0 .868.496l1.412-2.472A345.048 345.048 0 0 0 1 11h2v2.5a.5.5 0 0 0 1 0V11h1v2.5a.5.5 0 0 0 1 0V11h2L6.103 5.687l1.463 2.561a.5.5 0 1 0 .868-.496L6.578 4.504A1 1 0 0 0 5.71 4H3.29ZM9 4.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0v4a.5.5 0 0 1-1 0v-4h-1v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 1-1 0v-5Z', 7.28, 6.75, 2.6);
     } else if (name === 'dl-water') {
-      // drinking water — Maki `drinking-water` (CC0). Icons/vendor/maki/drinking-water.svg
+      // drinking water, Maki `drinking-water` (CC0). Icons/vendor/maki/drinking-water.svg
       svgGlyph('M6,1A2,2,0,0,0,4,3V6.5a.5.5,0,0,0,.5.5h2A.5.5,0,0,0,7,6.5v-2A.5.5,0,0,1,7.5,4H14V1ZM7,15H4a.5.5,0,0,1-.48-.38L2,8.62a.5.5,0,0,1,.365-.606A.558.558,0,0,1,2.5,8h6a.5.5,0,0,1,.514.485A.47.47,0,0,1,9,8.62l-1.5,6A.5.5,0,0,1,7,15ZM3.65,11H7.36l.5-2H3.14Z', 8, 8, 2.5);
     } else if (name === 'dl-accessible') {
-      // accessibility (wheelchair) — Maki `wheelchair` (CC0). Icons/vendor/maki/wheelchair.svg
+      // accessibility (wheelchair), Maki `wheelchair` (CC0). Icons/vendor/maki/wheelchair.svg
       svgGlyph('M12,1.5C12,2.3284,11.3284,3,10.5,3S9,2.3284,9,1.5S9.6716,0,10.5,0S12,0.6716,12,1.5z M2.82,4.87l1.74-1.71l1.85,1.29 L5.67,5.7c1.0747,0.3341,2.0207,0.9904,2.71,1.88l0.88-1.5c0.2295-0.4158,0.0785-0.939-0.3373-1.1685 C8.9218,4.911,8.9209,4.9105,8.92,4.91L8.3,4.54L4.79,2.1C4.5927,1.9594,4.3231,1.9805,4.15,2.15l-2,2 C1.9852,4.3716,2.0312,4.6848,2.2528,4.8496C2.4193,4.9735,2.645,4.9816,2.82,4.87z M8.13,10.94 c-0.0143,1.2308-0.5794,2.3904-1.54,3.16c-0.7118,0.5804-1.6016,0.8982-2.52,0.9C1.8261,15,0.0055,13.1839,0,10.94 c0.0023-0.9231,0.3238-1.8169,0.91-2.53c0.1868-0.232,0.398-0.4432,0.63-0.63c0.7131-0.5862,1.6069-0.9077,2.53-0.91 C6.3139,6.8755,8.13,8.6961,8.13,10.94z M6,12.21C6.7679,11.2051,6.5758,9.7679,5.5709,9C4.7501,8.3727,3.6109,8.3727,2.79,9 C2.5283,9.151,2.311,9.3683,2.16,9.63c-0.6923,1.0584-0.3956,2.4777,0.6628,3.17c0.7615,0.4981,1.7457,0.4981,2.5072,0 C5.5805,12.6365,5.8061,12.4378,6,12.21z M14.2,13.21l-2.49-5C11.5906,7.9251,11.3088,7.7425,11,7.75H8.51 c0.3293,0.4578,0.5856,0.9638,0.76,1.5h1.26l2.29,4.58c0.185,0.3728,0.6372,0.525,1.01,0.34c0.3728-0.185,0.525-0.6372,0.34-1.01 L14.2,13.21z', 7.5, 7.5, 2.3);
     } else if (!tint) {
       // unknown icon → plain circle (a tinted disc below covers this case)
@@ -3807,7 +3807,7 @@
         // (legacy 'pois') can't be baked and keep the two-layer setup.
         const baked = typeof iconImage === 'string' && iconImage.indexOf('dl-') === 0;
         // the 'campsite' sprite is a self-contained badge (tent on its own
-        // plate) — a circle behind it is redundant; drawn without one and
+        // plate), a circle behind it is redundant; drawn without one and
         // sized to match the carabiner route markers (both ~15px at size 1)
         const selfBadge = dsIcon === 'campsite';
         if (!baked && !selfBadge) {
@@ -3828,7 +3828,7 @@
           map.addLayer(circleSpec);
           mapboxIds.push(key+'-circle');
         } else if (selfBadge) {
-          // thin greenish-white ring peeking ~1px·size around the badge —
+          // thin greenish-white ring peeking ~1px·size around the badge -
           // matches the rim baked into the route markers (badge ≈ 7.5px·size,
           // rim ≈ 1px·size → ring radius 8.5·size)
           const ringSpec = { id: key+'-circle', type: 'circle', source: key,
@@ -3838,7 +3838,7 @@
           map.addLayer(ringSpec);
           mapboxIds.push(key+'-circle');
         }
-        // climbing markers are dense — drawn 25% smaller; the campsite
+        // climbing markers are dense, drawn 25% smaller; the campsite
         // badge matches them
         const iconScale = baked || selfBadge ? 0.75 : 1;
         const iconSpec = { id: key+'-icon', type: 'symbol', source: key,
@@ -3862,14 +3862,14 @@
             'text-color': selfBadge ? '#fff' : '#333',
             'text-halo-color': selfBadge ? '#000' : '#fff',
             'text-halo-width': selfBadge ? 0.8 : 1.5 } };
-        // Baked amenity glyphs (parking/restroom/water) are campground detail —
+        // Baked amenity glyphs (parking/restroom/water) are campground detail -
         // reveal them with the campsite sites (z13.5+), not at every zoom.
         if (baked) iconSpec.minzoom = 13.5;
         if (filter) iconSpec.filter = filter;
         map.addLayer(iconSpec);
         mapboxIds.push(key+'-icon');
       } else if (key === 'climbing_areas') {
-        // Semantic clustering. Leaf walls render as glyph point badges —
+        // Semantic clustering. Leaf walls render as glyph point badges -
         // carabiner disc for route walls, rock disc for boulder walls
         // (majority type at mixed walls), climb count pinned to the corner.
         // Parent areas render as convex-hull polygons of their subtree's
@@ -3877,7 +3877,7 @@
         // name·count label at the pole of inaccessibility. Each hierarchy
         // depth owns a zoom band (_minz/_maxz from enrichAreaBadges): the
         // depth-0 crags show below z12, each level deeper takes the next
-        // band, leaves take over from their own band onward — every climb
+        // band, leaves take over from their own band onward, every climb
         // is represented exactly once at any zoom.
         const B = ['coalesce', ['get', '_boulders'], 0];
         const R = ['coalesce', ['get', '_routes'], 0];
@@ -3900,7 +3900,7 @@
           map.addLayer({ id: `${HULL_SRC}-line-${suffix}`, type: 'line', source: HULL_SRC,
             filter: guards(typeF),
             paint: { 'line-color': tint, 'line-width': 1.6, 'line-opacity': 0.85 } }, firstSymbol);
-          // the polygon IS the marker — just the name·count label at its
+          // the polygon IS the marker, just the name·count label at its
           // pole of inaccessibility, no point icon
           map.addLayer({ id: `${HULL_SRC}-label-${suffix}`, type: 'symbol', source: HULL_SRC,
             filter: guards(typeF),
@@ -3921,7 +3921,7 @@
             'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.6975, 14, 1.1025],
             'icon-allow-overlap': true,
             'icon-ignore-placement': true,
-            // counts fade in at z14 — at overview zooms the glyphs stand
+            // counts fade in at z14, at overview zooms the glyphs stand
             // alone, the numbers only appear once markers have room
             'text-field': ['step', ['zoom'], '',
               14, ['case', ['>', ['get', '_climbs'], 1], ['to-string', ['get', '_climbs']], '']],
@@ -3936,7 +3936,7 @@
           } });
         addBadgeLayer(key+'-badge-routes', routeF, 'dl-carabiner@#e74c3c', '#e74c3c');
         addBadgeLayer(key+'-badge-boulders', boulderF, 'dl-boulder@#e67e22', '#e67e22');
-        // wall names under the leaf badges at high zoom — separate layers
+        // wall names under the leaf badges at high zoom, separate layers
         // (the badge's text slot carries the corner count) with collision
         // detection on, so dense walls drop labels instead of overlapping
         const addNameLayer = (id, typeF) => map.addLayer({
@@ -3970,10 +3970,10 @@
           layout: { 'text-field': ['get', 'name'], 'text-size': 12, 'text-max-width': 8 },
           paint: { 'text-color': '#fff', 'text-halo-color': '#1b3a1b', 'text-halo-width': 1.4 } });
         // Spur "driveways" (site → nearest road) are now ordinary roads
-        // (source='roads', highway='service'; migrations 028/033) — they render
+        // (source='roads', highway='service'; migrations 028/033), they render
         // and toggle with the roads layer, no longer a campsite companion.
         // tent disc (green) standard; RV disc (orange) electrical. Accessible sites
-        // get a blue disc — keyed on site_type 'handicapped' OR a Site # that starts
+        // get a blue disc, keyed on site_type 'handicapped' OR a Site # that starts
         // with "A" (the park's A1/A2 convention), so just labeling a site "A1" flags it.
         const ACCESSIBLE = ['any',
           ['==', ['get', 'site_type'], 'handicapped'],
@@ -3999,7 +3999,7 @@
             'icon-allow-overlap': true, 'icon-ignore-placement': true } };
         if (filter) iconSpec.filter = filter;
         map.addLayer(iconSpec);
-        // Site-number labels (the Site # / ref — "104", "A1", …) below each marker
+        // Site-number labels (the Site # / ref, "104", "A1", …) below each marker
         // at close zoom; text-optional lets them drop when markers crowd together.
         const siteLabelSpec = { id: key+'-label', type: 'symbol', source: key, minzoom: 16,
           layout: {
@@ -4021,7 +4021,7 @@
         mapboxIds.push(key+'-circle');
       }
     } else {
-      // polygon or mixed — add fill, outline, and circle sub-layers
+      // polygon or mixed, add fill, outline, and circle sub-layers
       map.addSource(key, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       const dsFillOpacity = layerCfg.default_style && layerCfg.default_style.fill_opacity;
       const fillSpec = { id: key+'-fill', type: 'fill', source: key,
@@ -4061,7 +4061,7 @@
               'icon-allow-overlap': true, 'icon-ignore-placement': true },
             paint: { 'icon-color': '#ffffff' },
             filter: ['!=', '$type', 'LineString'] };
-          // Baked amenity glyph (parking) is campground detail — reveal it with
+          // Baked amenity glyph (parking) is campground detail, reveal it with
           // the campsite sites (z13.5+), not at every zoom.
           if (baked) iconSpec.minzoom = 13.5;
           if (filter) iconSpec.filter = ['all', iconSpec.filter, filter];
@@ -4099,7 +4099,7 @@
     if (adhocFilter && adhocFilter.expr) {
       (bySource[adhocFilter.target] = bySource[adhocFilter.target] || []).push(adhocFilter.expr);
     }
-    // Every source any preset/ad-hoc could touch — so toggling off resets it to base.
+    // Every source any preset/ad-hoc could touch, so toggling off resets it to base.
     const managed = new Set(savedFilters.map(f => f.target));
     if (adhocFilter) managed.add(adhocFilter.target);
     managed.forEach(src => {
@@ -4112,7 +4112,7 @@
       (sourceToMapboxLayers[src] || []).forEach(id => {
         if (!map.getLayer(id)) return;
         let f = combined;
-        // hull layers aggregate subtrees — feature-property filters on the
+        // hull layers aggregate subtrees, feature-property filters on the
         // areas source don't translate to them
         if (id.indexOf('climbing_area_hulls-') === 0) return;
         if (id.indexOf('-badge-') !== -1) {
@@ -4147,7 +4147,7 @@
     activePresetIds.clear();
     adhocFilter = null;
 
-    // Predefined saved-filter presets — rendered into the Campground Filters
+    // Predefined saved-filter presets, rendered into the Campground Filters
     // section at the top of the sidebar (#ff-presets, built by
     // buildCampingFilters), independent of the custom
     // panel below. Populated here because this runs after buildLayersFromConfig.
@@ -4169,17 +4169,17 @@
       });
     }
 
-    // Custom (ad-hoc) filter panel — shown only when some layer exposes a
+    // Custom (ad-hoc) filter panel, shown only when some layer exposes a
     // filterable field (presets now live in the Camping footer above).
     const panel = document.getElementById('feature-filter-panel');
     // Climbing has its own dedicated filter UI (search / area / type / grade) in
-    // the Climbing group — exclude climbing layers from the custom filter builder.
+    // the Climbing group, exclude climbing layers from the custom filter builder.
     const filterableLayers = layers.filter(l =>
       layerFieldNames(l.source_key).length && !CLIMBING_SOURCES.includes(l.source_key));
     const adhocBox = document.getElementById('ff-adhoc');
     const layerSel = document.getElementById('ff-layer');
     // Experiences with a primary_layer (e.g. Campsites) surface their filtering
-    // in the top experience bar — hide the sidebar custom filter builder there.
+    // in the top experience bar, hide the sidebar custom filter builder there.
     const hasPrimaryLayer = !!(experienceConfig.experience && experienceConfig.experience.primary_layer);
     if (!filterableLayers.length || hasPrimaryLayer) {
       panel.style.display = 'none';
@@ -4274,7 +4274,7 @@
   }
 
   // ── Hand off to the device's native maps app ─────────────────
-  // No in-app route geometry or API calls — the maps app uses live GPS as
+  // No in-app route geometry or API calls, the maps app uses live GPS as
   // the start and handles traffic, turn-by-turn, and re-routing for free.
   function openDirections(dest /* [lng, lat] */) {
     const [lng, lat] = dest;
@@ -4295,7 +4295,7 @@
     if (climbPanel) document.getElementById('left-panel').appendChild(climbPanel);
     listEl.innerHTML = '';
 
-    // Pass 1 — metadata for every layer (incl. climbs, whose data still loads
+    // Pass 1, metadata for every layer (incl. climbs, whose data still loads
     // for popups/filters/search though they have no toggle), and map layers in
     // config order so layer z-order is unaffected by sidebar grouping.
     layers.forEach(layerCfg => {
@@ -4309,12 +4309,12 @@
         popup_css: layerCfg.popup_css || null,
       };
       layerBaseFilter[layerCfg.source_key] = layerCfg.filter_expr || null;
-      // Climbs render through their area's badge markers — no map layer here.
+      // Climbs render through their area's badge markers, no map layer here.
       if (CLIMB_SOURCES.includes(layerCfg.source_key)) return;
       addLayerToMap(layerCfg);
     });
 
-    // Pass 2 — sidebar rows bucketed by layer_group: each group renders exactly
+    // Pass 2, sidebar rows bucketed by layer_group: each group renders exactly
     // once, positioned by its earliest layer (robust to interleaved sort_order).
     // A group with no visible-by-default layer starts collapsed.
     const groupOrder = [];
@@ -4353,7 +4353,7 @@
       groupLayers.forEach(layerCfg => renderLayerRow(layerCfg, groupEl));
       // Climbing filters live inside the Climbing group, beneath its layer rows.
       if (climbPanel && groupLayers.some(l => l.source_key === 'climbing_areas')) {
-        climbPanel.classList.remove('collapsed');   // no own heading inside the group — keep content open
+        climbPanel.classList.remove('collapsed');   // no own heading inside the group, keep content open
         groupEl.appendChild(climbPanel);
       }
       listEl.appendChild(groupEl);
@@ -4401,7 +4401,7 @@
 
     // Build one sidebar row (or the climbing-areas split) into `container`.
     function renderLayerRow(layerCfg, container) {
-      // The areas layer splits into three toggleable rows — route walls,
+      // The areas layer splits into three toggleable rows, route walls,
       // boulder walls, and a climb-count label toggle (separate badge layers
       // on the same source).
       if (layerCfg.source_key === 'climbing_areas') {
@@ -4435,7 +4435,7 @@
       row.innerHTML = `
         <div class="layer-swatch" style="background:${color}${layerCfg.geom_type==='point'?';border-radius:50%':''}"></div>
         <span class="layer-name">${layerCfg.label}</span>
-        <span class="layer-count" id="count-${layerCfg.source_key}">—</span>
+        <span class="layer-count" id="count-${layerCfg.source_key}">-</span>
         <span class="layer-eye" aria-hidden="true"><i class="fa-solid fa-eye"></i><i class="fa-solid fa-eye-slash"></i></span>`;
       row.addEventListener('click', () => {
         const nowOn = row.classList.toggle('on');
@@ -4490,8 +4490,8 @@
     }
   }
 
-  // The climbing_areas source renders as two toggleable marker families —
-  // route-area badges and boulder-area badges — plus a toggle for the
+  // The climbing_areas source renders as two toggleable marker families -
+  // route-area badges and boulder-area badges, plus a toggle for the
   // corner climb counts, tracked here. The plain circle layer (structural
   // parent areas) shows while either badge family is on.
   const areaTypeVis = { routes: true, boulders: true, counts: true };
@@ -4571,7 +4571,7 @@
       });
     });
 
-    // Larger tap target — fingers are imprecise. If an exact tap missed every
+    // Larger tap target, fingers are imprecise. If an exact tap missed every
     // marker, re-query a padded box around the tap (much wider on touch screens)
     // and open the nearest feature in it.
     map.on('click', (e) => {
@@ -4596,7 +4596,7 @@
     });
   }
 
-  // True on phone-width screens — feature details render as a bottom sheet
+  // True on phone-width screens, feature details render as a bottom sheet
   // there instead of an anchored popup.
   const isMobile = () => window.matchMedia('(max-width: 600px)').matches;
 
@@ -4706,7 +4706,7 @@
         });
         // If the precomputed-OK photo transiently fails (propagation/edge error),
         // swap the hero to the branded placeholder so it never shows a broken image.
-        // It stays tappable — the interactive panorama may still load. naturalWidth
+        // It stays tappable, the interactive panorama may still load. naturalWidth
         // guards the case where the error fired before this listener attached.
         const heroImg = svHero.querySelector('img');
         if (heroImg) {
@@ -4778,7 +4778,7 @@
       // Desktop arrows for the photo + amenity galleries (mobile drags natively).
       wireScrollers(el);
       // Climb-list tools: sort (A–Z / grade) + grade pills. The pills SET
-      // the sidebar's slider ranges — one shared filter state — and the
+      // the sidebar's slider ranges, one shared filter state, and the
       // popup re-renders from it.
       const list = el.querySelector('.popup-climb-list');
       if (!list) return;
@@ -4839,7 +4839,7 @@
     return out.sort(byClimbName);
   }
 
-  // Climbs on the same immediate wall — the prev/next ring in climb popups.
+  // Climbs on the same immediate wall, the prev/next ring in climb popups.
   function climbSiblings(props) {
     const wall = canonicalAreaKey(props.area_id || props.area_name || '');
     if (!wall) return [];
@@ -4853,7 +4853,7 @@
     return out.sort(byClimbName);
   }
 
-  // Center a feature and open its popup — used by climbing nav, the experience
+  // Center a feature and open its popup, used by climbing nav, the experience
   // bar search, and the feature list. Source-agnostic (looks up by id in cache).
   function flyToFeature(src, fid) {
     const f = (layerCache[src] || { features: [] }).features
@@ -4871,7 +4871,7 @@
   // The DB's climb_count is the subtree rollup; badges want only the climbs
   // sitting on this exact marker. Pass {source: features[]} to count a
   // filtered subset (active climbing filters); omit for the full cache.
-  // Mutates the cache only — callers push it to the map with setData.
+  // Mutates the cache only, callers push it to the map with setData.
   function enrichAreaBadges(filteredBySource) {
     const areas = layerCache['climbing_areas'];
     if (!areas) return;
@@ -4895,7 +4895,7 @@
       });
     });
     // Band tables follow the TREE a feature hangs in (its root ancestor's
-    // subtree majority), not the feature's own type — a route leaf in the
+    // subtree majority), not the feature's own type, a route leaf in the
     // bouldering tree must appear exactly when its boulder parent's hull
     // hands off, or its climbs vanish in the band gap. Badge color/family
     // stays the feature's own type.
@@ -4960,7 +4960,7 @@
           }
         }
         if (layerCache[key]) {
-          // climb sources have no map source — they still count, and their
+          // climb sources have no map source, they still count, and their
           // cached data feeds the area badges, popups, and search
           const src = map.getSource(key);
           if (src) src.setData(layerCache[key]);
@@ -5013,7 +5013,7 @@
             slug = data[0].slug;
             config = await rpcCached('get_experience_config', { p_slug: slug }, 'config:' + slug);
           }
-        } catch (e) { /* offline with nothing cached — fall through to error */ }
+        } catch (e) { /* offline with nothing cached, fall through to error */ }
       }
     }
 
@@ -5032,10 +5032,10 @@
 
     // Apply header
     document.getElementById('map-title').textContent = exp.title || 'Trail Map';
-    document.title = `${exp.title} — Devil's Lake Mapping Project`;
+    document.title = `${exp.title}, Devil's Lake Mapping Project`;
 
     // Apply the experience's basemap (default outdoors is already loaded).
-    // Skipped when running on the offline fallback style — a remote style
+    // Skipped when running on the offline fallback style, a remote style
     // can't load and replacing the style would strand initLayers waiting
     // on a 'style.load' that never comes.
     let switchedStyle = false;
@@ -5054,7 +5054,7 @@
     }
 
     // bootOnce only runs once a style is in place, so the current style is
-    // usable right now — only a basemap switch above needs a fresh
+    // usable right now, only a basemap switch above needs a fresh
     // 'style.load' wait. (Checking isStyleLoaded() here instead is a trap:
     // bootstrap can run INSIDE the style.load event, where it returns false
     // but no further style.load will ever fire.)
@@ -5070,7 +5070,7 @@
     registerInteractions();
     setupClimbingFilterListeners();
     const total = await loadLayerData(layers);
-    // hull polygons aren't an experience layer — fetched alongside the areas
+    // hull polygons aren't an experience layer, fetched alongside the areas
     if (layerMeta['climbing_areas'] && !layerCache['climbing_area_hulls']) {
       const hulls = await rpcCached('get_layer_geojson',
         { p_source: 'climbing_area_hulls' }, 'layer:climbing_area_hulls');
@@ -5079,7 +5079,7 @@
         layerCache['climbing_area_hulls'] = hulls;
       }
     }
-    // Campground hulls — companion to campsite_sites (migration 027). Spurs are
+    // Campground hulls, companion to campsite_sites (migration 027). Spurs are
     // now ordinary roads (migrations 028/033) and load with the roads layer.
     if (layerMeta['campsite_sites']) {
       for (const src of ['campground_hulls']) {
@@ -5143,7 +5143,7 @@
   map.on('load', bootOnce);
   map.on('style.load', bootOnce);
 
-  // The basemap renders its own campsite POIs (Mapbox data) — hide them so
+  // The basemap renders its own campsite POIs (Mapbox data), hide them so
   // only our campsites layer marks campgrounds.
   function hideBasemapCampsites() {
     map.getStyle().layers.forEach(l => {
@@ -5153,7 +5153,7 @@
         const f = map.getFilter(l.id);
         const excl = ['!=', ['get', 'maki'], 'campsite'];
         map.setFilter(l.id, f ? ['all', f, excl] : excl);
-      } catch (e) { /* style with legacy filters — leave as-is */ }
+      } catch (e) { /* style with legacy filters, leave as-is */ }
     });
   }
 
@@ -5161,7 +5161,7 @@
   map.on('style.load', () => {
     hideBasemapCampsites();
     if (!experienceConfig) return;
-    // snapshot the sidebar toggle state — the rebuild recreates rows with
+    // snapshot the sidebar toggle state, the rebuild recreates rows with
     // config defaults, and a basemap switch shouldn't reset the map
     const toggleState = {};
     document.querySelectorAll('#layer-list .layer-row').forEach(r => {
@@ -5187,7 +5187,7 @@
       const src = map.getSource(key);
       if (src && layerCache[key]) src.setData(layerCache[key]);
     });
-    // hulls aren't in the experience config — re-feed them too
+    // hulls aren't in the experience config, re-feed them too
     const hullSrc = map.getSource('climbing_area_hulls');
     if (hullSrc && layerCache['climbing_area_hulls']) hullSrc.setData(layerCache['climbing_area_hulls']);
     ['campground_hulls'].forEach(src => {
@@ -5204,7 +5204,7 @@
     document.getElementById('left-panel').classList.toggle('open');
   });
 
-  // Collapsible sections — click the title to expand/collapse.
+  // Collapsible sections, click the title to expand/collapse.
   document.querySelectorAll('.panel-section.collapsible > .panel-section-title').forEach(title => {
     title.addEventListener('click', () => title.parentElement.classList.toggle('collapsed'));
   });
@@ -5227,7 +5227,7 @@
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 
-  // iOS never prompts for install — nudge Safari users toward Add to Home Screen
+  // iOS never prompts for install, nudge Safari users toward Add to Home Screen
   const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   if (isIos && !isStandalone) {
@@ -5264,7 +5264,7 @@
   }
 
   // Tile URLs covering the bounds from z8 down to OFFLINE_TILE_MAXZOOM,
-  // trimming the deepest zooms to stay under the cap — OpenTopoMap is a
+  // trimming the deepest zooms to stay under the cap, OpenTopoMap is a
   // volunteer-run service; a bounded experience area stays well-mannered.
   function enumerateTiles(bounds, cap = 1200) {
     const [w, s, e, n] = bounds;
@@ -5289,7 +5289,7 @@
   }
 
   // "Save for offline": the experience config + layer GeoJSON are already in
-  // IndexedDB (rpcCached) and the shell/libs in the SW caches — this makes the
+  // IndexedDB (rpcCached) and the shell/libs in the SW caches, this makes the
   // save explicit: pin storage, re-cache the page, and prefetch every photo.
   document.getElementById('offline-save-btn').addEventListener('click', async () => {
     const btn = document.getElementById('offline-save-btn');
@@ -5340,7 +5340,7 @@
         status.textContent = `Saving photos… ${Math.min(i + BATCH, urls.length)} / ${urls.length}`;
       }
 
-      // Prefetch the open-source basemap tiles for this experience's area —
+      // Prefetch the open-source basemap tiles for this experience's area -
       // these render via OFFLINE_STYLE when there's no signal.
       const tiles = enumerateTiles(offlineBounds());
       let tilesDone = 0;
@@ -5352,10 +5352,10 @@
         status.textContent = `Saving offline basemap… ${Math.min(i + TILE_BATCH, tiles.length)} / ${tiles.length} tiles`;
       }
 
-      status.textContent = `Saved — this map now works fully offline: data${urls.length ? `, ${done} photos` : ''}, and ${tilesDone} basemap tiles covering this area.`;
+      status.textContent = `Saved, this map now works fully offline: data${urls.length ? `, ${done} photos` : ''}, and ${tilesDone} basemap tiles covering this area.`;
       status.classList.add('ok');
     } catch (err) {
-      status.textContent = 'Could not finish saving — check your connection and try again.';
+      status.textContent = 'Could not finish saving, check your connection and try again.';
     }
     btn.disabled = false;
   });
@@ -5443,7 +5443,7 @@
       submitFile = null;
     } catch (err) {
       console.error('submit photo error:', err);
-      status.textContent = 'Upload failed — please try again.';
+      status.textContent = 'Upload failed, please try again.';
       status.className = 'err';
       btn.disabled = false;
     }

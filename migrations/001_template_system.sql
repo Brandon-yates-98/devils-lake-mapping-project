@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — Template / Experience System
+-- Devil's Lake Mapping Project, Template / Experience System
 -- Run in Supabase: Dashboard → SQL Editor → New query
 -- Assumes osm_geometries table already exists.
 -- ============================================================

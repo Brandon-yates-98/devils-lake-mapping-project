@@ -299,7 +299,7 @@ def main():
     print(f"  {'TOTAL':<12} {sum(len(v) for v in buckets.values()):>8}")
     print(f"\n{written} files written to: {OUTPUT_DIR}")
     if skipped:
-        print(f"({skipped} elements skipped — no tags or empty geometry)")
+        print(f"({skipped} elements skipped, no tags or empty geometry)")
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — write Campflare campground-level data onto the
+-- Devil's Lake Mapping Project, write Campflare campground-level data onto the
 -- campgrounds layer (osm_geometries WHERE source='pois_camping').
 -- Applied via Supabase MCP; recorded for the repo log.
 --

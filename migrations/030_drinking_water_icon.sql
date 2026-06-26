@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — drinking water marker glyph
+-- Devil's Lake Mapping Project, drinking water marker glyph
 -- Run in Supabase: Dashboard → SQL Editor → New query
 --
 -- pois_water pointed at the sprite-dependent "drinking-water" name, which

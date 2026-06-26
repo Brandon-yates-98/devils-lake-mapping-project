@@ -1,11 +1,11 @@
 <!--
-  ⚠️ DRAFT — pending legal review. NOT the operative license.
+  ⚠️ DRAFT, pending legal review. NOT the operative license.
   The repository's operative license remains /LICENSE.md until this draft is
   reviewed by counsel and promoted (see licensing/README.md). Confirm the
   copyright-holder legal entity below before this takes effect.
 -->
 
-Copyright (c) 2026 [PROJECT OWNER — your name, or a separate entity you form]
+Copyright (c) 2026 [PROJECT OWNER, your name, or a separate entity you form]
 <!-- Do NOT name a third party as the holder; ownership stays with the project
      owner. See DISCLAIMER.md and TRADEMARKS.md. -->
 
@@ -13,12 +13,12 @@ This software is licensed under the **PolyForm Noncommercial License 1.0.0**
 (full text below), **plus** the operator model / additional permissions in
 [`PERMITTED-USES.md`](./PERMITTED-USES.md).
 
-Names, logos, and other brand features are **not** licensed here — see
-[`TRADEMARKS.md`](./TRADEMARKS.md). Data and content are licensed separately —
+Names, logos, and other brand features are **not** licensed here, see
+[`TRADEMARKS.md`](./TRADEMARKS.md). Data and content are licensed separately -
 see [`DATA-AND-CONTENT-LICENSE.md`](./DATA-AND-CONTENT-LICENSE.md). This is an
-independent community project — see [`DISCLAIMER.md`](./DISCLAIMER.md).
+independent community project, see [`DISCLAIMER.md`](./DISCLAIMER.md).
 
-> Required Notice: Copyright [PROJECT OWNER] — Devil's Lake Mapping Project
+> Required Notice: Copyright [PROJECT OWNER], Devil's Lake Mapping Project
 
 ---
 

@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — remove junk campsite/road rows; connect Site 99e
+-- Devil's Lake Mapping Project, remove junk campsite/road rows; connect Site 99e
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Cleanup from the campsite/road audit:

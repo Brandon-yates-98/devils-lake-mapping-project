@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campground popup: declutter the top + widen
+-- Devil's Lake Mapping Project, campground popup: declutter the top + widen
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Builds on 048/049. Changes (template + appended CSS):

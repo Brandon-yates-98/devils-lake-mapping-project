@@ -10,7 +10,7 @@ North Shore and South Shore, then emit a SQL migration that:
   3. Rewrites the pois_camping popup_template (.cp card) to show the drive times.
 
 Routing: Mapbox Directions API (driving profile), one call per
-campsite/shore. This is a one-time offline precompute — the public map no
+campsite/shore. This is a one-time offline precompute, the public map no
 longer does any live routing (it deep-links to the device maps app).
 
 Run:  .venv/Scripts/python.exe compute_drive_times.py
@@ -29,7 +29,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_ANON = os.environ.get("SUPABASE_KEY")
 MAPBOX_TOKEN = os.environ.get("MAPBOX_SCRIPT_TOKEN")
 if not SUPABASE_URL or not SUPABASE_ANON or not MAPBOX_TOKEN:
-    sys.exit("Set SUPABASE_URL, SUPABASE_KEY, MAPBOX_SCRIPT_TOKEN — use: "
+    sys.exit("Set SUPABASE_URL, SUPABASE_KEY, MAPBOX_SCRIPT_TOKEN, use: "
              "op run --env-file=.env.tpl -- python compute_drive_times.py")
 
 # Devil's Lake shore routing destinations [lng, lat].

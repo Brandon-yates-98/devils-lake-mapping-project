@@ -7,7 +7,7 @@ OpenStreetMap and load them into the 'pois' layer.
     `out center`) so polygon campsites render in the point-only POIs layer.
   - Always writes osm_data_files/campsites_25mi.geojson.
   - If SUPABASE_URL / SUPABASE_KEY are set, upserts into source='pois' via
-    the upsert_osm_feature RPC (migration 008) — safe to re-run, no dupes.
+    the upsert_osm_feature RPC (migration 008), safe to re-run, no dupes.
 
 Usage:
   python fetch_campsites.py                         # fetch + write geojson only
@@ -103,7 +103,7 @@ def main():
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_KEY")
     if not (url and key):
-        print("\nSUPABASE_URL / SUPABASE_KEY not set — wrote GeoJSON only.")
+        print("\nSUPABASE_URL / SUPABASE_KEY not set, wrote GeoJSON only.")
         print("To import, run: op run --env-file=.env.tpl -- python fetch_campsites.py")
         return
 

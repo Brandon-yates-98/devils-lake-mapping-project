@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — Carabiner marker icon for climbing routes
+-- Devil's Lake Mapping Project, Carabiner marker icon for climbing routes
 -- Run in Supabase: Dashboard → SQL Editor → New query
 --
 -- 'apex-carabiner' is drawn in-app by drawMapGlyph(): a simplified

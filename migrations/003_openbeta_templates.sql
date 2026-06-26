@@ -1,7 +1,7 @@
 -- ============================================================
--- Devil's Lake Mapping Project — OpenBeta Climbing Layer Templates
+-- Devil's Lake Mapping Project, OpenBeta Climbing Layer Templates
 -- Run AFTER import_openbeta.py has populated osm_geometries.
--- License: OpenBeta data is ODbL — attribution required in UI.
+-- License: OpenBeta data is ODbL, attribution required in UI.
 -- ============================================================
 
 -- ── 0. Remove null-property orphans from failed import runs ──

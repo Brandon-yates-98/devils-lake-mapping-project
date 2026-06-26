@@ -42,7 +42,7 @@ create policy "Public read"  on trails for select using (true);
 create policy "Auth insert"  on trails for insert with check (auth.role() = 'authenticated');
 create policy "Auth update"  on trails for update using (auth.role() = 'authenticated');
 
--- 6. Import function (used by import_trails.py — accepts a GeoJSON feature, inserts one row)
+-- 6. Import function (used by import_trails.py, accepts a GeoJSON feature, inserts one row)
 create or replace function import_trail(feature json)
 returns uuid language plpgsql security definer as $$
 declare

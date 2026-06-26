@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — write Street View coverage status onto campsites
+-- Devil's Lake Mapping Project, write Street View coverage status onto campsites
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Used by scripts/precompute_streetview_coverage.py (a free metadata sweep) to mark

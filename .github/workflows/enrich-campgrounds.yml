@@ -34,7 +34,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Scripts are stdlib-only — nothing to pip install.
+      # Scripts are stdlib-only, nothing to pip install.
       - name: Enrich campgrounds (Google Places)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -56,7 +56,7 @@ jobs:
           python scripts/precompute_streetview_coverage.py
 
       # Campsite static data from Campflare (kind, hookups, capacity, price,
-      # check-in/out, photos). Availability is NOT fetched here — it's live via the
+      # check-in/out, photos). Availability is NOT fetched here, it's live via the
       # campflare-availability edge function. --dry-run still calls Campflare to preview.
       - name: Enrich campsites (Campflare)
         env:

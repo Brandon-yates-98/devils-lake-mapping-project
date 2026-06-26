@@ -1,12 +1,12 @@
 -- ============================================================
--- Devil's Lake Mapping Project — fix upsert_drawn_feature id type
+-- Devil's Lake Mapping Project, fix upsert_drawn_feature id type
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- BUG: get_layer_geojson surfaces the osm_geometries primary key (a BIGINT) as
 -- properties.id, but upsert_drawn_feature cast props->>'id' to UUID. Editing an
 -- existing (imported) point or line therefore hit '<bigint>'::uuid -> cast error,
 -- the function aborted, and nothing was saved. (New features have no id, only a
--- _draw_id, so creation still worked — only the *edit* path was broken.)
+-- _draw_id, so creation still worked, only the *edit* path was broken.)
 --
 -- Fix: cast the id to BIGINT to match the column. CREATE OR REPLACE; safe re-run.
 -- ============================================================

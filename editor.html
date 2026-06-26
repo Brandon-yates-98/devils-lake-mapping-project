@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Map Editor — Devil's Lake Mapping Project</title>
+  <title>Map Editor, Devil's Lake Mapping Project</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet" />
@@ -987,7 +987,7 @@
   <aside id="left-panel">
     <div class="panel-section">
       <div class="panel-section-title">Layers<button id="toggle-all-layers" class="layer-toggle-all" title="Show / hide all layers"><i class="fa-solid fa-eye"></i> All</button></div>
-      <label class="popup-preview-row" title="Render popups exactly as visitors see them — editing buttons hidden">
+      <label class="popup-preview-row" title="Render popups exactly as visitors see them, editing buttons hidden">
         <input type="checkbox" id="popup-preview-toggle" />
         <i class="fa-solid fa-eye"></i> Preview public popups
       </label>
@@ -1115,7 +1115,7 @@
         <label class="rp-label">Target Layer</label>
         <div class="rp-row">
           <select class="rp-select" id="draw-target-select" style="flex:1">
-            <option value="">— select a layer —</option>
+            <option value="">- select a layer -</option>
           </select>
         </div>
         <div class="rp-row" style="margin-top:8px">
@@ -1143,7 +1143,7 @@
 
       <div class="rp-section">
         <label class="rp-label">Reposition</label>
-        <button class="draw-mode-btn" id="edit-layer-btn" style="width:100%"><i class="fa-solid fa-up-down-left-right"></i>Edit points — drag to move</button>
+        <button class="draw-mode-btn" id="edit-layer-btn" style="width:100%"><i class="fa-solid fa-up-down-left-right"></i>Edit points, drag to move</button>
         <div style="font-size:11px;color:rgba(255,255,255,0.25);font-style:italic;margin-top:6px">
           Loads every feature in the target layer as a draggable handle. Drag to move (auto-saves);
           click one to edit its fields. Click the button again or press Esc to finish.
@@ -1162,7 +1162,7 @@
           </div>
           <div id="dynamic-fields"></div>
           <div>
-            <label class="rp-label">Photos <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">— shown in the map popup</span></label>
+            <label class="rp-label">Photos <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">- shown in the map popup</span></label>
             <div class="photo-tabs">
               <button class="photo-tab active" data-ptab="approved">Approved <span id="pt-approved-count"></span></button>
               <button class="photo-tab" data-ptab="pending">Pending <span id="pt-pending-count"></span></button>
@@ -1255,7 +1255,7 @@
       <div id="batch-list"></div>
     </div>
   </div>
-  <!-- Assignment modal — shown over the whole panel -->
+  <!-- Assignment modal, shown over the whole panel -->
   <div id="batch-assign-modal">
     <div id="batch-assign-box">
       <div id="batch-assign-header">
@@ -1270,7 +1270,7 @@
         </div>
         <div id="batch-assign-right">
           <div id="batch-assign-nogps-controls" style="display:none">
-            <p class="batch-nogps-hint">No GPS data — pick a location on the map or search by name below.</p>
+            <p class="batch-nogps-hint">No GPS data, pick a location on the map or search by name below.</p>
             <button id="batch-pick-location-btn">&#128205; Pick Location on Map</button>
           </div>
           <div id="batch-name-search-section">
@@ -1297,7 +1297,7 @@
   let currentExpLayers = [];
   let allTemplates = [];
   let selectedDrawFeatureId = null;
-  let editCtx = null; // { source, drawId } — single feature loaded into draw for editing
+  let editCtx = null; // { source, drawId }, single feature loaded into draw for editing
   let bulkEditSource = null; // layer slug whose features are all loaded into draw for repositioning
   const sourceToMapboxLayers = {};
   const layerToSource = {};
@@ -1521,7 +1521,7 @@
       ctx.stroke();
     } else if (name === 'dl-boulder') {
       // boulder silhouette traced from Icons/noun-rock-5301957.svg (rock by
-      // Brad, Noun Project) — solid shape, survives atlas minification.
+      // Brad, Noun Project), solid shape, survives atlas minification.
       // Path lives in a 24x30 viewBox; scaled and centered into the disc.
       ctx.translate(32 - 12.29 * 3, 32 - 12.08 * 3);
       ctx.scale(3, 3);
@@ -1543,22 +1543,22 @@
       ctx.moveTo(22, 40); ctx.lineTo(44, 38);
       ctx.stroke();
     } else if (name === 'dl-tent') {
-      // campsite tent — Maki `campsite` (CC0). Icons/vendor/maki/campsite.svg
+      // campsite tent, Maki `campsite` (CC0). Icons/vendor/maki/campsite.svg
       svgGlyph('M14 10V11C14 11.5523 13.5523 12 13 12H2C1.44772 12 1 11.5523 1 11V10C1 9.44772 1.44772 9.00001 2 9.00001H2.25L7.03206 1.25762C7.24699 0.90965 7.75302 0.909651 7.96794 1.25762L12.75 9.00001H13C13.5523 9.00001 14 9.44772 14 10ZM10.5 9.00001L7.5 4.00001L4.5 9.00001H10.5Z', 7.5, 6.5, 2.7);
     } else if (name === 'dl-rv') {
-      // camper trailer — Temaki `camper_trailer` (CC0). Icons/vendor/temaki/camper_trailer.svg
+      // camper trailer, Temaki `camper_trailer` (CC0). Icons/vendor/temaki/camper_trailer.svg
       svgGlyph('M10.5 11C10.5 9.9 9.6 9 8.5 9C7.4 9 6.5 9.9 6.5 11L0.5 11C0.22 11 0 10.78 0 10.5C0 10.22 0.22 10 0.5 10L3 10C1.9 10 1 9.1 1 8L1 5.29C1 4.26 1.78 3.4 2.8 3.3L2.8 3.3C4.73 3.1 6.46 3 8 3C9.54 3 11.27 3.1 13.2 3.3C14.22 3.4 15 4.26 15 5.29L15 9C15 10.1 14.1 11 13 11L10.5 11ZM5.5 7C5.78 7 6 6.78 6 6.5L6 5.5C6 5.22 5.78 5 5.5 5L3.5 5C3.22 5 3 5.22 3 5.5L3 6.5C3 6.78 3.22 7 3.5 7L5.5 7ZM12.5 7C12.78 7 13 6.78 13 6.5L13 5.5C13 5.22 12.78 5 12.5 5L8.5 5C8.22 5 8 5.22 8 5.5L8 6.5C8 6.78 8.22 7 8.5 7L12.5 7ZM8.5 12.5C7.67 12.5 7 11.83 7 11C7 10.17 7.67 9.5 8.5 9.5C9.33 9.5 10 10.17 10 11C10 11.83 9.33 12.5 8.5 12.5Z', 7.5, 7.75, 2.4);
     } else if (name === 'dl-parking') {
-      // parking "P" — Maki `parking` (CC0). Icons/vendor/maki/parking.svg
+      // parking "P", Maki `parking` (CC0). Icons/vendor/maki/parking.svg
       svgGlyph('M4 2V13H6V9H8.5C10.433 9 12 7.433 12 5.5C12 3.567 10.433 2 8.5 2H4ZM6 7V4H8.5C9.32843 4 10 4.67157 10 5.5C10 6.32843 9.32843 7 8.5 7H6Z', 8, 7.5, 3.2);
     } else if (name === 'dl-restroom') {
-      // restroom — Maki `toilet` (CC0). Icons/vendor/maki/toilet.svg
+      // restroom, Maki `toilet` (CC0). Icons/vendor/maki/toilet.svg
       svgGlyph('M3 1.5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0ZM11.5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM3.29 4a1 1 0 0 0-.868.504L.566 7.752a.5.5 0 1 0 .868.496l1.412-2.472A345.048 345.048 0 0 0 1 11h2v2.5a.5.5 0 0 0 1 0V11h1v2.5a.5.5 0 0 0 1 0V11h2L6.103 5.687l1.463 2.561a.5.5 0 1 0 .868-.496L6.578 4.504A1 1 0 0 0 5.71 4H3.29ZM9 4.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0v4a.5.5 0 0 1-1 0v-4h-1v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 1-1 0v-5Z', 7.28, 6.75, 2.6);
     } else if (name === 'dl-water') {
-      // drinking water — Maki `drinking-water` (CC0). Icons/vendor/maki/drinking-water.svg
+      // drinking water, Maki `drinking-water` (CC0). Icons/vendor/maki/drinking-water.svg
       svgGlyph('M6,1A2,2,0,0,0,4,3V6.5a.5.5,0,0,0,.5.5h2A.5.5,0,0,0,7,6.5v-2A.5.5,0,0,1,7.5,4H14V1ZM7,15H4a.5.5,0,0,1-.48-.38L2,8.62a.5.5,0,0,1,.365-.606A.558.558,0,0,1,2.5,8h6a.5.5,0,0,1,.514.485A.47.47,0,0,1,9,8.62l-1.5,6A.5.5,0,0,1,7,15ZM3.65,11H7.36l.5-2H3.14Z', 8, 8, 2.5);
     } else if (name === 'dl-accessible') {
-      // accessibility (wheelchair) — Maki `wheelchair` (CC0). Icons/vendor/maki/wheelchair.svg
+      // accessibility (wheelchair), Maki `wheelchair` (CC0). Icons/vendor/maki/wheelchair.svg
       svgGlyph('M12,1.5C12,2.3284,11.3284,3,10.5,3S9,2.3284,9,1.5S9.6716,0,10.5,0S12,0.6716,12,1.5z M2.82,4.87l1.74-1.71l1.85,1.29 L5.67,5.7c1.0747,0.3341,2.0207,0.9904,2.71,1.88l0.88-1.5c0.2295-0.4158,0.0785-0.939-0.3373-1.1685 C8.9218,4.911,8.9209,4.9105,8.92,4.91L8.3,4.54L4.79,2.1C4.5927,1.9594,4.3231,1.9805,4.15,2.15l-2,2 C1.9852,4.3716,2.0312,4.6848,2.2528,4.8496C2.4193,4.9735,2.645,4.9816,2.82,4.87z M8.13,10.94 c-0.0143,1.2308-0.5794,2.3904-1.54,3.16c-0.7118,0.5804-1.6016,0.8982-2.52,0.9C1.8261,15,0.0055,13.1839,0,10.94 c0.0023-0.9231,0.3238-1.8169,0.91-2.53c0.1868-0.232,0.398-0.4432,0.63-0.63c0.7131-0.5862,1.6069-0.9077,2.53-0.91 C6.3139,6.8755,8.13,8.6961,8.13,10.94z M6,12.21C6.7679,11.2051,6.5758,9.7679,5.5709,9C4.7501,8.3727,3.6109,8.3727,2.79,9 C2.5283,9.151,2.311,9.3683,2.16,9.63c-0.6923,1.0584-0.3956,2.4777,0.6628,3.17c0.7615,0.4981,1.7457,0.4981,2.5072,0 C5.5805,12.6365,5.8061,12.4378,6,12.21z M14.2,13.21l-2.49-5C11.5906,7.9251,11.3088,7.7425,11,7.75H8.51 c0.3293,0.4578,0.5856,0.9638,0.76,1.5h1.26l2.29,4.58c0.185,0.3728,0.6372,0.525,1.01,0.34c0.3728-0.185,0.525-0.6372,0.34-1.01 L14.2,13.21z', 7.5, 7.5, 2.3);
     } else if (!tint) {
       ctx.beginPath();
@@ -1584,7 +1584,7 @@
     if (!map.hasImage(e.id)) map.addImage(e.id, drawMapGlyph(e.id), { pixelRatio: 4 });
   });
 
-  // Draw handle styles — based on the mapbox-gl-draw default theme but with
+  // Draw handle styles, based on the mapbox-gl-draw default theme but with
   // noticeably larger point/vertex radii so features are easy to grab and drag.
   // (The default ~3-5px handles are fiddly to hit when repositioning a point.)
   const DRAW_STYLES = [
@@ -1613,14 +1613,14 @@
       filter: ['all', ['==', '$type', 'LineString'], ['==', 'active', 'true']],
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: { 'line-color': '#fbb03b', 'line-dasharray': [0.2, 2], 'line-width': 2 } },
-    // Vertices (line/polygon editing handles) — enlarged
+    // Vertices (line/polygon editing handles), enlarged
     { id: 'gl-draw-polygon-and-line-vertex-stroke-inactive', type: 'circle',
       filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
       paint: { 'circle-radius': 9, 'circle-color': '#fff' } },
     { id: 'gl-draw-polygon-and-line-vertex-inactive', type: 'circle',
       filter: ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
       paint: { 'circle-radius': 6, 'circle-color': '#fbb03b' } },
-    // Point features — enlarged grab targets
+    // Point features, enlarged grab targets
     { id: 'gl-draw-point-point-stroke-inactive', type: 'circle',
       filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Point'], ['==', 'meta', 'feature'], ['!=', 'mode', 'static']],
       paint: { 'circle-radius': 7, 'circle-opacity': 1, 'circle-color': '#fff' } },
@@ -1654,7 +1654,7 @@
   // cursor, snap it onto a nearby feature vertex (when the Snap toggle is on) and
   // show a ring on the target. snapEnabled/snapOneCoord are defined further down
   // (called only at drag time). Best-effort + try/catch so a Draw internals
-  // change can never break editing — the default drag has already run.
+  // change can never break editing, the default drag has already run.
   const _drawTarget = () => (document.getElementById('draw-target-select') || {}).value || '';
   function updateSnapIndicator(coord) {
     const SRC = '_snap_target';
@@ -1817,11 +1817,11 @@
           : null;
       if (iconImage) {
         // dl-* glyphs bake the marker circle into the icon image (one
-        // symbol per point, so overlapping markers stack atomically) — see
+        // symbol per point, so overlapping markers stack atomically), see
         // the public map's renderer. Sprite icons keep the two-layer setup.
         const baked = typeof iconImage === 'string' && iconImage.indexOf('dl-') === 0;
         // the 'campsite' sprite is a self-contained badge (tent on its own
-        // plate) — a circle behind it is redundant; drawn without one and
+        // plate), a circle behind it is redundant; drawn without one and
         // sized to match the carabiner route markers (both ~15px at size 1)
         const selfBadge = dsIcon === 'campsite';
         if (!baked && !selfBadge) {
@@ -1866,7 +1866,7 @@
             'text-color': selfBadge ? '#fff' : '#333',
             'text-halo-color': selfBadge ? '#000' : '#fff',
             'text-halo-width': selfBadge ? 0.8 : 1.5 } };
-        // Baked amenity glyphs (parking/restroom/water) are campground detail —
+        // Baked amenity glyphs (parking/restroom/water) are campground detail -
         // reveal them with the campsite sites (z13.5+), not at every zoom.
         if (baked) iconSpec.minzoom = 13.5;
         if (filter) iconSpec.filter = filter;
@@ -1874,14 +1874,14 @@
         mapboxIds.push(key+'-icon');
       } else if (key === 'climbing_areas') {
         // Semantic clustering: hull polygons for parent areas, glyph badges
-        // for leaf walls — mirrors the public map's renderer exactly.
+        // for leaf walls, mirrors the public map's renderer exactly.
         const B = ['coalesce', ['get', '_boulders'], 0];
         const R = ['coalesce', ['get', '_routes'], 0];
         const routeF = ['<=', B, R], boulderF = ['>', B, R];
         const inBand = ['all',
           ['>=', ['zoom'], ['coalesce', ['get', '_minz'], 0]],
           ['<',  ['zoom'], ['coalesce', ['get', '_maxz'], 24]]];
-        // Editor: no climb-count guard — show all areas including empty walls
+        // Editor: no climb-count guard, show all areas including empty walls
         const guards = extra => filter ? ['all', extra, inBand, filter] : ['all', extra, inBand];
 
         const HULL_SRC = 'climbing_area_hulls';
@@ -1942,10 +1942,10 @@
           layout: { 'text-field': ['get', 'name'], 'text-size': 12, 'text-max-width': 8 },
           paint: { 'text-color': '#fff', 'text-halo-color': '#1b3a1b', 'text-halo-width': 1.4 } });
         // Spur "driveways" (site → nearest road) are now ordinary roads
-        // (source='roads', highway='service'; migrations 028/033) — they render
+        // (source='roads', highway='service'; migrations 028/033), they render
         // and toggle with the roads layer, no longer a campsite companion.
         // tent disc (green) standard; RV disc (orange) electrical. Accessible sites
-        // get a blue disc — site_type 'handicapped' OR a Site # starting with "A".
+        // get a blue disc, site_type 'handicapped' OR a Site # starting with "A".
         const ACCESSIBLE = ['any',
           ['==', ['get', 'site_type'], 'handicapped'],
           ['==', ['slice', ['downcase', ['to-string', ['coalesce', ['get', 'ref'], ['get', 'name'], '']]], 0, 1], 'a']];
@@ -1962,7 +1962,7 @@
             'icon-allow-overlap': true, 'icon-ignore-placement': true } };
         if (filter) iconSpec.filter = filter;
         map.addLayer(iconSpec);
-        // Site-number labels (Site # / ref — "104", "A1", …) below each marker.
+        // Site-number labels (Site # / ref, "104", "A1", …) below each marker.
         const siteLabelSpec = { id: key+'-label', type: 'symbol', source: key, minzoom: 16,
           layout: {
             'text-field': ['coalesce', ['get', 'ref'], ''],
@@ -2002,7 +2002,7 @@
         if (dsIcon) {
           const baked = dsIcon.indexOf('dl-') === 0;
           const iconF = filter ? ['all', ['!=', '$type', 'LineString'], filter] : ['!=', '$type', 'LineString'];
-          // Baked amenity glyph (parking) is campground detail — reveal it with
+          // Baked amenity glyph (parking) is campground detail, reveal it with
           // the campsite sites (z13.5+), not at every zoom.
           map.addLayer({ id: key+'-icon', type: 'symbol', source: key, filter: iconF,
             ...(baked ? { minzoom: 13.5 } : {}),
@@ -2022,7 +2022,7 @@
     }
 
     // Any point/mixed layer carrying a `ref` (Site #) field gets a dedicated,
-    // independently-toggleable number label — added last so it sits above icons.
+    // independently-toggleable number label, added last so it sits above icons.
     maybeAddSiteLabelLayer(key, layerCfg, filter);
 
     sourceToMapboxLayers[key] = mapboxIds;
@@ -2067,7 +2067,7 @@
   // In edit mode, features are pulled out of the layer source into Mapbox GL
   // Draw, so the source-based labels above disappear. These twin layers read
   // straight from Draw's own sources (user props are exposed as `user_*`) so the
-  // site numbers stay pinned to each point — and follow them live while dragging.
+  // site numbers stay pinned to each point, and follow them live while dragging.
   // 'cold' = idle features, 'hot' = the actively-edited one.
   function ensureDrawLabelLayers() {
     ['cold', 'hot'].forEach(phase => {
@@ -2174,7 +2174,7 @@
     return out;
   }
   // Scope author CSS to the popup wrapper so it can't bleed into other Mapbox popups.
-  // NOTE: simple rules only — @media / @keyframes headers are left untouched (their inner
+  // NOTE: simple rules only, @media / @keyframes headers are left untouched (their inner
   // rules won't be scoped), which is acceptable for popup styling.
   function scopePopupCss(css, scopeSel) {
     scopeSel = scopeSel || '.dl-popup-custom';
@@ -2289,7 +2289,7 @@
   // ── Campsite popup (mirror docs/index.html) ──
   const STREETVIEW_EMBED_KEY = 'AIzaSyD7ogMBpHRomETaw_BypsdbB40HQ4CM220';
   const STREETVIEW_SOURCES = new Set(['campsite_sites']);
-  // Plain Street View photo (Street View Static API) — billed per request, so it
+  // Plain Street View photo (Street View Static API), billed per request, so it
   // only loads when a campsite popup opens. scale=2 keeps it crisp on retina.
   function streetViewStaticURL(lng, lat, heading, w, h) {
     let url = 'https://maps.googleapis.com/maps/api/streetview'
@@ -2350,7 +2350,7 @@
 
   function buildPublicPopupHTML(props, sourceKey) {
     const cfg = layerMeta[sourceKey] || { label: 'Feature', color: '#7f8c8d' };
-    const note = '<div class="preview-note"><i class="fa-solid fa-eye"></i> Public preview — buttons &amp; climb navigation are interactive on the live map</div>';
+    const note = '<div class="preview-note"><i class="fa-solid fa-eye"></i> Public preview, buttons &amp; climb navigation are interactive on the live map</div>';
 
     // Custom template: render template + inject photo gallery at <!--DL_PHOTOS-->
     // (or append it), exactly as the public map does. No action buttons here.
@@ -2492,7 +2492,7 @@
     });
     Object.keys(layerToSource).forEach(lid => {
       if (lid.endsWith('-glow') || lid.endsWith('-case')) return;
-      if (lid.startsWith('campground_hulls-')) return;  // derived geometry — not selectable/editable
+      if (lid.startsWith('campground_hulls-')) return;  // derived geometry, not selectable/editable
       map.on('mouseenter', lid, () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', lid, () => { map.getCanvas().style.cursor = ''; });
       if (!lid.endsWith('-outline')) {
@@ -2544,7 +2544,7 @@
         if (countEl) countEl.textContent = layerCache[key].features.length;
       }
     }));
-    // Climbing area hulls are not an experience layer — load alongside areas,
+    // Climbing area hulls are not an experience layer, load alongside areas,
     // then bake badge counts + zoom bands into both area and hull features.
     if (layers.some(l => (l.source_key || l.template_slug) === 'climbing_areas')) {
       if (!layerCache['climbing_area_hulls']) {
@@ -2557,9 +2557,9 @@
       const hullSrc = map.getSource('climbing_area_hulls');
       if (hullSrc && layerCache['climbing_area_hulls']) hullSrc.setData(layerCache['climbing_area_hulls']);
     }
-    // Campground footprint hulls — companion to campsite_sites (migration 027),
+    // Campground footprint hulls, companion to campsite_sites (migration 027),
     // not an experience layer, loaded alongside the points. (Spurs are now
-    // ordinary roads — migrations 028/033 — and load with the roads layer.)
+    // ordinary roads, migrations 028/033, and load with the roads layer.)
     if (layers.some(l => (l.source_key || l.template_slug) === 'campsite_sites')) {
       for (const src of ['campground_hulls']) {
         if (!layerCache[src]) {
@@ -2581,7 +2581,7 @@
     }
     // Normalize layer config shape from experience_layers join
     const normalized = expLayers.map(el => ({
-      id: el.id,   // experience_layers row id — used by the default-visibility pin
+      id: el.id,   // experience_layers row id, used by the default-visibility pin
       source_key: el.template_slug,
       template_slug: el.template_slug,
       // Per-experience overrides (migration 031) win over the global template.
@@ -2623,15 +2623,15 @@
       row.dataset.source = key;
       row.innerHTML = `<div class="layer-swatch" style="background:${color}"></div>
         <span class="layer-name">${l.label}</span>
-        <span class="layer-count" id="count-${key}">—</span>
-        <button class="layer-default-pin${l.visible_by_default ? ' on' : ''}" title="Shown by default on the public map — click to toggle"><i class="fa-solid fa-star"></i></button>
+        <span class="layer-count" id="count-${key}">-</span>
+        <button class="layer-default-pin${l.visible_by_default ? ' on' : ''}" title="Shown by default on the public map, click to toggle"><i class="fa-solid fa-star"></i></button>
         <div class="layer-toggle"></div>`;
       row.addEventListener('click', () => {
         const nowOn = row.classList.toggle('on');
         setLayerVisible(key, nowOn);
       });
       // Default visibility pin: persists experience_layers.visible_by_default
-      // (what the PUBLIC map shows on load) — independent of the session toggle.
+      // (what the PUBLIC map shows on load), independent of the session toggle.
       const pin = row.querySelector('.layer-default-pin');
       pin.addEventListener('click', async e => {
         e.stopPropagation();
@@ -2916,7 +2916,7 @@
     wrap.innerHTML = `
       <div style="border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:11px;margin-top:10px;background:rgba(255,255,255,0.02)">
         <div class="rp-label" style="margin-bottom:6px">Saved Filters
-          <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">— shown as buttons on the public map</span>
+          <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">- shown as buttons on the public map</span>
         </div>
         <div id="sf-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:9px"></div>
         <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:9px">
@@ -3078,7 +3078,7 @@
             <button class="btn-danger btn-sm card-remove-btn"><i class="fa-solid fa-xmark"></i> Remove</button>
           </div>
           <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">
-            <div class="rp-label" style="margin-bottom:4px">Fields <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">— order &amp; visibility drive the popup</span></div>
+            <div class="rp-label" style="margin-bottom:4px">Fields <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">- order &amp; visibility drive the popup</span></div>
             <div class="field-list"></div>
             <div class="add-field-form">
               <input class="rp-input af-label-input" placeholder="Label (e.g. Grade)" style="font-size:11px" />
@@ -3110,7 +3110,7 @@
             </div>
           </div>
           <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">
-            <div class="rp-label" style="margin-bottom:4px">Custom Popup <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">— HTML + CSS override the default popup</span></div>
+            <div class="rp-label" style="margin-bottom:4px">Custom Popup <span style="color:rgba(255,255,255,0.25);font-weight:400;text-transform:none">- HTML + CSS override the default popup</span></div>
             <div style="font-size:10px;color:rgba(255,255,255,0.35);line-height:1.5;margin-bottom:5px">
               Tokens: <code>{{ name }}</code>${(tmpl.field_schema || []).map(f => ` <code>{{ ${f.name} }}</code>`).join('')}.
               Use <code>{{#if field}}…{{/if}}</code> and <code>{{#each photos}}&lt;img src="{{ this }}"&gt;{{/each}}</code>. Values are escaped.
@@ -3176,7 +3176,7 @@
 
       // Duplicate into a new, independent custom layer
       card.querySelector('.card-duplicate-btn').addEventListener('click', async () => {
-        if (!confirm(`Duplicate "${tmpl.label}"? This creates an independent copy — edits to it won't affect the original.`)) return;
+        if (!confirm(`Duplicate "${tmpl.label}"? This creates an independent copy, edits to it won't affect the original.`)) return;
         const { error } = await db.rpc('duplicate_experience_layer', { p_experience_layer_id: el.id });
         if (error) { toast(error.message, true); return; }
         toast(`Duplicated "${tmpl.label}"`);
@@ -3221,7 +3221,7 @@
     // Populate "Add Layer" dropdown with templates not yet in this experience
     const usedSlugs = new Set(layers.map(l => l.template_slug));
     const addSelect = document.getElementById('add-layer-select');
-    addSelect.innerHTML = '<option value="">— choose template —</option>';
+    addSelect.innerHTML = '<option value="">- choose template -</option>';
     [...allTemplates].sort((a, b) => a.label.localeCompare(b.label)).forEach(t => {
       if (!usedSlugs.has(t.slug)) {
         const o = document.createElement('option');
@@ -3252,7 +3252,7 @@
   async function loadCustomLayers() {
     const { data } = await db.from('layer_templates').select('*').order('label');
     const sel = document.getElementById('draw-target-select');
-    sel.innerHTML = '<option value="">— select a layer —</option>';
+    sel.innerHTML = '<option value="">- select a layer -</option>';
     (data || []).forEach(t => {
       const o = document.createElement('option');
       o.value = t.slug;
@@ -3298,14 +3298,14 @@
     const ids = draw.add(drawFeature);
     const drawId = ids[0];
     // Hide the layer's own copy while editing so the draw handle isn't rendered
-    // on top of it — that overlap looked like a duplicate point once you moved it.
+    // on top of it, that overlap looked like a duplicate point once you moved it.
     // endFeatureEdit() reloads it from the DB at its saved position afterward.
     editCtx = { source: sourceKey, drawId };
     hideFeatureInLayer(sourceKey, stableId || drawId);
     ensureDrawLabelLayers(); applySiteLabels();  // keep the site # visible on the draw handle
     draw.changeMode('simple_select', { featureIds: [drawId] });
     showFeatureForm(draw.get(drawId));
-    toast('Editing feature — drag to move, edit fields, then Save');
+    toast('Editing feature, drag to move, edit fields, then Save');
   }
 
   // Splice a feature out of the cached layer GeoJSON so it isn't double-drawn
@@ -3360,7 +3360,7 @@
       .filter(f => f.id);
     if (!feats.length) { toast('No saved features to reposition in this layer', true); return; }
     if (feats.length > 800 &&
-        !confirm(`This layer has ${feats.length} features — load them all as draggable handles? It may be slow.`)) return;
+        !confirm(`This layer has ${feats.length} features, load them all as draggable handles? It may be slow.`)) return;
     try { draw.deleteAll(); } catch {}
     draw.add({ type: 'FeatureCollection', features: feats });
     draw.changeMode('simple_select');
@@ -3370,7 +3370,7 @@
     const btn = document.getElementById('edit-layer-btn');
     btn.classList.add('active');
     btn.innerHTML = '<i class="fa-solid fa-check"></i>Done editing';
-    toast(`Repositioning ${feats.length} features — drag any point to move it (auto-saves). Click Done or press Esc to finish.`);
+    toast(`Repositioning ${feats.length} features, drag any point to move it (auto-saves). Click Done or press Esc to finish.`);
   }
 
   async function exitLayerEdit() {
@@ -3381,7 +3381,7 @@
     hideFeatureForm();
     const btn = document.getElementById('edit-layer-btn');
     btn.classList.remove('active');
-    btn.innerHTML = '<i class="fa-solid fa-up-down-left-right"></i>Edit points — drag to move';
+    btn.innerHTML = '<i class="fa-solid fa-up-down-left-right"></i>Edit points, drag to move';
     delete layerCache[source];
     await refreshCustomSource(source);   // restore layer at all saved positions
   }
@@ -3429,7 +3429,7 @@
 
   // Shared deletion: optimistically drop the feature from the map immediately,
   // then persist via the security-definer RPC; restore on failure. Matches on the
-  // DB row id (imported features) or _draw_id (drawn ones). No confirm here —
+  // DB row id (imported features) or _draw_id (drawn ones). No confirm here -
   // callers confirm so multi-select deletes only prompt once.
   async function applyFeatureDeletion(feature, sourceKey) {
     const props = feature.properties || {};
@@ -3453,7 +3453,7 @@
 
     const { error } = await db.rpc('delete_feature_by_id', { p_source: sourceKey, p_key: key });
     if (error) {
-      // Reconcile — put the feature back where it was.
+      // Reconcile, put the feature back where it was.
       if (removed && cached) {
         cached.features.splice(idx < 0 ? cached.features.length : idx, 0, removed);
         if (src) src.setData(cached);
@@ -3559,7 +3559,7 @@
       }
     }
     // While a feature is open for edit its layer copy is hidden and the draw
-    // handle already shows the live position — reloading here would re-add the
+    // handle already shows the live position, reloading here would re-add the
     // hidden copy and double the point. The layer is refreshed by endFeatureEdit.
     if (!editCtx && !bulkEditSource) {
       delete layerCache[source];
@@ -3708,7 +3708,7 @@
         console.warn('photo upload failed:', file.name, err);
       }
     }
-    status.textContent = `${done} uploaded${failed ? `, ${failed} failed (unsupported format?)` : ''} — Save Feature to keep`;
+    status.textContent = `${done} uploaded${failed ? `, ${failed} failed (unsupported format?)` : ''}, Save Feature to keep`;
     refreshStorageMeter();
   });
 
@@ -3724,7 +3724,7 @@
     const fill = document.getElementById('storage-bar-fill');
     const { data, error } = await db.rpc('storage_usage');
     if (error || data == null) {
-      label.textContent = 'usage unavailable — run migrations/014';
+      label.textContent = 'usage unavailable, run migrations/014';
       return;
     }
     const used = Number(data);
@@ -3765,7 +3765,7 @@
       editingIdx = idx;
       afLabelInput.value = field.label;
       afNameInput.value = field.name;
-      afNameInput.readOnly = true; // key is locked — it maps to stored feature data
+      afNameInput.readOnly = true; // key is locked, it maps to stored feature data
       afNameInput.dataset.userEdited = '1';
       afTypeInput.value = field.type;
       afOptInput.style.display = field.type === 'select' ? '' : 'none';
@@ -3778,7 +3778,7 @@
     function renderList() {
       fieldList.innerHTML = '';
       if (!schema.length) {
-        fieldList.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,0.25);font-style:italic">No fields configured — popup shows raw attributes</div>';
+        fieldList.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,0.25);font-style:italic">No fields configured, popup shows raw attributes</div>';
         return;
       }
       schema.forEach((field, idx) => {
@@ -3799,7 +3799,7 @@
             <div class="field-item-name">${field.label}</div>
             <div class="field-item-meta">${field.name} · ${meta}</div>
           </div>
-          <button class="field-item-ctrl fm-hide ${hidden ? '' : 'on'}" title="${hidden ? 'Hidden in popup — click to show' : 'Shown in popup — click to hide'}"><i class="fa-solid fa-${hidden ? 'eye-slash' : 'eye'}"></i></button>
+          <button class="field-item-ctrl fm-hide ${hidden ? '' : 'on'}" title="${hidden ? 'Hidden in popup, click to show' : 'Shown in popup, click to hide'}"><i class="fa-solid fa-${hidden ? 'eye-slash' : 'eye'}"></i></button>
           <button class="field-item-edit" title="Edit"><i class="fa-solid fa-pen"></i></button>
           <button class="field-item-remove" title="Remove">×</button>`;
         item.querySelector('.fm-up').addEventListener('click', () => {
@@ -3939,7 +3939,7 @@
       if (field.type === 'select') {
         div.innerHTML = `<label class="rp-label">${field.label}${tag}</label>
           <select class="rp-select feat-custom-field" data-field="${field.name}"${baseAttr}>
-            <option value="">—</option>
+            <option value="">-</option>
             ${(field.options || []).map(o => `<option value="${o}">${o}</option>`).join('')}
           </select>`;
       } else {
@@ -3979,7 +3979,7 @@
     const { error: saveErr } = await db.rpc('upsert_drawn_feature', { p_source: source, p_feature: feature });
     if (saveErr) { toast('Save failed: ' + saveErr.message, true); return; }
     // Photos live in the osm_geometries.photos + photo_meta COLUMNS
-    // (get_layer_geojson serves columns, not properties) — persist via RPC.
+    // (get_layer_geojson serves columns, not properties), persist via RPC.
     const photoKey = String(feature.properties.id || feature.properties._draw_id || '');
     if (photoKey) {
       const photoUrls = formPhotoMeta.map(m => m.url);
@@ -4075,7 +4075,7 @@
     if (document.getElementById('tab-preview').classList.contains('active')) layoutPreview();
   });
 
-  // The basemap renders its own campsite POIs (Mapbox data) — hide them so
+  // The basemap renders its own campsite POIs (Mapbox data), hide them so
   // only our campsites layer marks campgrounds.
   function hideBasemapCampsites() {
     map.getStyle().layers.forEach(l => {
@@ -4085,7 +4085,7 @@
         const f = map.getFilter(l.id);
         const excl = ['!=', ['get', 'maki'], 'campsite'];
         map.setFilter(l.id, f ? ['all', f, excl] : excl);
-      } catch (e) { /* style with legacy filters — leave as-is */ }
+      } catch (e) { /* style with legacy filters, leave as-is */ }
     });
   }
 
@@ -4119,7 +4119,7 @@
       const src = map.getSource(key);
       if (src && layerCache[key]) src.setData(layerCache[key]);
     });
-    // Companion sources aren't experience layers — re-feed their caches too.
+    // Companion sources aren't experience layers, re-feed their caches too.
     ['campground_hulls'].forEach(src => {
       const s = map.getSource(src);
       if (s && layerCache[src]) s.setData(layerCache[src]);
@@ -4329,7 +4329,7 @@
     if (!files.length) return;
     document.getElementById('batch-progress').textContent = `Reading ${files.length} file${files.length > 1 ? 's' : ''}…`;
     await handleBatchFiles(files);
-    document.getElementById('batch-progress').textContent = `${batchItems.length} photo${batchItems.length > 1 ? 's' : ''} loaded — click → to assign`;
+    document.getElementById('batch-progress').textContent = `${batchItems.length} photo${batchItems.length > 1 ? 's' : ''} loaded, click → to assign`;
     updateBatchSaveBtn();
   });
 
@@ -4395,7 +4395,7 @@
         } catch {}
       }
       const objUrl = URL.createObjectURL(file);
-      // HEIC can't be rendered by Chrome/Firefox — use a placeholder for display
+      // HEIC can't be rendered by Chrome/Firefox, use a placeholder for display
       const displayUrl = isHeic(file) ? HEIC_PLACEHOLDER : objUrl;
       const item = {
         file, url: objUrl, displayUrl, exifLat, exifLng, exifDate,
@@ -4442,7 +4442,7 @@
       const gpsText = hasGps
         ? `GPS: ${item.exifLat.toFixed(5)}, ${item.exifLng.toFixed(5)}`
         : hasPlaced ? `Placed: ${item._pickLat.toFixed(5)}, ${item._pickLng.toFixed(5)}`
-        : 'No GPS — click → to assign';
+        : 'No GPS, click → to assign';
       const assignText = item.assignedFeatureName
         ? `<div class="batch-item-assigned">→ ${item.assignedFeatureName}</div>`
         : `<div class="batch-item-unassigned">Unassigned</div>`;
@@ -4511,7 +4511,7 @@
     });
     listEl.innerHTML = '';
     if (error || !data || !data.length) {
-      listEl.innerHTML = '<div class="batch-assign-empty">No features within 300 m — try searching by name above.</div>';
+      listEl.innerHTML = '<div class="batch-assign-empty">No features within 300 m, try searching by name above.</div>';
       return;
     }
     renderBatchFeatureList(listEl, data.map(f => ({
@@ -4683,11 +4683,11 @@
 
   // ══ Basemap Switcher ═══════════════════════════════════════════
 
-  // WI DNR "Latest Leaf-Off" orthoimagery — WROC 2020/2025 statewide mosaic, up to
+  // WI DNR "Latest Leaf-Off" orthoimagery, WROC 2020/2025 statewide mosaic, up to
   // 3-inch (0.076 m) GSD, ~8x sharper than NAIP/Mapbox Satellite (~0.6 m). Leaf-off,
   // so rock, talus and trails read clearly through the canopy at Devil's Lake.
   // It's a dynamic ImageServer (cache is in WI Transverse Mercator, unusable as XYZ),
-  // so we template the exportImage op — it reprojects to 3857 to match Mapbox's
+  // so we template the exportImage op, it reprojects to 3857 to match Mapbox's
   // {bbox-epsg-3857} raster token. glyphs+sprite are borrowed from a Mapbox style so
   // our symbol (label/icon) layers still render once style.load re-adds them over the
   // imagery.

@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campsites: show "Campsite Sites" as just "Campsites"
+-- Devil's Lake Mapping Project, campsites: show "Campsite Sites" as just "Campsites"
 -- Applied via Supabase MCP; recorded for the repo log.
 -- Per-experience label_override (migration 031); global template unchanged.
 -- ============================================================

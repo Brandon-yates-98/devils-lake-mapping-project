@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — Saved filter presets per experience
+-- Devil's Lake Mapping Project, Saved filter presets per experience
 -- Stores admin-defined filter queries (price / field-presence) that
 -- surface as buttons in the public viewer.
 -- ⚠ Run this in the Supabase SQL Editor (anon key cannot ALTER TABLE).

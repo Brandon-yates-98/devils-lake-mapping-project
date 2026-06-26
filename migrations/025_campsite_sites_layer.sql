@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campsite_sites layer template
+-- Devil's Lake Mapping Project, campsite_sites layer template
 -- Individual campsite spots digitized from the paper campground map.
 -- Run in Supabase: Dashboard → SQL Editor → New query
 -- ============================================================
@@ -31,7 +31,7 @@ on conflict (slug) do update set
   field_schema  = excluded.field_schema,
   sort_order    = excluded.sort_order;
 
--- Add to the default experience (off by default — too dense at low zoom)
+-- Add to the default experience (off by default, too dense at low zoom)
 with exp as (select id from experiences where slug = 'default')
 insert into experience_layers (experience_id, template_slug, visible_by_default, sort_order)
 select exp.id, 'campsite_sites', false, 31 from exp

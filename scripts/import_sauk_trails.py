@@ -10,7 +10,7 @@ the layer via the replace_layer_geometries RPC (first batch truncates, rest appe
 so the county's edits flow through on the schedule.
 
 Writes go through the replace_layer_geometries SECURITY DEFINER RPC (migration 057)
-using the SERVICE key — the anon key is RLS-blocked for writes
+using the SERVICE key, the anon key is RLS-blocked for writes
 (memory: supabase-write-constraints).
 
 Usage:
@@ -115,7 +115,7 @@ def main():
     for t, c in sorted(types.items(), key=lambda kv: -kv[1]):
         print(f'  {c:>5}  {t}')
     if not feats:
-        sys.exit('No features returned — aborting (refusing to truncate the layer).')
+        sys.exit('No features returned, aborting (refusing to truncate the layer).')
 
     if DRY_RUN:
         print('\n[dry run] would replace osm_geometries source=sauk_trails with the above.')

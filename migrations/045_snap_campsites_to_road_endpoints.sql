@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — snap campsite sites to road endpoints
+-- Devil's Lake Mapping Project, snap campsite sites to road endpoints
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Each campsite point should sit on the end of its access spur (the spurs were

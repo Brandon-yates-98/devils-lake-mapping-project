@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campground popup: remove the "Google Maps" button
+-- Devil's Lake Mapping Project, campground popup: remove the "Google Maps" button
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Drops the Open-in-Google-Maps action from the pois_camping popup. Same template

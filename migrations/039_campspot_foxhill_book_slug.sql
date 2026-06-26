@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — fix Fox Hill's Campspot reservation link
+-- Devil's Lake Mapping Project, fix Fox Hill's Campspot reservation link
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Campspot reserve links are gated on the campspot.com/book/{slug} host+path:

@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — Add campsite price/booking fields to the camping layer
+-- Devil's Lake Mapping Project, Add campsite price/booking fields to the camping layer
 -- Run in Supabase: Dashboard → SQL Editor → New query
 --
 -- The enrichment VALUES are written by fetch via upsert_osm_feature (into

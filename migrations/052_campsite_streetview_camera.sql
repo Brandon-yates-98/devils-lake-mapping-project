@@ -1,18 +1,18 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campsite Street View camera (stand on road, face site)
+-- Devil's Lake Mapping Project, campsite Street View camera (stand on road, face site)
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Precomputes, for every campsite_sites point, where a Street View camera should
 -- stand and which way it should face so the first frame looks AT the campsite:
 --   * sv_lng / sv_lat : the standing point on the road network.
 --   * sv_heading       : bearing from that point toward the campsite (degrees,
---     0=N clockwise — same convention as the Maps Embed API `heading`).
+--     0=N clockwise, same convention as the Maps Embed API `heading`).
 --
 -- Standing point is chosen in priority order:
 --   1. The spur's road end (the spur/road intersection) when a _spur exists.
 --   2. Else, for a campsite that is the dead-end tip of a short (<80 m) non-spur
 --      access road, that road's FAR endpoint (its junction with the bigger road)
---      — so the camera stands at the junction and looks UP the access road at the
+--     , so the camera stands at the junction and looks UP the access road at the
 --      site. (Migration 045 snapped these campsites onto the road, erasing their
 --      offset, so without this they'd get no heading and Street View would face
 --      its arbitrary default "down the road".)

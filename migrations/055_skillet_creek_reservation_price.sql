@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — restore Skillet Creek's reservation link + price
+-- Devil's Lake Mapping Project, restore Skillet Creek's reservation link + price
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Skillet Creek Campground (id 13056, formerly Wheeler's; see migration 042) was
@@ -13,7 +13,7 @@
 -- enough to bring the booking flow back.
 --
 -- Price: the campground only publishes "starting" rates (tent from $40, RV from
--- $50), so we store min_price=40 and leave max_price unset — the same min-only
+-- $50), so we store min_price=40 and leave max_price unset, the same min-only
 -- shape ~10 other records already use. Source is their own rates page.
 -- ============================================================
 

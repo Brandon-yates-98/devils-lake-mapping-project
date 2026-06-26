@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — add "Accessible" + "Pet Friendly" filter chips
+-- Devil's Lake Mapping Project, add "Accessible" + "Pet Friendly" filter chips
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Appends two saved-filter presets to the Campsites experience search tool. Both

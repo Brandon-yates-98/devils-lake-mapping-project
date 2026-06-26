@@ -1,11 +1,11 @@
 -- ============================================================
--- Devil's Lake Mapping Project — fix parking visibility + parking/restroom icons
+-- Devil's Lake Mapping Project, fix parking visibility + parking/restroom icons
 -- Run in Supabase: Dashboard → SQL Editor → New query
 --
 -- Two problems, both fixed here:
 --  1. The default experience showed an empty `pois_parking` point layer
 --     (visible) while the populated dedicated `parking` layer (76 features,
---     polygons + points) was hidden — so parking never drew on either map.
+--     polygons + points) was hidden, so parking never drew on either map.
 --  2. Neither parking nor restrooms had a real marker glyph: `parking` had
 --     no icon at all, and `pois_restrooms` pointed at the sprite-dependent
 --     "toilets" name (renders as a blank circle when the basemap sprite

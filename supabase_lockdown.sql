@@ -1,15 +1,15 @@
-    -- Pre-deployment lockdown — run in Supabase: Dashboard → SQL Editor.
+    -- Pre-deployment lockdown, run in Supabase: Dashboard → SQL Editor.
     -- Closes the public-write holes before the site/repo goes public.
 
     -- 1. Write-capable RPCs are SECURITY DEFINER and, by Postgres default,
-    --    executable by everyone — including `anon`, whose key ships in the public
+    --    executable by everyone, including `anon`, whose key ships in the public
     --    HTML. Functions are looked up BY NAME in pg_proc (the live DB has
-    --    drifted from the local migration files — names/signatures differ), so
+    --    drifted from the local migration files, names/signatures differ), so
     --    this works regardless of signature and skips anything that don't exist.
     --
     --    Importer-only RPCs lose all web-facing roles (run importers with the
     --    service_role key: op run --env-file=.env.tpl ...).
-    --    Editor RPCs lose anon but KEEP authenticated — the editor is signed in.
+    --    Editor RPCs lose anon but KEEP authenticated, the editor is signed in.
     do $$
     declare r record;
     begin
@@ -39,7 +39,7 @@
       end loop;
     end $$;
 
-    -- 2. Read RPCs stay public — they're what the map uses. (No change needed;
+    -- 2. Read RPCs stay public, they're what the map uses. (No change needed;
     --    listed here for the record.)
     --      get_layer_geojson(text), get_experience_config(text), get_trails_geojson()
 
@@ -56,7 +56,7 @@
     --   using (auth.uid() = '<YOUR-USER-UUID>');
     --    (repeat for the trails table and any other writable tables)
 
-    -- 4. NOT SQL — do these in the Dashboard:
+    -- 4. NOT SQL, do these in the Dashboard:
     --    a. Authentication → Sign In / Up → disable new email signups.
     --       Without this, anyone can supabase.auth.signUp() with the anon key and
     --       become `authenticated`, passing the write policies in (3).
@@ -64,4 +64,4 @@
     --       (and ideally your uid), reads public.
     --    c. Mapbox dashboard: URL-restrict the pk. token to your Pages domain,
     --       custom domain, and localhost. Create a separate token for scripts
-    --       (compute_drive_times.py) — URL restrictions don't apply server-side.
+    --       (compute_drive_times.py), URL restrictions don't apply server-side.

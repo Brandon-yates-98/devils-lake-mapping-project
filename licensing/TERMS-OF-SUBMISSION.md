@@ -1,6 +1,6 @@
-# Terms of Submission — Community Content (DRAFT)
+# Terms of Submission, Community Content (DRAFT)
 
-> ⚠️ **DRAFT skeleton — NOT legal text.** Community uploads involve other
+> ⚠️ **DRAFT skeleton, NOT legal text.** Community uploads involve other
 > people's copyright, photos of people, and GPS/EXIF data, so this **must** be
 > drafted/reviewed by an attorney and paired with a Privacy Policy before any
 > uploads are accepted. The app already stores EXIF lat/lng
@@ -17,7 +17,7 @@ volunteer gifts per `PERMITTED-USES.md`).
 
 > *Decision point:* if you also want Submissions to be shareable **upstream**
 > (e.g., to Wikimedia/OSM), offer contributors an option to release under
-> **CC-BY-SA 4.0** or **CC0** — note those permit commercial reuse and therefore
+> **CC-BY-SA 4.0** or **CC0**, note those permit commercial reuse and therefore
 > cannot also be "noncommercial-only."
 
 ## 2. Your warranties

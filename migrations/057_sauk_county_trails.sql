@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — Sauk County Trails & Paths overlay
+-- Devil's Lake Mapping Project, Sauk County Trails & Paths overlay
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Imports the county's public ArcGIS trails layer as an ordinary vector layer
@@ -9,7 +9,7 @@
 --
 -- 1. replace_layer_geometries(): full-refresh upsert for an imported source.
 --    p_truncate clears the source first (sent on the first batch); later batches
---    append. service_role-only (bulk sync, not a user edit — no audit log).
+--    append. service_role-only (bulk sync, not a user edit, no audit log).
 -- 2. layer_templates row + experience_layers links (campsites + default), off by
 --    default so it's an opt-in overlay.
 -- ============================================================

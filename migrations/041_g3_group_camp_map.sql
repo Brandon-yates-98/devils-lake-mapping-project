@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — point G3 at Devil's Lake Group Camp
+-- Devil's Lake Mapping Project, point G3 at Devil's Lake Group Camp
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- G3 is a single group site within Devil's Lake's Group Camp. Migration 038

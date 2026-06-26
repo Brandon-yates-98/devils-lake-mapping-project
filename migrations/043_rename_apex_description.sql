@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — rename custom_data.apex_description
+-- Devil's Lake Mapping Project, rename custom_data.apex_description
 -- Applied via Supabase MCP; recorded for the repo log.
 --
 -- Part of the Apex → Devil's Lake Mapping Project rebrand. The legacy custom

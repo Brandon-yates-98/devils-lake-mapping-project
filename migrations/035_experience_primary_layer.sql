@@ -1,10 +1,10 @@
 -- ============================================================
--- Devil's Lake Mapping Project — experiences.primary_layer
+-- Devil's Lake Mapping Project, experiences.primary_layer
 -- Applied via Supabase MCP; recorded here for the repo log.
 --
 -- The "primary layer" is the layer whose features the top-of-map experience
 -- bar (search / filters / list) operates on. Nullable: experiences without it
--- simply don't render the bar. No get_experience_config change is needed —
+-- simply don't render the bar. No get_experience_config change is needed -
 -- it returns row_to_json(e.*), so the new column flows through automatically.
 -- ============================================================
 

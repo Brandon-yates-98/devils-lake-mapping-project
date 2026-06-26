@@ -13,13 +13,13 @@ same technique `dl-boulder` already uses for `noun-rock-5301957.svg`).
 ## House standard
 
 For outdoor-recreation markers we standardize on **Maki** (Mapbox) and
-**Temaki**, both released under **CC0 1.0** (public domain — no attribution
+**Temaki**, both released under **CC0 1.0** (public domain, no attribution
 required, commercial use OK). They share a 15×15 viewBox and a consistent
 weight tuned for small map display, which is why they trace cleanly into the
 64px glyph canvas. For recreation symbols those sets lack, the **U.S. National
 Park Service Map Symbols** (public domain, U.S. federal work) are the fallback.
 
-Climbing glyphs (`dl-carabiner`, `dl-cliff`) stay bespoke — no open set has a
+Climbing glyphs (`dl-carabiner`, `dl-cliff`) stay bespoke, no open set has a
 good equivalent. `dl-boulder` traces `noun-rock-5301957.svg` (Noun Project).
 
 ## Vendored sources → baked glyph
@@ -35,15 +35,15 @@ good equivalent. `dl-boulder` traces `noun-rock-5301957.svg` (Noun Project).
 To add or change a recreation glyph: drop the source SVG under `vendor/`, copy
 its `d` attribute into a new `dl-*` branch in `drawMapGlyph`, and pick a
 center (`cx,cy` in source units) + scale `s` so it sits inside the disc. The
-`Icons/vendor/` SVGs are the source of truth — keep the baked path in sync.
+`Icons/vendor/` SVGs are the source of truth, keep the baked path in sync.
 
 ## Licenses
 
-- **Maki** — CC0 1.0 Universal. https://github.com/mapbox/maki
-- **Temaki** — CC0 1.0 Universal. https://github.com/rapideditor/temaki
-- **NPS Map Symbols** (fallback, not yet vendored) — U.S. public domain.
+- **Maki**, CC0 1.0 Universal. https://github.com/mapbox/maki
+- **Temaki**, CC0 1.0 Universal. https://github.com/rapideditor/temaki
+- **NPS Map Symbols** (fallback, not yet vendored), U.S. public domain.
   https://www.nps.gov/maps/tools/symbol-library/
-- **The Noun Project** (`noun-rock-5301957.svg`) — see file for attribution.
+- **The Noun Project** (`noun-rock-5301957.svg`), see file for attribution.
 
 CC0 and U.S.-public-domain works require no attribution; this table is recorded
 for provenance only.

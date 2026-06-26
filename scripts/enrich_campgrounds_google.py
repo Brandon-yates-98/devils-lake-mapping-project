@@ -18,7 +18,7 @@ only returns rows whose cache is missing or older than REFRESH_DAYS, so reruns
 are idempotent and cheap. Use --dry-run to see the plan without spending calls.
 
 Writes go through two SECURITY DEFINER RPCs (migration 048) using the SERVICE
-key — the anon key is RLS-blocked for writes (memory: supabase-write-constraints).
+key, the anon key is RLS-blocked for writes (memory: supabase-write-constraints).
 
 Usage:
   ! op run --env-file=.env.tpl -- .venv/Scripts/python.exe scripts/enrich_campgrounds_google.py --dry-run
@@ -47,7 +47,7 @@ SEARCH_RADIUS_M    = 500     # location bias when resolving place_id by name
 DRY_RUN = '--dry-run' in sys.argv
 
 PLACES_BASE = 'https://places.googleapis.com/v1'
-# Place Details field mask — every field we actually surface. Atmosphere fields
+# Place Details field mask, every field we actually surface. Atmosphere fields
 # (reviews/editorialSummary/allowsDogs/restroom/goodForChildren) set the SKU.
 DETAILS_FIELDS = ','.join([
     'id', 'displayName', 'googleMapsUri',
@@ -107,7 +107,7 @@ def apply_enrichment(row_id, props, photo_meta, place_id):
 
 
 # ── Google Places (New) ──────────────────────────────────────────────────────
-# Generic camp words carry no identity — strip them before comparing names so
+# Generic camp words carry no identity, strip them before comparing names so
 # "Snuffy's Family Campground" vs "Skillet Creek Campground" share nothing and the
 # mismatch is caught (Text Search by name+location can return the wrong place).
 _GENERIC_WORDS = {'campground', 'campsite', 'camp', 'camping', 'resort', 'rv',
@@ -123,11 +123,11 @@ def _name_matches(want, got):
     """True if the Google name shares a distinctive token with the campground name."""
     wt = _name_tokens(want)
     if not wt:
-        return True               # nothing distinctive to verify — accept
+        return True               # nothing distinctive to verify, accept
     return bool(wt & _name_tokens(got))
 
 def resolve_place_id(name, lat, lng):
-    """Text Search (New) — minimal field mask keeps this on the cheap SKU.
+    """Text Search (New), minimal field mask keeps this on the cheap SKU.
     Returns the first candidate whose name matches; skips (None) if none do."""
     _budget('text_search')
     url = f'{PLACES_BASE}/places:searchText'
@@ -144,7 +144,7 @@ def resolve_place_id(name, lat, lng):
             return p['id']
     if places:
         top = (places[0].get('displayName') or {}).get('text', '?')
-        sys.stderr.write(f'  name mismatch for "{name}": top result "{top}" — skipping '
+        sys.stderr.write(f'  name mismatch for "{name}": top result "{top}", skipping '
                          '(set custom_data.google.place_id manually to override)\n')
     return None
 
@@ -243,7 +243,7 @@ def main():
         time.sleep(0.1)  # be gentle on the API
 
     print(f'\nDone. enriched={ok} skipped={skipped} google_api_calls={_calls}'
-          f'{" (none — dry run)" if DRY_RUN else ""}')
+          f'{" (none, dry run)" if DRY_RUN else ""}')
 
 
 if __name__ == '__main__':

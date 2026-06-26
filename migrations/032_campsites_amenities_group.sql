@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — campsites: move Parking into the POI group and rename
+-- Devil's Lake Mapping Project, campsites: move Parking into the POI group and rename
 -- that group to "Amenities". Applied via Supabase MCP; recorded for the log.
 --
 -- Uses the per-experience layer_group_override added in migration 031, so the

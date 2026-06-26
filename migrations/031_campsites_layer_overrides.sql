@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — per-experience label / layer_group overrides
+-- Devil's Lake Mapping Project, per-experience label / layer_group overrides
 -- Applied via Supabase MCP (apply_migration). Recorded here for the repo log.
 --
 -- label and layer_group live on layer_templates (global). To curate one

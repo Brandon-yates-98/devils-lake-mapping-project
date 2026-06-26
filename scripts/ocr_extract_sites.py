@@ -73,7 +73,7 @@ X_SPLIT = 470
 Q_RANGE  = (1, 100)
 NL_RANGE = (104, 246)
 
-# Two layout modes — 11 (sparse) and 12 (sparse + OSD) — catch different
+# Two layout modes, 11 (sparse) and 12 (sparse + OSD), catch different
 # label placements; results are merged and deduped.
 TESS_PSMS = [11, 12]
 TESS_CONFIG_FMT = '--oem 1 --psm {psm} -c tessedit_char_whitelist=0123456789e'
@@ -115,7 +115,7 @@ def preprocess(crop: Image.Image, scale: int) -> Image.Image:
 
 
 def assign_campground(orig_px: float) -> str:
-    """Campground from POSITION — the reliable signal (the two loops don't overlap)."""
+    """Campground from POSITION, the reliable signal (the two loops don't overlap)."""
     return 'quartzite' if orig_px < X_SPLIT else 'northern_lights'
 
 

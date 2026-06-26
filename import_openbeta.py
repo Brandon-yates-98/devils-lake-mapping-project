@@ -4,9 +4,9 @@ import_openbeta.py
 Fetches Devil's Lake climbing data from the OpenBeta GraphQL API and
 upserts it into Supabase as three template layer sources:
 
-  climbing_routes   — roped routes (trad, sport, TR, aid, alpine, mixed)
-  climbing_boulders — bouldering problems
-  climbing_areas    — named sectors/walls (overview markers)
+  climbing_routes  , roped routes (trad, sport, TR, aid, alpine, mixed)
+  climbing_boulders, bouldering problems
+  climbing_areas   , named sectors/walls (overview markers)
 
 License notice: OpenBeta data is licensed under the Open Database License
 (ODbL). Any public display of this data must include the attribution:
@@ -24,7 +24,7 @@ from supabase import create_client
 SUPABASE_URL  = os.environ.get('SUPABASE_URL')
 SUPABASE_KEY  = os.environ.get('SUPABASE_KEY')
 if not SUPABASE_URL or not SUPABASE_KEY:
-    sys.exit('Set SUPABASE_URL and SUPABASE_KEY — use: '
+    sys.exit('Set SUPABASE_URL and SUPABASE_KEY, use: '
              'op run --env-file=.env.tpl -- python import_openbeta.py')
 OPENBETA_URL  = 'https://api.openbeta.io'
 DEVILS_LAKE_UUID = 'bf4481e8-d698-5b5f-a46d-81f807c26d7d'
@@ -291,7 +291,7 @@ def main():
         try:
             full = gql(FULL_AREA_Q, {'uuid': child['uuid']})['area']
         except Exception as e:
-            print(f"  ERROR: {e} — skipping")
+            print(f"  ERROR: {e}, skipping")
             continue
 
         areas, routes, boulders = collect_from_area(full)

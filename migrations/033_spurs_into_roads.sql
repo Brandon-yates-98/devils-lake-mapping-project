@@ -1,5 +1,5 @@
 -- ============================================================
--- Devil's Lake Mapping Project — fold campsite spurs into the roads layer
+-- Devil's Lake Mapping Project, fold campsite spurs into the roads layer
 -- Spurs were stored as a separate source ('campsite_spurs', migration 028)
 -- and rendered as a campsite companion. They are now first-class roads:
 -- re-tagged source='roads' with highway='service' so they toggle, style,

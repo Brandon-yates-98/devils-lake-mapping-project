@@ -23,7 +23,7 @@ Modes:
                RPC, so it can run with a read key and be applied via Supabase MCP.
 
 Writes go through the set_campsite_campflare SECURITY DEFINER RPC (migration 054)
-using the SERVICE key — the anon key is RLS-blocked for writes
+using the SERVICE key, the anon key is RLS-blocked for writes
 (memory: supabase-write-constraints).
 
 Usage:
@@ -35,7 +35,7 @@ Required env (locally via 1Password `op`; in CI via GitHub Actions secrets):
   SUPABASE_URL         https://<project>.supabase.co
   SUPABASE_KEY         service_role key (bypasses RLS for the write RPC; a read key
                        is fine with --emit-sql / --discover / --dry-run)
-  CAMPFLARE_API_KEY    Campflare v2 API key (Authorization header, raw — no "Bearer")
+  CAMPFLARE_API_KEY    Campflare v2 API key (Authorization header, raw, no "Bearer")
 """
 import os, sys, json, re, time, urllib.parse, urllib.request, urllib.error
 

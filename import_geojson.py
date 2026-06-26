@@ -8,7 +8,7 @@ url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 
 if not url or not key:
-    sys.exit("Set SUPABASE_URL and SUPABASE_KEY — use: op run --env-file=.env.tpl -- python import_geojson.py")
+    sys.exit("Set SUPABASE_URL and SUPABASE_KEY, use: op run --env-file=.env.tpl -- python import_geojson.py")
 
 supabase = create_client(url, key)
 

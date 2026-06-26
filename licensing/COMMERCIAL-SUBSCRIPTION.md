@@ -1,6 +1,6 @@
-# Commercial Subscription Agreement — Custom Map Experiences (DRAFT / FUTURE)
+# Commercial Subscription Agreement, Custom Map Experiences (DRAFT / FUTURE)
 
-> ⚠️ **DRAFT template for a possible FUTURE offering — not active, not legal advice,
+> ⚠️ **DRAFT template for a possible FUTURE offering, not active, not legal advice,
 > pending legal review.** Commercial use is reserved by the project (see
 > [`PERMITTED-USES.md`](./PERMITTED-USES.md)); no paid subscription is offered today.
 > If/when one launches, set `[PROJECT OWNER]` to the confirmed licensor entity, secure
@@ -89,6 +89,6 @@ described for the project. Changes must be in writing.
 
 ### Pricing tiers (informal, not part of the contract)
 
-- **Free** — governments, nonprofits, and community organizations (operator discretion).
-- **Business** — paid subscription; tier by features/usage (e.g., number of custom
+- **Free**, governments, nonprofits, and community organizations (operator discretion).
+- **Business**, paid subscription; tier by features/usage (e.g., number of custom
   layers, private data, embed traffic). Finalize `[tier names + prices]`.

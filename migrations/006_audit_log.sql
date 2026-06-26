@@ -1,10 +1,10 @@
 -- ============================================================
--- Devil's Lake Mapping Project — Edit tracking (audit_log)
+-- Devil's Lake Mapping Project, Edit tracking (audit_log)
 -- Run in Supabase: Dashboard → SQL Editor → New query
 --
 -- Captures two kinds of edits, fully server-side (no client change):
---   1. Feature data edits  — via upsert_drawn_feature / delete_drawn_feature
---   2. Field schema edits   — via a trigger on layer_templates.field_schema
+--   1. Feature data edits , via upsert_drawn_feature / delete_drawn_feature
+--   2. Field schema edits  , via a trigger on layer_templates.field_schema
 --
 -- No in-editor UI yet; query audit_log directly in Supabase.
 -- Safe to re-run (IF NOT EXISTS / CREATE OR REPLACE).
