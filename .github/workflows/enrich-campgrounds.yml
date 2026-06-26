@@ -1,4 +1,4 @@
-name: Refresh Google data (campgrounds + campsite Street View)
+name: Refresh campground data (Google + Street View + Campflare)
 
 # Refreshes Google Places data for the campgrounds layer on a 30-day cycle, then
 # precomputes campsite Street View coverage (sv_status). The campground enrich
@@ -54,3 +54,14 @@ jobs:
           GOOGLE_STREETVIEW_REFERER: ${{ secrets.GOOGLE_STREETVIEW_REFERER }}
         run: |
           python scripts/precompute_streetview_coverage.py
+
+      # Campsite static data from Campflare (kind, hookups, capacity, price,
+      # check-in/out, photos). Availability is NOT fetched here — it's live via the
+      # campflare-availability edge function. --dry-run still calls Campflare to preview.
+      - name: Enrich campsites (Campflare)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}            # service_role key
+          CAMPFLARE_API_KEY: ${{ secrets.CAMPFLARE_API_KEY }}
+        run: |
+          python scripts/enrich_campsites_campflare.py ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}

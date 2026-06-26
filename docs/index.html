@@ -262,6 +262,7 @@
     .layer-row.on .layer-name { color: rgba(255,255,255,0.82); }
 
     .layer-count {
+      display: none;   /* feature counts removed from the layer manager */
       font-size: 8px; font-weight: 700;
       color: rgba(255,255,255,0.2);
       padding: 1px 5px;
@@ -601,14 +602,22 @@
     #sv-close:hover { color: #fff; }
     .popup-photos {
       display: flex; gap: 5px; overflow-x: auto;
-      margin: 2px 0 2px; padding-bottom: 3px;
+      margin: 2px 0 2px; padding-bottom: 1px;
       -webkit-overflow-scrolling: touch;
     }
+    /* uniform thumb size → strip has a definite width even before lazy images load,
+       so the arrow nav appears reliably (matches the amenity gallery) */
     .popup-photos img {
-      height: 76px; border-radius: 6px; display: block; flex: 0 0 auto;
+      width: 104px; height: 76px; object-fit: cover; border-radius: 6px; display: block; flex: 0 0 auto;
       cursor: pointer; transition: opacity 0.15s;
     }
     .popup-photos img:hover { opacity: 0.85; }
+    /* ≤3 photos: flex to fill the row so they fit with no scrollbar or arrows */
+    .popup-photos--fit { overflow: visible; }
+    .popup-photos--fit img { flex: 1 1 0; width: auto; min-width: 0; }
+    /* hide the scrollbar on both galleries — navigation is arrows (desktop) / drag (touch) */
+    .popup-photos, .cp-amen { scrollbar-width: none; -ms-overflow-style: none; }
+    .popup-photos::-webkit-scrollbar, .cp-amen::-webkit-scrollbar { display: none; }
     .popup-photo-count {
       font-size: 9.5px; color: #999; margin-bottom: 6px; margin-top: 1px;
     }
@@ -635,9 +644,14 @@
     .cs-pop-placeholder i { font-size: 34px; }
     .cs-pop-svcap { font-size: 10.5px; color: #7a8a5a; text-align: center; padding: 5px 0 0; }
     .cs-pop-svcap i { font-size: 10px; }
-    .cs-pop-head { padding: 11px 13px 4px; }
+    .cs-pop-head { padding: 11px 13px 4px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .cs-pop-head-l { min-width: 0; }
     .cs-pop-title { font-size: 15px; font-weight: 800; color: #1a2418; line-height: 1.2; }
     .cs-pop-sub { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    /* price at the top, mirroring the campground popup */
+    .cs-pop-price { flex: 0 0 auto; display: flex; align-items: baseline; gap: 3px; white-space: nowrap; }
+    .cs-pop-price-amt { font-size: 22px; font-weight: 800; color: #2f5d1e; letter-spacing: -.5px; }
+    .cs-pop-price-unit { font-size: 11px; font-weight: 600; color: #7a8a72; }
     .cs-pop-cg { font-size: 12px; font-weight: 600; color: #5a6a4a; }
     .cs-pop-type {
       display: inline-flex; align-items: center; gap: 4px;
@@ -648,14 +662,64 @@
     .cs-type-accessible { background: #e4edfb; color: #1f57c4; }
     .cs-type-walkin     { background: #e0f1ee; color: #157a6a; }
     .cs-type-group      { background: #efe7f7; color: #6b3aa0; }
-    .cs-pop-actions { padding: 8px 13px 12px; display: flex; flex-direction: column; gap: 7px; }
+    .cs-pop-actions { padding: 8px 13px 12px; display: flex; gap: 7px; }   /* Reserve + Directions side by side */
+    .cs-pop-actions > * { flex: 1; }
     .cs-pop-reserve {
       display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-      width: 100%; padding: 9px; border: none; border-radius: 7px; cursor: pointer;
+      padding: 9px; border: none; border-radius: 7px; cursor: pointer;
       font-family: inherit; font-size: 12px; font-weight: 800; color: #fff;
       background: linear-gradient(135deg,#7cae2f,#5f9221); transition: filter 0.15s;
     }
     .cs-pop-reserve:hover { filter: brightness(1.06); }
+    /* Directions matches the campground popup's dark-green button */
+    .cs-pop-actions .popup-directions-btn {
+      width: auto; margin-top: 0; padding: 9px; border-radius: 7px; box-shadow: none;
+      background: #1f3a17; border: 1px solid rgba(155,194,60,0.35); color: #cfe39a;
+    }
+    .cs-pop-actions .popup-directions-btn:hover { background: #284b1d; color: #fff; filter: none; }
+    .cs-pop-hero--photo { cursor: default; }
+    /* Campflare per-site facts */
+    .cs-pop-facts { padding: 2px 13px 4px; display: flex; flex-direction: column; gap: 7px; }
+    .cs-fact-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .cs-fact-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; background: #eef4e2; color: #557a1f; }
+    .cs-fact-chip i { font-size: 9.5px; }
+    .cs-fact-details { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11.5px; color: #5a6a4a; }
+    .cs-fact-details i { font-size: 10px; color: #9bc23c; margin-right: 3px; }
+    .cs-pop-attr { padding: 6px 13px 11px; font-size: 9.5px; color: #9aa19a; }
+    .cs-pop-attr a { color: #6c8c2e; text-decoration: none; font-weight: 600; }
+    .cs-pop-attr a:hover { text-decoration: underline; }
+    /* Horizontal galleries (photos + amenities): drag on mobile, arrows on desktop */
+    .dl-gal { position: relative; }
+    .dl-gal-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; padding: 0;
+      width: 26px; height: 26px; border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(255,255,255,0.94); color: #2f5d1e; box-shadow: 0 1px 6px rgba(0,0,0,0.28);
+      display: none; align-items: center; justify-content: center; font-size: 12px;
+    }
+    .dl-gal-arrow:hover { background: #fff; }
+    .dl-gal-prev { left: 3px; }
+    .dl-gal-next { right: 3px; }
+    .dl-gal-arrow.show { display: flex; }
+    @media (hover: none), (pointer: coarse) { .dl-gal-arrow { display: none !important; } }
+    .cp-amen-box { margin: 6px 0 2px; }
+    .cp-amen { display: flex; gap: 5px; overflow-x: auto; min-width: 0; padding-bottom: 1px; }
+    .cp-amen .cp-chip { flex: 0 0 auto; }
+    /* Campflare campground description (under photos): 3-line clamp, inline See more */
+    .cp-cf { margin: 6px 0 2px; }
+    .cp-cf-closed { font-size: 11px; font-weight: 800; color: #c0392b; margin-bottom: 5px; }
+    .cp-cf-descwrap { position: relative; font-size: 12px; line-height: 1.45; color: #3a463a; }
+    .cp-cf-desc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+    .cp-cf-desc--full { -webkit-line-clamp: unset; }
+    .cp-cf-toggle { display: none; }
+    .cp-cf-toggle:checked ~ .cp-cf-descwrap .cp-cf-desc { -webkit-line-clamp: unset; }
+    .cp-cf-more { position: absolute; right: 0; bottom: 0; cursor: pointer; color: #6c8c2e; font-weight: 700; padding-left: 28px; background: linear-gradient(90deg, rgba(255,255,255,0), #fff 45%); }
+    .cp-cf-more::after { content: 'See more'; }
+    .cp-cf-toggle:checked ~ .cp-cf-descwrap .cp-cf-more { position: static; padding-left: 4px; background: none; }
+    .cp-cf-toggle:checked ~ .cp-cf-descwrap .cp-cf-more::after { content: 'See less'; }
+    /* Consolidated source footer (Campflare + Google) */
+    .cp-attrib-multi { display: flex; flex-direction: column; gap: 0; line-height: 1.35; }
+    .cp-attrib-line a { color: #6c8c2e; text-decoration: none; font-weight: 700; }
+    .cp-attrib-line a:hover { text-decoration: underline; }
 
     /* ─── Submit photo button (in popup) ─── */
     .popup-submit-btn {
@@ -778,6 +842,72 @@
     #gtc-go:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(95,146,33,0.45); }
     #gtc-go:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
     #gtc-note { font-size: 10px; color: #9aa694; text-align: center; line-height: 1.4; }
+
+    /* ─── DNR availability tool (reuses .gtc-cal-* for the calendar) ─── */
+    .avail-btn {
+      width: 100%; margin-top: 4px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 9px; border: none; border-radius: 7px; cursor: pointer; font-family: 'Inter', sans-serif;
+      font-size: 12px; font-weight: 800; color: #fff; background: linear-gradient(135deg,#5d6d7e,#34495e);
+      transition: filter 0.15s;
+    }
+    .avail-btn:hover { filter: brightness(1.1); }
+    .avail-btn i { font-size: 11px; }
+    #avail-modal {
+      display: none; position: fixed; inset: 0; z-index: 10000;
+      background: rgba(0,0,0,0.6); align-items: center; justify-content: center;
+      padding: env(safe-area-inset-top,0px) 12px env(safe-area-inset-bottom,0px);
+    }
+    #avail-modal.open { display: flex; }
+    #avail-box {
+      background: #fff; border-radius: 10px; width: 340px; max-width: 94vw;
+      overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); font-family: 'Inter', sans-serif;
+    }
+    #avail-box-header {
+      background: linear-gradient(135deg,#162914,#24401f);
+      padding: 11px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #9bc23c;
+    }
+    #avail-box-header span { flex: 1; font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 7px; }
+    #avail-box-header i { color: #9bc23c; }
+    #avail-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 18px; cursor: pointer; padding: 2px 6px; }
+    #avail-close:hover { color: #fff; }
+    #avail-box-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+    #avail-cal { user-select: none; }
+    #avail-summary { font-size: 11.5px; color: #5a6a4a; text-align: center; font-weight: 600; min-height: 15px; }
+    #avail-go {
+      width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 11px; border: none; border-radius: 7px; cursor: pointer; font-family: inherit;
+      font-size: 12.5px; font-weight: 800; color: #fff;
+      background: linear-gradient(135deg,#7cae2f,#5f9221); box-shadow: 0 2px 8px rgba(95,146,33,0.35);
+      transition: transform 0.08s ease, box-shadow 0.15s ease;
+    }
+    #avail-go:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(95,146,33,0.45); }
+    #avail-go:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+    #avail-note { font-size: 10px; color: #9aa694; text-align: center; line-height: 1.4; }
+    #avail-note a { color: #6c8c2e; font-weight: 700; text-decoration: none; }
+    .avail-legend, .avc-legend { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; font-size: 10.5px; color: #5a6a4a; font-weight: 600; }
+    .avail-legend span, .avc-legend span { display: inline-flex; align-items: center; gap: 4px; }
+    .avc-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    /* Floating availability state pill (mirrors #climb-filter-chip), bottom-center */
+    #avail-chip {
+      position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+      z-index: 250; max-width: 90%;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    #avail-chip-clear {
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 12px; border-radius: 18px; border: 1px solid rgba(155,194,60,0.5);
+      background: rgba(14,22,12,0.92); color: #cfe3a8;
+      font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+    }
+    #avail-chip-clear i { color: #9bc23c; font-size: 10px; }
+    #avail-chip-clear .cfc-x { font-size: 14px; font-weight: 800; color: #e08c7d; line-height: 1; }
+    #avail-chip-clear:hover { border-color: rgba(231,76,60,0.6); }
+    #avail-chip-clear:hover .cfc-x { color: #e74c3c; }
+    #avail-chip .avc-legend {
+      background: rgba(14,22,12,0.92); color: #cfe3a8; padding: 5px 11px; border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+    }
 
     /* ─── Lightbox ─── */
     #lb-overlay {
@@ -1013,7 +1143,11 @@
        behind it like the desktop popup) — lighten it for contrast. */
     #feature-sheet .cs-pop-title { color: #fff; }
     #feature-sheet .cs-pop-cg { color: rgba(255,255,255,0.72); }
+    #feature-sheet .cs-pop-price-amt { color: #cfe3a8; }
+    #feature-sheet .cs-pop-price-unit { color: rgba(255,255,255,0.6); }
     #feature-sheet .cs-pop-svcap { color: rgba(255,255,255,0.6); }
+    #feature-sheet .cs-fact-details { color: rgba(255,255,255,0.72); }
+    #feature-sheet .cs-pop-attr { color: rgba(255,255,255,0.5); }
     /* Keep the title clear of the absolute close button (44px) in the sheet. */
     #feature-sheet .popup-header,
     #feature-sheet .cp-head { padding-right: 52px; }
@@ -1069,8 +1203,15 @@
     #exp-bar.collapsed .exp-search-wrap,
     #exp-bar.collapsed .exp-filters,
     #exp-bar.collapsed #exp-list-btn,
+    #exp-bar.collapsed #avail-bar,
     #exp-bar.collapsed #exp-suggestions,
-    #exp-bar.collapsed #exp-list { display: none; }
+    #exp-bar.collapsed #exp-list { display: none !important; }
+    /* Search + List sit in a left column; the DNR availability button sits under
+       them and spans their combined width. */
+    .exp-bar-main { display: flex; flex-direction: column; gap: 8px; flex: 0 1 auto; min-width: 0; }
+    .exp-bar-search-row { display: flex; align-items: center; gap: 8px; }
+    #avail-bar { width: 100%; }
+    #avail-bar .avail-btn { margin-top: 0; }
 
     .exp-autocomplete {
       display: none; list-style: none; margin: 6px 0 0; padding: 4px;
@@ -1123,9 +1264,8 @@
     @media (max-width: 600px) {
       #exp-bar { top: calc(8px + env(safe-area-inset-top, 0px)); max-width: calc(100% - 16px); }
       .exp-bar-row { flex-wrap: wrap; }   /* allow wrapping only on phones */
-      .exp-search-wrap { order: 1; flex: 1 1 auto; }   /* search + List + collapse share row 1 */
-      #exp-list-btn { order: 2; }
-      #exp-collapse { order: 3; }
+      .exp-bar-main { order: 1; flex: 1 1 100%; }       /* search + List + availability take row 1 */
+      .exp-search-wrap { flex: 1 1 auto; }
       .exp-filters { order: 4; flex-basis: 100%; }      /* filters drop to a full-width row 2 */
       .exp-bar-btn { padding: 9px 10px; }
       /* List opens as a bottom sheet on phones; filters stay inline in the bar */
@@ -1217,6 +1357,28 @@
       <label class="gtc-field"><span id="gtc-type-label">Equipment</span><select id="gtc-equip"></select></label>
       <button id="gtc-go"><i class="fa-solid fa-arrow-up-right-from-square"></i> Search availability</button>
       <div id="gtc-note">Opens the official Wisconsin State Parks reservation site in a new tab.</div>
+    </div>
+  </div>
+</div>
+
+<!-- DNR campsite availability date-range picker (extension of the campsite search). -->
+<div id="avail-modal" role="dialog" aria-modal="true" aria-label="Choose availability dates">
+  <div id="avail-box">
+    <div id="avail-box-header">
+      <span><i class="fa-solid fa-calendar-check"></i> Campsite availability</span>
+      <button id="avail-close" aria-label="Close">&#x2715;</button>
+    </div>
+    <div id="avail-box-body">
+      <div id="avail-cal"></div>
+      <div id="avail-summary"></div>
+      <button id="avail-go"><i class="fa-solid fa-fill-drip"></i> Show availability</button>
+      <div class="avail-legend">
+        <span><i class="avc-dot" style="background:#27ae60"></i> Open</span>
+        <span><i class="avc-dot" style="background:#e6a817"></i> Some nights</span>
+        <span><i class="avc-dot" style="background:#c0392b"></i> Full</span>
+        <span><i class="avc-dot" style="background:#9aa0a6"></i> Unknown</span>
+      </div>
+      <div id="avail-note">Live availability from <a href="https://campflare.com" target="_blank" rel="noopener">Campflare</a>. Book on the official site via a campsite's Reserve button.</div>
     </div>
   </div>
 </div>
@@ -1375,17 +1537,38 @@
       <i class="fa-solid fa-filter"></i> <span id="cfc-label"></span> <span class="cfc-x">×</span>
     </button>
 
+    <!-- Floating availability state: shows the active range + legend, click to clear -->
+    <div id="avail-chip" style="display:none">
+      <button id="avail-chip-clear" title="Clear availability">
+        <i class="fa-solid fa-calendar-check"></i> <span id="avc-label"></span> <span class="cfc-x">×</span>
+      </button>
+      <div class="avc-legend">
+        <span><i class="avc-dot" style="background:#27ae60"></i> Open</span>
+        <span><i class="avc-dot" style="background:#e6a817"></i> Some</span>
+        <span><i class="avc-dot" style="background:#c0392b"></i> Full</span>
+        <span><i class="avc-dot" style="background:#9aa0a6"></i> Unknown</span>
+      </div>
+    </div>
+
     <!-- Experience top bar: an experience's primary functionality (search ·
          filters · list) pinned to the top of the map. Shown when the experience
          sets a primary_layer; built/wired in initExperienceBar(). -->
     <div id="exp-bar" style="display:none">
       <div class="exp-bar-row">
-        <div class="exp-search-wrap">
-          <i class="fa-solid fa-magnifying-glass exp-search-icon"></i>
-          <input type="text" id="exp-search" class="exp-search-input" autocomplete="off" placeholder="Search…" />
-          <button id="exp-search-clear" class="exp-clear-btn" aria-label="Clear search" style="display:none">×</button>
+        <div class="exp-bar-main">
+          <div class="exp-bar-search-row">
+            <div class="exp-search-wrap">
+              <i class="fa-solid fa-magnifying-glass exp-search-icon"></i>
+              <input type="text" id="exp-search" class="exp-search-input" autocomplete="off" placeholder="Search…" />
+              <button id="exp-search-clear" class="exp-clear-btn" aria-label="Clear search" style="display:none">×</button>
+            </div>
+            <button id="exp-list-btn" class="exp-bar-btn"><i class="fa-solid fa-list-ul"></i> List <span id="exp-list-count" class="exp-count"></span></button>
+          </div>
+          <!-- DNR campsite availability: under the search + List, spanning their width (campsites only) -->
+          <div id="avail-bar" style="display:none">
+            <button id="avail-btn" class="avail-btn"><i class="fa-solid fa-calendar-check"></i> DNR Campsite Availability</button>
+          </div>
         </div>
-        <button id="exp-list-btn" class="exp-bar-btn"><i class="fa-solid fa-list-ul"></i> List <span id="exp-list-count" class="exp-count"></span></button>
         <div id="exp-filters" class="exp-filters"></div>
         <button id="exp-collapse" class="exp-bar-btn" aria-label="Collapse search & filters" title="Collapse">
           <i class="fa-solid fa-magnifying-glass exp-c-open"></i>
@@ -1403,10 +1586,11 @@
 <script>
   mapboxgl.accessToken = 'pk.eyJ1IjoiYnlhdGVzNDAiLCJhIjoiY21xN25reXZ6MDFxeTJwcHp0eWd1eThkZSJ9.e8kuKAeb7KnerdLxQU7vpQ';
 
-  const db = supabase.createClient(
-    'https://lcenhesezodgrjrymngg.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjZW5oZXNlem9kZ3JqcnltbmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Mjk2MDksImV4cCI6MjA5NTAwNTYwOX0.HD9iIKp267i3t2csvLA68TBZ4ASDBL14xznlSQumn30'
-  );
+  const SB_URL = 'https://lcenhesezodgrjrymngg.supabase.co';
+  const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjZW5oZXNlem9kZ3JqcnltbmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Mjk2MDksImV4cCI6MjA5NTAwNTYwOX0.HD9iIKp267i3t2csvLA68TBZ4ASDBL14xznlSQumn30';
+  const SB_FUNCTIONS = `${SB_URL}/functions/v1`;
+
+  const db = supabase.createClient(SB_URL, SB_ANON);
 
   // ── Offline store ────────────────────────────────────────────
   // Supabase RPCs are POSTs, which the service worker's Cache Storage can't
@@ -1555,7 +1739,11 @@
   }
 
   // Campsite price filter: max nightly price (null = no cap).
-  const CAMPING_SOURCE = 'pois_camping';
+  const CAMPING_SOURCE = 'pois_camping';   // the campgrounds layer (price filter)
+  const CAMPSITE_SOURCE = 'campsite_sites'; // individual sites (availability coloring)
+  // DNR campsite availability state (Campflare). When active, each campsite feature
+  // is decorated with a `_avail` status and recolored; data = { slug: { ref: status } }.
+  const availFilter = { active: false, start: null, end: null, data: null };
   const campFilter = { price: null };
 
   // ── Feature filter state ─────────────────────────────────────
@@ -1702,7 +1890,12 @@
     let photos = props.photos;
     if (typeof photos === 'string') { try { photos = JSON.parse(photos); } catch { photos = []; } }
     if (!Array.isArray(photos)) photos = [];
-    return { ...props, ...cd, name: props.name || cd.name || '', photos };
+    const ctx = { ...props, ...cd, name: props.name || cd.name || '', photos };
+    // Campground prices display rounded to the nearest dollar.
+    for (const k of ['min_price', 'max_price']) {
+      if (ctx[k] != null && ctx[k] !== '' && !isNaN(ctx[k])) ctx[k] = Math.round(Number(ctx[k]));
+    }
+    return ctx;
   }
   // Render {{#each photos}}, {{#if field}}, and {{ field }} tokens against ctx (values escaped).
   function renderPopupTemplate(template, ctx) {
@@ -1929,6 +2122,172 @@
     }
     openReserveModal._ctx = { provider, cfg };
   }
+
+  // ── DNR campsite availability (Campflare) ───────────────────────
+  // Static site data is precomputed (properties.campflare); this is the volatile
+  // part — live per-site availability over a date range, fetched on demand from the
+  // campflare-availability edge function and colored onto the campsite markers.
+  // Reuses the reserve calendar's CSS (.gtc-cal-*) and date helpers.
+  const AVAIL_COLORS = { available: '#27ae60', partial: '#e6a817', unavailable: '#c0392b', unknown: '#9aa0a6' };
+  const availSel = { view: null, start: null, end: null };  // Dates at local midnight
+
+  function renderAvailCalendar() {
+    const cal = document.getElementById('avail-cal');
+    const sum = document.getElementById('avail-summary');
+    const go = document.getElementById('avail-go');
+    if (!cal) return;
+    const v = availSel.view, y = v.getFullYear(), m = v.getMonth();
+    const today = _midnight(new Date());
+    const firstDow = new Date(y, m, 1).getDay();
+    const ndays = new Date(y, m + 1, 0).getDate();
+    const atFirstMonth = y === today.getFullYear() && m === today.getMonth();
+    const s = availSel.start, e = availSel.end;
+    let cells = '';
+    for (let i = 0; i < firstDow; i++) cells += '<button class="gtc-cal-day gtc-empty" disabled tabindex="-1"></button>';
+    for (let d = 1; d <= ndays; d++) {
+      const cur = new Date(y, m, d);
+      const past = cur < today;
+      let cls = 'gtc-cal-day';
+      if (s && +cur === +s) cls += ' range-start';
+      if (e && +cur === +e) cls += ' range-end';
+      if (s && e && cur > s && cur < e) cls += ' in-range';
+      cells += `<button class="${cls}"${past ? ' disabled' : ` data-date="${GTC_DATE(cur)}"`}>${d}</button>`;
+    }
+    cal.innerHTML =
+      `<div class="gtc-cal-head">
+        <button class="gtc-cal-nav" data-nav="prev"${atFirstMonth ? ' disabled' : ''} aria-label="Previous month"><i class="fa-solid fa-chevron-left"></i></button>
+        <span class="gtc-cal-title">${_MONTHS[m]} ${y}</span>
+        <button class="gtc-cal-nav" data-nav="next" aria-label="Next month"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+      <div class="gtc-cal-grid">
+        ${['Su','Mo','Tu','We','Th','Fr','Sa'].map(w => `<div class="gtc-cal-dow">${w}</div>`).join('')}
+        ${cells}
+      </div>`;
+    const fmt = dt => `${_MONTHS[dt.getMonth()].slice(0, 3)} ${dt.getDate()}`;
+    if (s && e) {
+      const nights = Math.round((e - s) / _MS_DAY);
+      sum.textContent = `${fmt(s)} → ${fmt(e)} · ${nights} night${nights === 1 ? '' : 's'}`;
+      go.disabled = false;
+    } else if (s) {
+      sum.textContent = `Check-in ${fmt(s)} — now pick check-out`;
+      go.disabled = true;
+    } else {
+      sum.textContent = 'Tap your check-in, then check-out date';
+      go.disabled = true;
+    }
+  }
+
+  function _availDayClick(iso) {
+    const d = _parseLocal(iso), s = availSel;
+    if (!s.start || (s.start && s.end)) { s.start = d; s.end = null; }
+    else if (d <= s.start) { s.start = d; s.end = null; }
+    else { s.end = d; }
+    renderAvailCalendar();
+  }
+
+  let _availWired = false;
+  function openAvailModal() {
+    const modal = document.getElementById('avail-modal');
+    if (!modal) return;
+    if (!availSel.start || !availSel.end) {   // default to a 1-night range starting tomorrow
+      const start = _midnight(new Date()); start.setDate(start.getDate() + 1);
+      const end = new Date(start); end.setDate(end.getDate() + 1);
+      availSel.start = start; availSel.end = end;
+      availSel.view = new Date(start.getFullYear(), start.getMonth(), 1);
+    }
+    renderAvailCalendar();
+    modal.classList.add('open');
+    if (!_availWired) {
+      _availWired = true;
+      const close = () => modal.classList.remove('open');
+      document.getElementById('avail-close').addEventListener('click', close);
+      modal.addEventListener('click', e => { if (e.target === modal) close(); });
+      document.getElementById('avail-cal').addEventListener('click', e => {
+        const nav = e.target.closest('[data-nav]');
+        if (nav) { availSel.view.setMonth(availSel.view.getMonth() + (nav.dataset.nav === 'next' ? 1 : -1)); renderAvailCalendar(); return; }
+        const day = e.target.closest('[data-date]');
+        if (day) _availDayClick(day.dataset.date);
+      });
+      document.getElementById('avail-go').addEventListener('click', () => {
+        if (!availSel.start || !availSel.end) return;
+        close();
+        applyAvailability(GTC_DATE(availSel.start), GTC_DATE(availSel.end));
+      });
+    }
+  }
+
+  async function fetchCampflareAvailability(campgroundIds, startDate, endDate) {
+    const res = await fetch(`${SB_FUNCTIONS}/campflare-availability`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` },
+      body: JSON.stringify({ campgroundIds, start_date: startDate, end_date: endDate }),
+    });
+    if (!res.ok) throw new Error(`availability HTTP ${res.status}`);
+    return res.json();
+  }
+
+  // Decorate campsite features with `_avail` (when active) and push to the source,
+  // so the icon expression recolors them. Targets campsite_sites, independent of the
+  // campgrounds price filter.
+  function applyCampsiteAvailability() {
+    const src = map.getSource(CAMPSITE_SOURCE);
+    const cached = layerCache[CAMPSITE_SOURCE];
+    if (!src || !cached) return;
+    let features = cached.features;
+    if (availFilter.active && availFilter.data) {
+      const byCgId = availFilter.data;   // { campflareCgId: { campsiteId: status } }
+      features = features.map(f => {
+        const p = f.properties || {};
+        const cgId = CAMPFLARE_CAMPGROUNDS[p.campground];
+        const status = (cgId && byCgId[cgId] && byCgId[cgId][p.campflare_id]) || 'unknown';
+        return { ...f, properties: { ...p, _avail: status } };
+      });
+    }
+    src.setData({ type: 'FeatureCollection', features });
+  }
+
+  async function applyAvailability(startDate, endDate) {
+    const ids = Object.values(CAMPFLARE_CAMPGROUNDS).filter(Boolean);
+    if (!ids.length) { console.warn('CAMPFLARE_CAMPGROUNDS not configured — run --discover'); return; }
+    const label = document.getElementById('avc-label');
+    document.getElementById('avail-chip').style.display = '';
+    if (label) label.textContent = 'Loading availability…';
+    let data;
+    try {
+      data = await fetchCampflareAvailability(ids, startDate, endDate);
+    } catch (e) {
+      if (label) label.textContent = 'Availability unavailable';
+      return;
+    }
+    availFilter.active = true;
+    availFilter.start = startDate;
+    availFilter.end = endDate;
+    availFilter.data = data.availability || {};   // { campflareCgId: { campsiteId: status } }
+    applyCampsiteAvailability();
+    updateAvailChip();
+  }
+
+  function updateAvailChip() {
+    const chip = document.getElementById('avail-chip');
+    if (!chip) return;
+    if (!availFilter.active) { chip.style.display = 'none'; return; }
+    const fmt = iso => { const d = _parseLocal(iso); return `${_MONTHS[d.getMonth()].slice(0, 3)} ${d.getDate()}`; };
+    chip.style.display = '';
+    chip.querySelector('#avc-label').textContent = `Availability ${fmt(availFilter.start)}–${fmt(availFilter.end)}`;
+  }
+
+  function clearAvailability() {
+    availFilter.active = false;
+    availFilter.data = null;
+    applyCampsiteAvailability();
+    updateAvailChip();
+  }
+
+  // The availability button is (re)built with the camp filters, so delegate.
+  document.addEventListener('click', e => {
+    if (e.target.closest('#avail-btn')) openAvailModal();
+    else if (e.target.closest('#avail-chip-clear')) clearAvailability();
+  });
 
   // ── Climbing grade helpers ────────────────────────────────────
   function ydsRank(g) {
@@ -2535,6 +2894,11 @@
     const input = document.getElementById('exp-search');
     if (input) input.placeholder = `Search ${label}…`;
     setupExperienceBar();
+    // Show the DNR availability button only when campsites are present and at
+    // least one Campflare campground id is configured.
+    const availBar = document.getElementById('avail-bar');
+    if (availBar) availBar.style.display =
+      (layerCache[CAMPSITE_SOURCE] && Object.values(CAMPFLARE_CAMPGROUNDS).some(Boolean)) ? '' : 'none';
     refreshExpList();
     requestAnimationFrame(syncBarHeight);
   }
@@ -2734,42 +3098,152 @@
     quartzite:       { txId: '-2147483634', resId: '-2147483634', mapId: '-2147483636' },
     northern_lights: { txId: '-2147483634', resId: '-2147483634', mapId: '-2147483635' },
   };
+  // Campflare campground ids per our campground slug, for the live availability tool.
+  // Fill these from `enrich_campsites_campflare.py --discover` (the *DL* hits). Any
+  // slug left empty is simply skipped by the availability lookup.
+  const CAMPFLARE_CAMPGROUNDS = {
+    quartzite:       'devils-lake-quartzite-wisc',
+    northern_lights: 'northern-lights-wisc',
+  };
   // Campsite popup: a plain Street View photo hero (tap -> full-screen interactive),
   // a clean header (site name + campground + styled type), and no plain-text rows.
   // The hero is a fixed-height frame so the popup never collapses: covered sites
   // (sv_status='ok', precomputed via the free metadata sweep) show the Street View
   // photo; everything else shows a branded placeholder (the site-type glyph on the
   // dark panel) — never a gray "no imagery" tile, never an empty box.
+  // Campflare per-site facts (amenity chips + a details line) for the campsite popup.
+  // Reads the slow-moving blob stamped by enrich_campsites_campflare.py.
+  function campflareData(props) {
+    let v = props.campflare;
+    if (typeof v === 'string') { try { v = JSON.parse(v); } catch { v = null; } }
+    return (v && typeof v === 'object') ? v : null;
+  }
+  function buildCampsiteFactsHTML(cf) {
+    if (!cf) return '';
+    const chip = (on, icon, label) => on ? `<span class="cs-fact-chip"><i class="fa-solid ${icon}"></i> ${label}</span>` : '';
+    // Electric is already shown as the site-type pill in the header, so it's
+    // omitted here; price moves to the header (see buildCampsitePopupHTML).
+    const chips = [
+      chip(cf.firepit, 'fa-fire', 'Fire pit'),
+      chip(cf.water_hookups, 'fa-droplet', 'Water'),
+      chip(cf.sewer_hookups, 'fa-recycle', 'Sewer'),
+      chip(cf.picnic_table, 'fa-table', 'Picnic table'),
+      chip(cf.ada_accessible, 'fa-wheelchair', 'Accessible'),
+    ].filter(Boolean).join('');
+    const details = [];
+    if (cf.max_people)     details.push(`<i class="fa-solid fa-user-group"></i> Sleeps ${escapeHtml(String(cf.max_people))}`);
+    if (cf.max_rv_length)  details.push(`<i class="fa-solid fa-caravan"></i> RV ${escapeHtml(String(cf.max_rv_length))} ft`);
+    if (cf.check_in || cf.check_out) details.push(`<i class="fa-solid fa-clock"></i> ${escapeHtml(cf.check_in || '?')}–${escapeHtml(cf.check_out || '?')}`);
+    if (!chips && !details.length) return '';
+    return `<div class="cs-pop-facts">
+      ${chips ? `<div class="cs-fact-chips">${chips}</div>` : ''}
+      ${details.length ? `<div class="cs-fact-details">${details.map(d => `<span>${d}</span>`).join('')}</div>` : ''}
+    </div>`;
+  }
+
+  // Campflare campground-level info for the DNR campground popups (only the
+  // campgrounds Campflare covers carry a `campflare` blob). The amenity chips
+  // replace the Google chips in the card's .cp-chips row (same .cp-chip style);
+  // the description is placed under the photos by buildPopupHTML.
+  function campgroundAmenityChips(cf) {
+    const am = (cf && cf.amenities) || {};
+    const toiletLabel = am.toilet_kind
+      ? `${am.toilet_kind.charAt(0).toUpperCase() + am.toilet_kind.slice(1)} toilets`
+      : (am.toilets ? 'Toilets' : '');
+    const chip = (on, icon, label) => on ? `<span class="cp-chip"><i class="fa-solid ${icon}"></i> ${label}</span>` : '';
+    return [
+      chip(am.water, 'fa-faucet-drip', 'Drinking water'),
+      chip(am.showers, 'fa-shower', 'Showers'),
+      toiletLabel ? `<span class="cp-chip"><i class="fa-solid fa-restroom"></i> ${toiletLabel}</span>` : '',
+      chip(am.dump_station, 'fa-truck-droplet', 'Dump station'),
+      chip(am.electric_hookups, 'fa-plug', 'Electric'),
+      chip(am.camp_store, 'fa-store', 'Camp store'),
+      chip(am.wifi, 'fa-wifi', 'Wi-Fi'),
+      chip(am.pets_allowed, 'fa-dog', 'Pets OK'),
+      chip(am.fires_allowed, 'fa-fire', 'Fires allowed'),
+      chip(am.trash, 'fa-trash-can', 'Trash'),
+    ].filter(Boolean).join('');
+  }
+  // The amenities row as a compact one-line gallery (horizontal scroll) with an
+  // expand toggle that wraps them all into view. Replaces the template's .cp-chips.
+  function buildCampgroundAmenHTML(cf) {
+    const chips = campgroundAmenityChips(cf);
+    if (!chips) return '';
+    return `<div class="cp-amen-box dl-gal">
+      <button class="dl-gal-arrow dl-gal-prev" type="button" tabindex="-1" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+      <div class="cp-amen">${chips}</div>
+      <button class="dl-gal-arrow dl-gal-next" type="button" tabindex="-1" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>`;
+  }
+  // One consolidated source footer at the bottom of the campground popup, naming
+  // which parts come from Campflare vs Google.
+  function buildCampgroundAttrib(hasGoogle) {
+    const lines = ['<div class="cp-attrib-line">Amenities &amp; campground info by <a href="https://campflare.com" target="_blank" rel="noopener">Campflare</a></div>'];
+    if (hasGoogle) lines.push('<div class="cp-attrib-line">Ratings, reviews &amp; photos by Google</div>');
+    return `<div class="cp-attrib cp-attrib-multi">${lines.join('')}</div>`;
+  }
+  // Campflare description (status note), clamped to 3 lines with a CSS-only
+  // see-more toggle. Rendered directly under the photo gallery.
+  function buildCampgroundDescHTML(cf) {
+    if (!cf) return '';
+    const closed = cf.status === 'closed';
+    const desc = cf.status_description || '';
+    if (!closed && !desc) return '';
+    const long = desc.length > 160;   // ~3 lines at popup width; gate the toggle
+    // "See more" sits inline at the end of the clamped 3rd line (absolute, faded).
+    const body = long
+      ? `<input type="checkbox" id="cp-cf-toggle" class="cp-cf-toggle">
+         <div class="cp-cf-descwrap"><span class="cp-cf-desc">${escapeHtml(desc)}</span><label for="cp-cf-toggle" class="cp-cf-more"></label></div>`
+      : `<div class="cp-cf-descwrap"><span class="cp-cf-desc cp-cf-desc--full">${escapeHtml(desc)}</span></div>`;
+    return `<div class="cp-cf">
+      ${closed ? `<div class="cp-cf-closed"><i class="fa-solid fa-circle-exclamation"></i> Currently closed</div>` : ''}
+      ${desc ? body : ''}
+    </div>`;
+  }
+
   function buildCampsitePopupHTML(props) {
     const name = props.name || (props.ref ? `Site ${props.ref}` : 'Campsite');
     const cg = prettifyCampground(props.campground);
     const t = SITE_TYPE_META[props.site_type];
     const phIcon = t ? t.icon : 'fa-tent';
+    const cf = campflareData(props);
     const hasSV = STREETVIEW_EMBED_KEY && props.sv_lng != null && props.sv_lat != null
       && props.sv_status === 'ok';
+    // Fall back to a Campflare photo when there's no Street View, so empty-SV
+    // sites still show an image instead of just the placeholder glyph.
+    const cfPhoto = (!hasSV && cf && Array.isArray(cf.photos) && cf.photos.length) ? cf.photos[0].url : null;
     const hero = hasSV
       ? `<div class="cs-pop-hero" role="button" tabindex="0" aria-label="Open Street View">
           <img src="${escapeHtml(streetViewStaticURL(props.sv_lng, props.sv_lat, props.sv_heading, 600, 320))}" alt="Street View of ${escapeHtml(name)}" loading="lazy" />
           <span class="cs-pop-expand"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
         </div>`
+      : cfPhoto
+      ? `<div class="cs-pop-hero cs-pop-hero--photo"><img src="${escapeHtml(cfPhoto)}" alt="${escapeHtml(name)}" loading="lazy" /></div>`
       : `<div class="cs-pop-hero cs-pop-hero--placeholder"><div class="cs-pop-placeholder"><i class="fa-solid ${phIcon}"></i></div></div>`;
     const sub = [
       cg ? `<span class="cs-pop-cg">${escapeHtml(cg)}</span>` : '',
       t ? `<span class="cs-pop-type cs-type-${t.cls}"><i class="fa-solid ${t.icon}"></i> ${t.label}</span>` : '',
     ].filter(Boolean).join('');
+    const facts = buildCampsiteFactsHTML(cf);
+    const price = (cf && cf.price_per_night != null && !isNaN(cf.price_per_night)) ? Math.round(Number(cf.price_per_night)) : null;
     return `<div class="dl-popup-custom"><div class="cs-pop">
       ${hero}
       ${hasSV ? `<div class="cs-pop-svcap"><i class="fa-solid fa-street-view"></i> Click for Street View</div>` : ''}
       <div class="cs-pop-head">
-        <div class="cs-pop-title">${escapeHtml(name)}</div>
-        ${sub ? `<div class="cs-pop-sub">${sub}</div>` : ''}
+        <div class="cs-pop-head-l">
+          <div class="cs-pop-title">${escapeHtml(name)}</div>
+          ${sub ? `<div class="cs-pop-sub">${sub}</div>` : ''}
+        </div>
+        ${price != null ? `<div class="cs-pop-price"><span class="cs-pop-price-amt">$${price}</span><span class="cs-pop-price-unit">/ night</span></div>` : ''}
       </div>
+      ${facts}
       <div class="cs-pop-actions">
         ${CAMPSITE_RESERVATION[props.campground]
           ? `<button class="cs-pop-reserve" data-cg="${escapeHtml(props.campground)}"><i class="fa-solid fa-calendar-check"></i> Reserve</button>`
           : ''}
         <button class="popup-directions-btn"><i class="fa-solid fa-route"></i> Directions</button>
       </div>
+      ${facts || cfPhoto || price != null ? `<div class="cs-pop-attr">Site data &amp; availability by <a href="https://campflare.com" target="_blank" rel="noopener">Campflare</a></div>` : ''}
     </div></div>`;
   }
 
@@ -2787,11 +3261,15 @@
       ? photoMeta.map(m => ({ url: m.url || '', caption: m.caption || '' }))
       : photos.map(u => ({ url: u, caption: '' }));
     if (!lbData.length) return '';
-    return `<div class="popup-photos" data-photos="${escapeHtml(JSON.stringify(lbData))}">${
-        lbData.slice(0, 12).map((m, i) =>
-          `<img class="popup-photo-thumb" src="${escapeHtml(m.url)}" data-idx="${i}" loading="lazy" alt="" />`
-        ).join('')
-      }</div><div class="popup-photo-count">${lbData.length} photo${lbData.length === 1 ? '' : 's'}</div>`;
+    const thumbs = lbData.slice(0, 12).map((m, i) =>
+      `<img class="popup-photo-thumb" src="${escapeHtml(m.url)}" data-idx="${i}" loading="lazy" alt="" />`).join('');
+    // ≤3 photos flex to fill the row (no scroll/arrows); 4+ scroll as a fixed-width strip.
+    const fit = lbData.length <= 3 ? ' popup-photos--fit' : '';
+    return `<div class="dl-gal">
+        <button class="dl-gal-arrow dl-gal-prev" type="button" tabindex="-1" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="popup-photos${fit}" data-photos="${escapeHtml(JSON.stringify(lbData))}">${thumbs}</div>
+        <button class="dl-gal-arrow dl-gal-next" type="button" tabindex="-1" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
+      </div><div class="popup-photo-count">${lbData.length} photo${lbData.length === 1 ? '' : 's'}</div>`;
   }
 
   function buildPopupHTML(props, sourceKey) {
@@ -2801,9 +3279,24 @@
       // Inject the photo gallery at the template's <!--DL_PHOTOS--> marker (or
       // append it) — custom templates can't emit the lightbox data attributes.
       const gallery = buildPhotoGalleryHTML(props);
+      let afterPhotos = gallery;
+      // DNR campgrounds carry a Campflare blob: swap the Google amenity chips for
+      // the Campflare ones, and drop the Campflare description right under the photos.
+      if (sourceKey === CAMPING_SOURCE) {
+        const cf = campflareData(props);
+        if (cf) {
+          const amen = buildCampgroundAmenHTML(cf);
+          if (amen) body = body.replace(/<div class="cp-chips">[\s\S]*?<\/div>/, amen);
+          afterPhotos += buildCampgroundDescHTML(cf);
+          // Consolidate source credits into one footer at the bottom of the card.
+          const hasGoogle = body.includes('cp-attrib');
+          body = body.replace(/<div class="cp-attrib">[\s\S]*?<\/div>/, '');
+          body = body.replace(/(<button class="popup-directions-btn">[\s\S]*?<\/button>)/, `$1${buildCampgroundAttrib(hasGoogle)}`);
+        }
+      }
       body = body.includes('<!--DL_PHOTOS-->')
-        ? body.replace('<!--DL_PHOTOS-->', gallery)
-        : body + gallery;
+        ? body.replace('<!--DL_PHOTOS-->', afterPhotos)
+        : body + afterPhotos;
       const style = cfg.popup_css ? `<style>${scopePopupCss(cfg.popup_css)}</style>` : '';
       return `${style}<div class="dl-popup-custom">${body}</div>`;
     }
@@ -3485,7 +3978,15 @@
         const ACCESSIBLE = ['any',
           ['==', ['get', 'site_type'], 'handicapped'],
           ['==', ['slice', ['downcase', ['to-string', ['coalesce', ['get', 'ref'], ['get', 'name'], '']]], 0, 1], 'a']];
+        // Glyph shape by site type; tint by site type normally, or by the live
+        // `_avail` status when the availability tool is active (the dynamic sprite
+        // generator tints any `glyph@#hex` on demand, so the colors compose).
+        const GLYPH = ['case', ACCESSIBLE, 'dl-accessible',
+          ['==', ['get', 'site_type'], 'electrical'], 'dl-rv', 'dl-tent'];
+        const AVAIL_TINT = ['match', ['get', '_avail'],
+          'available', '#27ae60', 'partial', '#e6a817', 'unavailable', '#c0392b', '#9aa0a6'];
         const ICON = ['case',
+          ['has', '_avail'], ['concat', GLYPH, '@', AVAIL_TINT],
           ACCESSIBLE, 'dl-accessible@#2563eb',
           ['==', ['get', 'site_type'], 'electrical'], 'dl-rv@#e67e22',
           'dl-tent@#27ae60'];
@@ -4136,6 +4637,29 @@
     };
   }
 
+  // Desktop arrow nav for horizontal galleries (photos + amenities). Touch devices
+  // hide the arrows (CSS) and drag the strip natively (overflow-x: auto).
+  function wireScrollers(root) {
+    root.querySelectorAll('.dl-gal').forEach(gal => {
+      const strip = gal.querySelector('.popup-photos, .cp-amen');
+      const prev = gal.querySelector('.dl-gal-prev');
+      const next = gal.querySelector('.dl-gal-next');
+      if (!strip || !prev || !next) return;
+      const update = () => {
+        const max = strip.scrollWidth - strip.clientWidth - 1;
+        const scrollable = strip.scrollWidth > strip.clientWidth + 2;
+        prev.classList.toggle('show', scrollable && strip.scrollLeft > 2);
+        next.classList.toggle('show', scrollable && strip.scrollLeft < max);
+      };
+      const step = () => Math.max(120, Math.round(strip.clientWidth * 0.8));
+      prev.addEventListener('click', () => strip.scrollBy({ left: -step(), behavior: 'smooth' }));
+      next.addEventListener('click', () => strip.scrollBy({ left: step(), behavior: 'smooth' }));
+      strip.addEventListener('scroll', update, { passive: true });
+      strip.querySelectorAll('img').forEach(img => { if (!img.complete) img.addEventListener('load', update, { once: true }); });
+      requestAnimationFrame(update);
+    });
+  }
+
   // Open a feature popup and wire its interactive parts. Used by map clicks
   // and by in-popup navigation (area climb lists, prev/next stepping), which
   // chain popups with a flyTo between them. On mobile it renders as a bottom
@@ -4144,7 +4668,7 @@
     const html = buildPopupHTML(feature.properties, sourceKey);
     const surface = isMobile()
       ? openFeatureSheet(html)
-      : new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '320px' })
+      : new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '336px' })
           .setLngLat(lngLat).setHTML(html).addTo(map);
     let sortMode = 'alpha';   // survives grade-pill rebuilds
 
@@ -4251,6 +4775,8 @@
           openLightbox(data, +img.dataset.idx);
         });
       });
+      // Desktop arrows for the photo + amenity galleries (mobile drags natively).
+      wireScrollers(el);
       // Climb-list tools: sort (A–Z / grade) + grade pills. The pills SET
       // the sidebar's slider ranges — one shared filter state — and the
       // popup re-renders from it.
