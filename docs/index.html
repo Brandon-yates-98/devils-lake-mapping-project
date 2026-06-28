@@ -5158,47 +5158,19 @@
   function buildTrailFilters(pane, layers) {
     const title = txt => { const d = document.createElement('div'); d.className = 'fb-pane-title'; d.textContent = txt; pane.appendChild(d); };
 
-    // (Trail-name search now lives in the shared search column, built in buildFiltersBar.)
-    // Trail-type layer toggles — only the loop-eligible trail layers (+ loops);
-    // other trail types are intentionally left out of this module.
-    const toggleSrcs = layers.filter(l => LOOP_TRAIL_SOURCES.includes(l.source_key) || l.source_key === 'hiking_loops');
-    if (toggleSrcs.length) {
-      title('Trail layers');
-      const row = document.createElement('div');
-      row.className = 'cf-chips ft-chip-row';
-      toggleSrcs.forEach(l => {
-        const key = l.source_key;
-        const sideRow = () => document.querySelector(`.layer-row[data-source="${key}"]`);
-        const sr0 = sideRow();
-        const chip = document.createElement('span');
-        chip.dataset.source = key;   // so enableTabLayers can re-sync the chip state
-        chip.className = 'cf-chip' + ((sr0 ? sr0.classList.contains('on') : l.visible_by_default) ? ' active' : '');
-        chip.textContent = (layerMeta[key] && layerMeta[key].label) || l.label || key;
-        chip.addEventListener('click', () => {
-          const sr = sideRow();
-          if (sr) { sr.click(); chip.classList.toggle('active', sr.classList.contains('on')); }
-          else { setLayerVisible(key, chip.classList.toggle('active')); }
-        });
-        row.appendChild(chip);
-      });
-      pane.appendChild(row);
-    }
-
+    // (Trail-name search lives in the shared search column, built in buildFiltersBar.)
     // Distance + elevation-gain range sliders (loop filters; bounds filled after
-    // data loads). Surface chips below.
+    // data loads). Layer + surface filters are dropped for now.
     title('Distance & elevation gain');
     const ranges = document.createElement('div'); ranges.className = 'cf-grades'; ranges.id = 'ft-ranges';
     pane.appendChild(ranges);
-    title('Surface');
-    const surf = document.createElement('div'); surf.className = 'cf-chips ft-chip-row'; surf.id = 'ft-surface-row';
-    pane.appendChild(surf);
 
     // Relocate the POI chips (loops are now browsed via the hierarchical search).
     const poi = document.getElementById('poi-filter-chips');
     if (poi) { title('Points of interest'); pane.appendChild(poi); }
 
-    // Fill the surface chips + distance/elevation sliders (data is usually already
-    // cached on a rebuild; init also calls this after the first data load).
+    // Fill the distance/elevation sliders (data is usually already cached on a
+    // rebuild; init also calls this after the first data load).
     populateTrailAttrFilters();
   }
 
