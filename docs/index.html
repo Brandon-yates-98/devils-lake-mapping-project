@@ -40,7 +40,7 @@
       person_profiles: 'identified_only',    // anonymous visitors don't create profiles (lighter, cheaper)
       autocapture: true,                     // auto-track clicks/inputs on buttons & links
       capture_pageview: true,
-      disable_session_recording: true        // off: heavy + a privacy ask on a public map
+      disable_session_recording: false       // session replay on (project opt-in also enabled)
     });
     // Segment every event by which experience the visitor is in. Registered
     // synchronously from the URL so the FIRST pageview already carries it (most
