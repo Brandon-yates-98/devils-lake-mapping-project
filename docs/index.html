@@ -435,9 +435,11 @@
     .cf-grades .cf-label { margin-top: 0; }
     .cf-grade .cf-vrange { margin-left: 0; margin-right: 0; }
     #exp-filters #cf-types { margin-top: 10px; }
-    /* Climbing: top-align the columns so the grade sliders line up with the search bar */
+    /* Climbing: top-align the columns, then nudge the grades up so the slider
+       track sits at the search input's vertical center (not below it). */
     #exp-bar[data-filter-tab="climbing"] .exp-bar-row { align-items: flex-start; }
     #exp-bar[data-filter-tab="climbing"] #exp-filters .cf-grades .cf-label { margin-top: 0; }
+    #exp-bar[data-filter-tab="climbing"] #exp-filters .cf-grades { margin-top: -6px; }
     @media (max-width: 600px) {
       #fb-search-host { flex: 1 1 100%; order: 1; }
       #exp-filters .fb-body { width: auto; }
