@@ -352,6 +352,50 @@
     .loop-mi { font-variant-numeric: tabular-nums; font-weight: 700; color: #cfe39a; font-size: 10.5px; flex-shrink: 0; }
     .loop-empty { font-size: 11px; color: rgba(255,255,255,0.4); padding: 6px; }
 
+    /* ── Floating Filters panel (Climbing / Trails) with bottom-edge tabs ── */
+    #filters-bar {
+      position: absolute; z-index: 44; left: 0; right: 0; margin: 0 auto;
+      top: calc(12px + env(safe-area-inset-top, 0px));
+      width: fit-content; max-width: calc(100% - 24px);
+      display: flex; flex-direction: column; align-items: center;
+      font-family: 'Inter', sans-serif; pointer-events: none;
+    }
+    body.has-exp-bar #filters-bar { top: calc(var(--exp-bar-h, 56px) + 26px + env(safe-area-inset-top, 0px)); }
+    .fb-panel {
+      pointer-events: auto; width: 300px; max-width: 100%;
+      background: rgba(14,22,12,0.92); backdrop-filter: blur(6px);
+      border: 1px solid rgba(155,194,60,0.35); border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.4); padding: 12px 14px;
+    }
+    .fb-body { max-height: min(62vh, 460px); overflow-y: auto; }
+    .fb-pane { display: none; }
+    .fb-pane.active { display: block; }
+    /* Relocated modules render normally inside a pane regardless of their old
+       sidebar visibility class */
+    .fb-body #climbing-filter-panel { display: block !important; }
+    .fb-body .loop-browser,
+    .fb-body .poi-filters { display: flex !important; padding: 0; }
+    .fb-pane-title { font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+      color: rgba(255,255,255,0.5); text-transform: uppercase; margin: 10px 0 5px; }
+    .fb-pane-title:first-child { margin-top: 0; }
+    .fb-tabs { pointer-events: auto; display: flex; gap: 6px; margin-top: -1px; }
+    .fb-tab {
+      display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.3px; padding: 6px 16px;
+      background: rgba(14,22,12,0.78); color: rgba(255,255,255,0.5);
+      border: 1px solid rgba(155,194,60,0.35); border-top: none;
+      border-radius: 0 0 11px 11px; box-shadow: 0 5px 12px rgba(0,0,0,0.3); transition: all 0.15s;
+    }
+    .fb-tab i { font-size: 10px; }
+    .fb-tab:hover { color: rgba(255,255,255,0.85); }
+    .fb-tab.active { background: rgba(14,22,12,0.92); color: #9bc23c; }
+    /* Trail attribute filter chips reuse the climbing .cf-chip look */
+    .ft-chip-row { display: flex; flex-wrap: wrap; gap: 4px; }
+    @media (max-width: 600px) {
+      #filters-bar { max-width: calc(100% - 16px); }
+      .fb-panel { width: calc(100vw - 28px); }
+    }
+
     /* ── Climbing filter panel ── */
     #climbing-filter-panel { display: none; }
     .cf-search-wrap {
@@ -1621,6 +1665,12 @@
       </div>
       <ul id="exp-suggestions" class="exp-autocomplete" role="listbox"></ul>
       <div id="exp-list" class="exp-list"></div>
+    </div>
+
+    <!-- Filters panel (Climbing / Trails): floats over the map, tabs protrude from the bottom edge -->
+    <div id="filters-bar" style="display:none">
+      <div class="fb-panel"><div id="fb-body" class="fb-body"></div></div>
+      <div id="fb-tabs" class="fb-tabs"></div>
     </div>
   </div>
 
@@ -4547,11 +4597,6 @@
       });
       groupEl.appendChild(header);
       groupLayers.forEach(layerCfg => renderLayerRow(layerCfg, groupEl));
-      // Climbing filters live inside the Climbing group, beneath its layer rows.
-      if (climbPanel && groupLayers.some(l => l.source_key === 'climbing_areas')) {
-        climbPanel.classList.remove('collapsed');   // no own heading inside the group — keep content open
-        groupEl.appendChild(climbPanel);
-      }
       listEl.appendChild(groupEl);
     });
 
@@ -4577,6 +4622,9 @@
     } else if (campSection) {
       campSection.style.display = 'none';
     }
+
+    // Consolidate the Climbing + Trails filters into the floating top-of-map panel.
+    buildFiltersBar(layers);
 
     // The max-price slider + the predefined filter presets (populated later by
     // initFeatureFilters into #ff-presets; configured by initCampFilter).
@@ -4711,6 +4759,149 @@
         container.appendChild(chipPanel);
       }
     }
+  }
+
+  // ── Floating Filters panel: Climbing + Trails tabs ───────────────
+  // Relocates the already-built climbing panel + loop browser + POI chips into
+  // tab panes (same trick the sidebar used), and adds trail type toggles +
+  // skill/surface attribute filters. Called at the end of buildLayersFromConfig.
+  const trailAttr = { skill: new Set(), surface: new Set() };
+
+  function buildFiltersBar(layers) {
+    const bar = document.getElementById('filters-bar');
+    const body = document.getElementById('fb-body');
+    const tabsEl = document.getElementById('fb-tabs');
+    if (!bar || !body || !tabsEl) return;
+    body.innerHTML = '';
+    tabsEl.innerHTML = '';
+
+    const hasClimb = layers.some(l => CLIMB_SOURCES.includes(l.source_key));
+    const hasTrails = layers.some(l => l.source_key.startsWith('sauk_trail') || l.source_key === 'hiking_loops');
+    const panes = [];
+
+    if (hasClimb) {
+      const pane = document.createElement('div');
+      pane.className = 'fb-pane';
+      const cp = document.getElementById('climbing-filter-panel');
+      if (cp) { cp.classList.remove('collapsed'); pane.appendChild(cp); }  // move the wired panel
+      body.appendChild(pane);
+      panes.push({ key: 'climbing', label: 'Climbing', icon: 'fa-mountain-sun', el: pane });
+    }
+    if (hasTrails) {
+      const pane = document.createElement('div');
+      pane.className = 'fb-pane';
+      buildTrailFilters(pane, layers);
+      body.appendChild(pane);
+      panes.push({ key: 'trails', label: 'Trails', icon: 'fa-person-hiking', el: pane });
+    }
+
+    if (!panes.length) { bar.style.display = 'none'; document.body.classList.remove('has-filters-bar'); return; }
+    bar.style.display = '';
+    document.body.classList.add('has-filters-bar');
+
+    // Default to the Trails tab when present (it's the main-map focus), else first.
+    let active = panes.findIndex(p => p.key === 'trails');
+    if (active < 0) active = 0;
+    panes.forEach((p, i) => {
+      const t = document.createElement('button');
+      t.className = 'fb-tab' + (i === active ? ' active' : '');
+      t.innerHTML = `<i class="fa-solid ${p.icon}"></i> ${p.label}`;
+      t.addEventListener('click', () => {
+        panes.forEach(q => q.el.classList.toggle('active', q === p));
+        tabsEl.querySelectorAll('.fb-tab').forEach((b, j) => b.classList.toggle('active', j === i));
+      });
+      tabsEl.appendChild(t);
+      p.el.classList.toggle('active', i === active);
+    });
+    tabsEl.style.display = panes.length > 1 ? '' : 'none';
+  }
+
+  function buildTrailFilters(pane, layers) {
+    const title = txt => { const d = document.createElement('div'); d.className = 'fb-pane-title'; d.textContent = txt; pane.appendChild(d); };
+
+    // Trail-type layer toggles (mirror the sidebar rows so the two stay in sync).
+    const toggleSrcs = layers.filter(l => l.source_key.startsWith('sauk_trail') || l.source_key === 'hiking_loops');
+    if (toggleSrcs.length) {
+      title('Trail layers');
+      const row = document.createElement('div');
+      row.className = 'cf-chips ft-chip-row';
+      toggleSrcs.forEach(l => {
+        const key = l.source_key;
+        const sideRow = () => document.querySelector(`.layer-row[data-source="${key}"]`);
+        const sr0 = sideRow();
+        const chip = document.createElement('span');
+        chip.className = 'cf-chip' + ((sr0 ? sr0.classList.contains('on') : l.visible_by_default) ? ' active' : '');
+        chip.textContent = (layerMeta[key] && layerMeta[key].label) || l.label || key;
+        chip.addEventListener('click', () => {
+          const sr = sideRow();
+          if (sr) { sr.click(); chip.classList.toggle('active', sr.classList.contains('on')); }
+          else { setLayerVisible(key, chip.classList.toggle('active')); }
+        });
+        row.appendChild(chip);
+      });
+      pane.appendChild(row);
+    }
+
+    // Skill / surface attribute chips (values filled after data loads).
+    title('Skill level');
+    const skill = document.createElement('div'); skill.className = 'cf-chips ft-chip-row'; skill.id = 'ft-skill-row';
+    pane.appendChild(skill);
+    title('Surface');
+    const surf = document.createElement('div'); surf.className = 'cf-chips ft-chip-row'; surf.id = 'ft-surface-row';
+    pane.appendChild(surf);
+
+    // Relocate the loop browser + POI chips (already built + wired).
+    const lb = document.getElementById('loop-browser');
+    if (lb) { title('Hiking loops'); pane.appendChild(lb); }
+    const poi = document.getElementById('poi-filter-chips');
+    if (poi) { title('Points of interest'); pane.appendChild(poi); }
+  }
+
+  // Fill the skill/surface chips from loaded trail data + wire the filter. Called
+  // after loadLayerData (values aren't known until the trail features are cached).
+  function populateTrailAttrFilters() {
+    const skillRow = document.getElementById('ft-skill-row');
+    const surfRow = document.getElementById('ft-surface-row');
+    if (!skillRow || !surfRow) return;
+    const skills = new Set(), surfaces = new Set();
+    Object.keys(layerCache).forEach(k => {
+      if (!k.startsWith('sauk_trail')) return;
+      (layerCache[k].features || []).forEach(f => {
+        const p = f.properties || {};
+        if (p.skill_level) skills.add(String(p.skill_level));
+        if (p.surface) surfaces.add(String(p.surface));
+      });
+    });
+    const build = (rowEl, values, kind) => {
+      rowEl.innerHTML = '';
+      if (!values.size) { rowEl.innerHTML = '<span class="loop-empty">none</span>'; return; }
+      [...values].sort().forEach(v => {
+        const chip = document.createElement('span');
+        chip.className = 'cf-chip' + (trailAttr[kind].has(v) ? ' active' : '');
+        chip.textContent = v;
+        chip.addEventListener('click', () => {
+          if (chip.classList.toggle('active')) trailAttr[kind].add(v); else trailAttr[kind].delete(v);
+          applyTrailFilters();
+        });
+        rowEl.appendChild(chip);
+      });
+    };
+    build(skillRow, skills, 'skill');
+    build(surfRow, surfaces, 'surface');
+  }
+
+  // Filter every sauk_trail_* line/case layer by the selected skill/surface values
+  // (AND-combined with any base filter). No selection = base filter only.
+  function applyTrailFilters() {
+    const extra = [];
+    if (trailAttr.skill.size) extra.push(['match', ['get', 'skill_level'], [...trailAttr.skill], true, false]);
+    if (trailAttr.surface.size) extra.push(['match', ['get', 'surface'], [...trailAttr.surface], true, false]);
+    Object.keys(layerMeta).forEach(k => {
+      if (!k.startsWith('sauk_trail')) return;
+      const base = layerBaseFilter[k] || null;
+      const expr = extra.length ? (base ? ['all', base, ...extra] : ['all', ...extra]) : base;
+      ['-line', '-case'].forEach(suf => { if (map.getLayer(k + suf)) map.setFilter(k + suf, expr); });
+    });
   }
 
   // The climbing_areas source renders as two toggleable marker families —
@@ -5478,6 +5669,7 @@
     initFeatureFilters(layers);
     initExperienceBar();
     if (layerMeta['hiking_loops']) populateLoopBrowser();
+    populateTrailAttrFilters();
 
     document.getElementById('feature-count-badge').innerHTML =
       `<i class="fa-solid fa-layer-group"></i> ${total.toLocaleString()} Features`;
