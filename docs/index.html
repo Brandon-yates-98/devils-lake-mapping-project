@@ -4915,7 +4915,9 @@
         // the type chips. Drop the in-panel search + the Area/Type headers.
         if (cp.dataset.fbReflow) return;
         cp.dataset.fbReflow = '1';
-        const sw = cp.querySelector('.cf-search-wrap'); if (sw) sw.remove();
+        // Keep the in-panel .cf-search-wrap in the DOM (hidden via CSS) — its
+        // #cf-search input is still wired by setupClimbingFilterListeners; the
+        // visible search lives in the search column.
         const dropLabel = el => { if (!el) return; const l = el.previousElementSibling; if (l && l.classList.contains('cf-label')) l.remove(); };
         const area = cp.querySelector('#cf-area'); dropLabel(area);
         const types = cp.querySelector('#cf-types'); dropLabel(types);
