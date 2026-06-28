@@ -52,7 +52,61 @@
     } catch (e) {}
     // No-op safe wrapper so capture() calls never throw if the key is missing or PH is blocked.
     window.track = function (event, props) { try { window.posthog && posthog.capture(event, props); } catch (e) {} };
-  </script>
+
+    // ── Outbound-link tracking ──────────────────────────────────────────────
+    // One `outbound_click` event per external link, organised by `source` (the
+    // destination site) with a `label` (the feature it came from, e.g. the climb
+    // name) so events read like "Mountain Project: Mammalary Magic" in PostHog.
+    (function () {
+      var SOURCES = [
+        ['mountainproject.com', 'Mountain Project'],
+        ['openbeta.io', 'OpenBeta'],
+        ['campflare.com', 'Campflare'],
+        ['goingtocamp.com', 'GoingToCamp'],
+        ['campspot.com', 'Campspot'],
+        ['recreation.gov', 'Recreation.gov'],
+        ['reserveamerica.com', 'ReserveAmerica'],
+        ['co.sauk.wi.us', 'Sauk County GIS'],
+        ['openstreetmap.org', 'OpenStreetMap'],
+        ['opentopomap.org', 'OpenTopoMap'],
+        ['maps.apple.com', 'Apple Maps'],
+        ['google.com/maps', 'Google Maps'],
+        ['flaticon.com', 'Flaticon'],
+        ['thenounproject.com', 'Noun Project'],
+        ['opendatacommons.org', 'Open Data Commons'],
+      ];
+      function sourceFor(u) {
+        var h = (u.hostname + u.pathname).toLowerCase();
+        for (var i = 0; i < SOURCES.length; i++) if (h.indexOf(SOURCES[i][0]) !== -1) return SOURCES[i][1];
+        return u.hostname.replace(/^www\./, '');
+      }
+      function labelFor(a) {
+        var pop = a.closest('.mapboxgl-popup-content, #trail-popup, #feature-sheet, .dl-popup-custom');
+        if (pop) {
+          var t = pop.querySelector('.popup-feature-name, .tr-pop-title, .cs-pop-title');
+          if (t && t.textContent.trim()) return t.textContent.replace(/\s+/g, ' ').trim();
+        }
+        var txt = (a.textContent || '').replace(/\s+/g, ' ').trim();
+        return txt || null;
+      }
+      document.addEventListener('click', function (e) {
+        if (e.defaultPrevented) return;                 // skip links intercepted into modals, etc.
+        var a = e.target.closest && e.target.closest('a[href]');
+        if (!a) return;
+        var href = a.getAttribute('href') || '';
+        if (!/^https?:\/\//i.test(href)) return;        // ignore in-page / relative links
+        var u; try { u = new URL(href, location.href); } catch (err) { return; }
+        if (u.hostname === location.hostname) return;    // internal
+        window.track('outbound_click', {
+          source: sourceFor(u),
+          label: labelFor(a),
+          url: u.href,
+          domain: u.hostname.replace(/^www\./, ''),
+          link_text: (a.textContent || '').replace(/\s+/g, ' ').trim() || null,
+        });
+      });
+    })();
+</script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
