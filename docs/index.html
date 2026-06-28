@@ -385,10 +385,13 @@
       background: rgba(14,22,12,0.97); border: 1px solid rgba(155,194,60,0.3); border-radius: 12px; padding: 4px; }
     .fb-list.open { display: flex; }
     #exp-filters .cf-search-wrap { display: none; }   /* climbing uses the unified search */
-    #exp-filters #climbing-filter-panel { padding: 0; border: none; }
+    #exp-filters #climbing-filter-panel { padding: 0; border: none; margin: 0; }
     /* Climbing tab: two columns (search+area | chips+sliders), like campgrounds */
     .cf-cols { display: flex; gap: 16px; align-items: flex-start; }
     .cf-col { flex: 1 1 210px; min-width: 200px; display: flex; flex-direction: column; }
+    .cf-cols .cf-col > :first-child { margin-top: 0; }
+    .cf-cols .cf-label { margin-top: 9px; margin-bottom: 4px; }
+    .cf-cols #cf-result-count { margin-top: 8px; }
     @media (max-width: 600px) {
       .cf-cols { flex-direction: column; gap: 4px; }
       .cf-col { min-width: 0; flex: 1 1 auto; }
@@ -4839,9 +4842,12 @@
         if (!cp) return;
         cp.classList.remove('collapsed');
         p.appendChild(cp);
-        // Two columns (like campgrounds): left = search + List + Areas dropdown;
-        // right = type chips + the two grade sliders. Move the wired controls
-        // (ids preserved) into the columns; the listeners keep working.
+        // Restructure into two columns ONCE — the panel is a singleton re-appended
+        // on every layer rebuild, so guard against accumulating duplicates.
+        if (cp.dataset.fbCols) return;
+        cp.dataset.fbCols = '1';
+        // Left = search + List + Areas dropdown; right = type chips + grade sliders.
+        // Move the wired controls (ids preserved) into the columns.
         const cols = document.createElement('div'); cols.className = 'cf-cols';
         const left = document.createElement('div'); left.className = 'cf-col';
         const right = document.createElement('div'); right.className = 'cf-col';
@@ -4858,13 +4864,18 @@
             return out.slice(0, 200);
           },
         }).el);
+        const area = cp.querySelector('#cf-area');
+        if (area) {
+          const lbl = area.previousElementSibling;   // drop the "Area" header
+          if (lbl && lbl.classList.contains('cf-label')) lbl.remove();
+          left.appendChild(area);
+        }
         const moveWithLabel = (el, col) => {
           if (!el) return;
           const prev = el.previousElementSibling;
           if (prev && prev.classList.contains('cf-label')) col.appendChild(prev);
           col.appendChild(el);
         };
-        moveWithLabel(cp.querySelector('#cf-area'), left);            // areas dropdown under search
         moveWithLabel(cp.querySelector('#cf-types'), right);          // type chips
         cp.querySelectorAll('.cf-vrange').forEach(vr => moveWithLabel(vr, right));  // both grade sliders
         const rc = cp.querySelector('#cf-result-count'); if (rc) right.appendChild(rc);
