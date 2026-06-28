@@ -380,8 +380,10 @@
     #exp-bar.collapsed .fb-tabs { display: none !important; }
     /* Per-tab search + inline result list (reuses the campsite search styling) */
     .fb-search { margin-bottom: 8px; }
-    .fb-search .exp-search-wrap { width: 100%; }
-    .fb-list { display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow-y: auto; margin-top: 6px; }
+    .fb-search .exp-search-wrap { flex: 1 1 auto; }
+    .fb-list { display: none; flex-direction: column; gap: 2px; max-height: 240px; overflow-y: auto; margin-top: 6px;
+      background: rgba(14,22,12,0.97); border: 1px solid rgba(155,194,60,0.3); border-radius: 12px; padding: 4px; }
+    .fb-list.open { display: flex; }
     #exp-filters .cf-search-wrap { display: none; }   /* climbing uses the unified search */
 
     /* ── Climbing filter panel ── */
@@ -4720,33 +4722,55 @@
   const trailAttr = { skill: new Set(), surface: new Set() };
   let activeFilterTab = null;
 
-  // Reusable per-tab search box + inline result list, styled like the campsite
-  // search/list. cfg.getItems(query) -> [{name, meta, fly()}]; pick calls fly().
+  // Reusable per-tab search, mirroring the campsite search: a formatted search bar
+  // with a "List N" button beside it that toggles a result list. cfg.getItems(q)
+  // -> [{name, meta, fly()}] (q '' returns all); picking a row calls fly().
   function buildTabSearch(cfg) {
     const wrap = document.createElement('div');
     wrap.className = 'fb-search';
     wrap.innerHTML = `
-      <div class="exp-search-wrap">
-        <i class="fa-solid fa-magnifying-glass exp-search-icon"></i>
-        <input type="text" class="exp-search-input" placeholder="${cfg.placeholder}" autocomplete="off" />
-        <button class="exp-clear-btn" type="button" style="display:none">×</button>
+      <div class="exp-bar-search-row">
+        <div class="exp-search-wrap">
+          <i class="fa-solid fa-magnifying-glass exp-search-icon"></i>
+          <input type="text" class="exp-search-input" placeholder="${cfg.placeholder}" autocomplete="off" />
+          <button class="exp-clear-btn" type="button" style="display:none">×</button>
+        </div>
+        <button class="exp-bar-btn fb-list-btn" type="button"><i class="fa-solid fa-list-ul"></i> List <span class="exp-count fb-list-count"></span></button>
       </div>
       <div class="fb-list"></div>`;
     const input = wrap.querySelector('input');
     const clear = wrap.querySelector('.exp-clear-btn');
+    const listBtn = wrap.querySelector('.fb-list-btn');
+    const countEl = wrap.querySelector('.fb-list-count');
     const list = wrap.querySelector('.fb-list');
-    const render = () => {
+    const renderRows = items => {
+      list.innerHTML = items.length
+        ? items.map((it, i) => `<button class="exp-row" data-i="${i}"><span class="exp-row-name">${escapeHtml(it.name)}</span>${it.meta ? `<span class="exp-row-meta">${escapeHtml(it.meta)}</span>` : ''}</button>`).join('')
+        : '<div class="exp-list-empty">No matches</div>';
+      list.querySelectorAll('.exp-row').forEach(b => b.addEventListener('click', () => {
+        items[+b.dataset.i].fly();
+        list.classList.remove('open'); listBtn.classList.remove('active');
+      }));
+    };
+    const update = () => {
       const q = input.value.trim();
       clear.style.display = q ? '' : 'none';
       const items = cfg.getItems(q);
-      list.innerHTML = items.length
-        ? items.map((it, i) => `<button class="exp-row" data-i="${i}"><span class="exp-row-name">${escapeHtml(it.name)}</span>${it.meta ? `<span class="exp-row-meta">${escapeHtml(it.meta)}</span>` : ''}</button>`).join('')
-        : (q ? '<div class="exp-list-empty">No matches</div>' : '');
-      list.querySelectorAll('.exp-row').forEach(b => b.addEventListener('click', () => items[+b.dataset.i].fly()));
+      countEl.textContent = items.length || '';
+      if (list.classList.contains('open')) renderRows(items);
+      return items;
     };
-    input.addEventListener('input', render);
-    clear.addEventListener('click', () => { input.value = ''; render(); });
-    return { el: wrap, refresh: render };
+    input.addEventListener('input', () => {
+      const items = update();
+      if (input.value.trim()) { list.classList.add('open'); listBtn.classList.add('active'); renderRows(items); }
+    });
+    clear.addEventListener('click', () => { input.value = ''; update(); list.classList.remove('open'); listBtn.classList.remove('active'); });
+    listBtn.addEventListener('click', () => {
+      const open = list.classList.toggle('open');
+      listBtn.classList.toggle('active', open);
+      if (open) renderRows(cfg.getItems(input.value.trim()));
+    });
+    return { el: wrap, refresh: update };
   }
 
   // Fly + highlight every segment of a named trail (its "variants").
@@ -4806,13 +4830,13 @@
         p.appendChild(buildTabSearch({
           placeholder: 'Search routes & boulders…',
           getItems: q => {
-            if (!q) return [];
             const ql = q.toLowerCase(), out = [];
             CLIMB_SOURCES.forEach(src => ((layerCache[src] || {}).features || []).forEach(f => {
               const n = f.properties.name || '';
-              if (n.toLowerCase().includes(ql)) out.push({ name: n, meta: f.properties.grade || '', fly: () => flyToFeature(src, f.properties.id) });
+              if (n && (!ql || n.toLowerCase().includes(ql))) out.push({ name: n, meta: f.properties.grade || '', fly: () => flyToFeature(src, f.properties.id) });
             }));
-            return out.slice(0, 40);
+            out.sort((a, b) => a.name.localeCompare(b.name));
+            return out.slice(0, 200);
           },
         }).el);
         const cp = document.getElementById('climbing-filter-panel');
@@ -4859,16 +4883,15 @@
     pane.appendChild(buildTabSearch({
       placeholder: 'Search trails…',
       getItems: q => {
-        if (!q) return [];
         const ql = q.toLowerCase(), groups = new Map();
         Object.keys(layerCache).forEach(k => {
           if (!k.startsWith('sauk_trail')) return;
           (layerCache[k].features || []).forEach(f => {
             const n = (f.properties.name || '').trim();
-            if (n && n.toLowerCase().includes(ql)) (groups.get(n) || groups.set(n, []).get(n)).push(f);
+            if (n && (!ql || n.toLowerCase().includes(ql))) (groups.get(n) || groups.set(n, []).get(n)).push(f);
           });
         });
-        return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(0, 50)
+        return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(0, 200)
           .map(([name, feats]) => ({ name, meta: feats.length + ' seg', fly: () => flyToTrailName(feats) }));
       },
     }).el);
