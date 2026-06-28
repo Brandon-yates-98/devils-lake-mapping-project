@@ -17,3 +17,4 @@ osm_data_files/
 # Never commit or publish these.
 Campsite Maps/
 campsite_maps/
+.env
