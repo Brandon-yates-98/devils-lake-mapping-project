@@ -909,9 +909,13 @@
     .tr-pop-attr { margin-top: 8px; font-size: 9.5px; color: #9aa19a; }
     .tr-pop-attr a { color: #6c8c2e; text-decoration: none; font-weight: 600; }
     .tr-pop-attr a:hover { text-decoration: underline; }
-    /* Associated-loops list in the trail popup */
+    /* Associated-loops list in the trail popup (top 3, sortable) */
     .tr-pop-loops { margin: 2px 0 9px; }
-    .tr-pop-loops-lbl { font-size: 9.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #999; margin-bottom: 5px; }
+    .tr-loop-sort { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+    .tr-loop-sort-lbl { font-size: 9.5px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #999; margin-right: auto; }
+    .tr-loop-sortbtn { background: #eef3e4; color: #4a7a2a; border: 1px solid #d7e3bf; border-radius: 6px;
+      padding: 3px 8px; font-size: 10px; font-weight: 800; cursor: pointer; font-family: inherit; }
+    .tr-loop-sortbtn.active { background: #4a7a2a; color: #fff; border-color: #4a7a2a; }
     .tr-loop-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left;
       background: #f4f7ee; border: 1px solid #e3ead6; border-radius: 6px; padding: 6px 9px; margin-bottom: 4px;
       color: #1f3a17; font-size: 12px; cursor: pointer; font-family: inherit; }
@@ -1996,7 +2000,55 @@
     setLayerOn('hiking_loops', loopsOn);
     document.querySelectorAll('#fb-search-host .fb-modetoggle button')
       .forEach(b => b.classList.toggle('active', b.dataset.mode === hikingLayerMode));
-    if (!loopsOn) clearLoopSel();   // leaving the loops view drops the loop highlight
+    if (!loopsOn) { clearLoopSel(); buildTrailEnds(); }   // leaving loops: drop highlight, refresh trail ends
+    setTrailEndsVisible(!loopsOn);
+  }
+  // Short perpendicular "tick" marks at trail termini (endpoints used by a single
+  // segment — i.e. where a trail starts/stops, not junctions). Built from the
+  // cached hiking-trail features.
+  function ensureTrailEnds() {
+    if (!map || map.getSource('trail_ends')) return;
+    map.addSource('trail_ends', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'trail_ends-line', type: 'line', source: 'trail_ends', minzoom: 12,
+      layout: { visibility: 'none', 'line-cap': 'round' },
+      paint: { 'line-color': '#1f7a3d', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 2, 16, 3.5], 'line-opacity': 0.95 } });
+  }
+  // A short segment perpendicular to the trail at endpoint `pt` (ref = adjacent point).
+  function perpTick(pt, ref, halfLenM) {
+    const mPerLat = 110540, mPerLon = 111320 * Math.cos(pt[1] * Math.PI / 180);
+    let ex = (pt[0] - ref[0]) * mPerLon, ny = (pt[1] - ref[1]) * mPerLat;
+    const len = Math.hypot(ex, ny) || 1; ex /= len; ny /= len;
+    const px = -ny, py = ex;   // perpendicular unit
+    return [
+      [pt[0] + (px * halfLenM) / mPerLon, pt[1] + (py * halfLenM) / mPerLat],
+      [pt[0] - (px * halfLenM) / mPerLon, pt[1] - (py * halfLenM) / mPerLat],
+    ];
+  }
+  function buildTrailEnds() {
+    ensureTrailEnds();
+    const src = map && map.getSource('trail_ends');
+    if (!src) return;
+    const key = c => (+c[0]).toFixed(6) + ',' + (+c[1]).toFixed(6);
+    const ends = [], count = {};
+    LOOP_TRAIL_SOURCES.forEach(s => ((layerCache[s] || {}).features || []).forEach(f => {
+      const g = f.geometry; if (!g) return;
+      const parts = g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : [];
+      parts.forEach(cs => {
+        if (cs.length < 2) return;
+        ends.push({ pt: cs[0], ref: cs[1] }); count[key(cs[0])] = (count[key(cs[0])] || 0) + 1;
+        ends.push({ pt: cs[cs.length - 1], ref: cs[cs.length - 2] }); count[key(cs[cs.length - 1])] = (count[key(cs[cs.length - 1])] || 0) + 1;
+      });
+    }));
+    const feats = [];
+    ends.forEach(e => {
+      if (count[key(e.pt)] !== 1) return;   // skip junctions; only true starts/stops
+      feats.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: perpTick(e.pt, e.ref, 13) }, properties: {} });
+    });
+    src.setData({ type: 'FeatureCollection', features: feats });
+  }
+  function setTrailEndsVisible(on) {
+    ensureTrailEnds();
+    if (map && map.getLayer('trail_ends-line')) map.setLayoutProperty('trail_ends-line', 'visibility', on ? 'visible' : 'none');
   }
   // Apply the distance/elevation sliders to the loops MAP layer (the list filter
   // is separate, in trailsSearchItems).
@@ -3665,12 +3717,14 @@
     const loops = ((layerCache['hiking_loops'] || {}).features || [])
       .filter(f => loopTrailNames(f.properties).some(t => t.toLowerCase() === nl))
       .sort((a, b) => (+a.properties.distance_mi || 0) - (+b.properties.distance_mi || 0));
+    // Sort header + (top 3) rows are rendered/managed in openFeaturePopup's wire().
     const loopsHTML = loops.length ? `<div class="tr-pop-loops">
-        <div class="tr-pop-loops-lbl"><i class="fa-solid fa-arrows-spin"></i> Loops on this trail</div>
-        ${loops.map(f => `<button class="tr-loop-row" type="button" data-loop-id="${escapeHtml(String((f.properties || {}).id))}">
-            <span class="tr-loop-nm">${escapeHtml(f.properties.name || 'Loop')}</span>
-            <span class="tr-loop-meta">${escapeHtml(loopMeta(f.properties))}</span>
-          </button>`).join('')}
+        <div class="tr-loop-sort">
+          <span class="tr-loop-sort-lbl"><i class="fa-solid fa-arrows-spin"></i> Loops on this trail</span>
+          <button class="tr-loop-sortbtn active" type="button" data-sort="dist">Length</button>
+          <button class="tr-loop-sortbtn" type="button" data-sort="gain">Elev gain</button>
+        </div>
+        <div class="tr-loop-list"></div>
       </div>` : '';
     return `<div class="dl-popup-custom"><div class="tr-pop">
       <div class="tr-pop-head" style="border-bottom-color:${meta.color}">
@@ -5311,6 +5365,7 @@
       // 'trails' so loops start off. (The generic loop above flipped them all on;
       // this corrects to a single mode.)
       if (tabKey === 'trails') setHikingMode(hikingLayerMode);
+      else setTrailEndsVisible(false);   // trail end-vertices only with the hiking trail view
       ALWAYS_ON_LAYERS.forEach(k => setLayer(k, true));   // parking + roads on everywhere
     };
     panes.forEach((p, i) => {
@@ -6041,14 +6096,33 @@
           flyToClimb(fsrc, fid);
         });
       });
-      // Trail popup → loops on this trail: select the loop (switches to loops view).
-      el.querySelectorAll('.tr-loop-row').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const lf = ((layerCache['hiking_loops'] || {}).features || [])
-            .find(f => String((f.properties || {}).id) === String(btn.dataset.loopId));
-          if (lf) selectLoop(lf);
-        });
-      });
+      // Trail popup → loops on this trail: top 3, sortable by length / elev gain.
+      const loopBox = el.querySelector('.tr-pop-loops');
+      if (loopBox && sourceKey.startsWith('sauk_trail')) {
+        const nm = (feature.properties.name || '').toLowerCase();
+        const all = ((layerCache['hiking_loops'] || {}).features || [])
+          .filter(f => loopTrailNames(f.properties).some(t => t.toLowerCase() === nm));
+        const listEl = loopBox.querySelector('.tr-loop-list');
+        let mode = 'dist';
+        const renderLoops = () => {
+          const sorted = all.slice().sort((a, b) => mode === 'gain'
+            ? (+a.properties.elev_gain_ft || 0) - (+b.properties.elev_gain_ft || 0)
+            : (+a.properties.distance_mi || 0) - (+b.properties.distance_mi || 0));
+          listEl.innerHTML = sorted.slice(0, 3).map(f =>
+            `<button class="tr-loop-row" type="button" data-loop-id="${escapeHtml(String((f.properties || {}).id))}">
+              <span class="tr-loop-nm">${escapeHtml(f.properties.name || 'Loop')}</span>
+              <span class="tr-loop-meta">${escapeHtml(loopMeta(f.properties))}</span>
+            </button>`).join('');
+          listEl.querySelectorAll('.tr-loop-row').forEach(btn => btn.addEventListener('click', () => {
+            const lf = all.find(f => String((f.properties || {}).id) === String(btn.dataset.loopId));
+            if (lf) selectLoop(lf);
+          }));
+          loopBox.querySelectorAll('.tr-loop-sortbtn').forEach(b => b.classList.toggle('active', b.dataset.sort === mode));
+        };
+        loopBox.querySelectorAll('.tr-loop-sortbtn').forEach(b =>
+          b.addEventListener('click', () => { mode = b.dataset.sort; renderLoops(); }));
+        renderLoops();
+      }
       // Submit photo button
       const submitBtn = el.querySelector('.popup-submit-btn');
       if (submitBtn) submitBtn.addEventListener('click', () => {
