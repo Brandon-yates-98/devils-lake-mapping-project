@@ -6025,7 +6025,7 @@
       let listBottom = 220;
       if (list) { const r = list.getBoundingClientRect(); if (r.height) listBottom = r.bottom - mapRect.top; }
       const offY = Math.min(listBottom / 2, mapRect.height * 0.35);
-      map.easeTo({ center: [-89.73, 43.43], zoom: 11.5, offset: [0, offY] });
+      map.easeTo({ center: [-89.73, 43.43], zoom: 11, offset: [0, offY] });
       return;
     }
     const feats = loopsForTrail(trailBrowseTrail);
