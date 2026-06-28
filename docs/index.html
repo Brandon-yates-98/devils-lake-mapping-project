@@ -332,6 +332,26 @@
       color: #9bc23c;
     }
 
+    /* ── Hiking Loops browser (sortable list under the layer row) ── */
+    .loop-browser { display: none; flex-direction: column; gap: 6px; padding: 4px 6px 8px 14px; }
+    .loop-browser.visible { display: flex; }
+    .layer-group.collapsed .loop-browser { display: none; }
+    .loop-browser-bar { display: flex; gap: 6px; align-items: center; }
+    .loop-sort { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.8); font-size: 11px; border-radius: 6px; padding: 4px 6px; }
+    .loop-clear { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.55); font-size: 10px; border-radius: 6px; padding: 4px 8px; cursor: pointer; }
+    .loop-clear:hover { color: #9bc23c; border-color: rgba(155,194,60,0.4); }
+    .loop-list { display: flex; flex-direction: column; gap: 2px; max-height: 280px; overflow-y: auto; }
+    .loop-item { display: flex; align-items: center; gap: 7px; padding: 5px 7px; border-radius: 6px;
+      cursor: pointer; font-size: 11.5px; color: rgba(255,255,255,0.7); }
+    .loop-item:hover { background: rgba(155,194,60,0.1); color: #fff; }
+    .loop-item.sel { background: rgba(255,213,79,0.16); color: #fff; }
+    .loop-ic { font-size: 10px; color: #9bc23c; width: 12px; text-align: center; flex-shrink: 0; }
+    .loop-nm { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .loop-mi { font-variant-numeric: tabular-nums; font-weight: 700; color: #cfe39a; font-size: 10.5px; flex-shrink: 0; }
+    .loop-empty { font-size: 11px; color: rgba(255,255,255,0.4); padding: 6px; }
+
     /* ── Climbing filter panel ── */
     #climbing-filter-panel { display: none; }
     .cf-search-wrap {
@@ -697,6 +717,14 @@
     .tr-pop-body { background: #fff; padding: 11px 13px 12px; }
     .tr-pop-facts { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11.5px; color: #5a6a4a; margin-bottom: 8px; }
     .tr-pop-facts i { font-size: 10px; color: #9bc23c; margin-right: 3px; }
+    .tr-pop-elev { margin: 0 0 9px; }
+    .tr-pop-elev svg { display: block; width: 100%; height: 44px; }
+    .tr-elev-cap { margin-top: 2px; font-size: 9.5px; color: #9aa19a; text-align: right; }
+    .tr-pop-parking { margin: 0 0 9px; }
+    .tr-pop-parking-lbl { display: block; font-size: 10px; font-weight: 700; color: #6c8c2e; margin-bottom: 3px; }
+    .tr-pop-parking-lbl i { margin-right: 4px; }
+    .loop-parking-select { width: 100%; font-size: 11.5px; padding: 5px 7px; border-radius: 6px;
+      border: 1px solid #cdd8bd; background: #f6f9ef; color: #3a4a2a; }
     .tr-pop-fn { font-size: 11.5px; color: #555; line-height: 1.5; margin-bottom: 9px; }
     .tr-pop-body .popup-directions-btn { width: 100%; margin-top: 0; padding: 9px; border-radius: 7px; box-shadow: none; background: #1f3a17; border: 1px solid rgba(155,194,60,0.35); color: #cfe39a; }
     .tr-pop-body .popup-directions-btn:hover { background: #284b1d; color: #fff; filter: none; }
@@ -3232,6 +3260,31 @@
   const SAUK_TRAIL_DEFAULT = { color: '#b15928', icon: 'fa-route' };
   const saukTrailMeta = t => SAUK_TRAIL_TYPES[t] || SAUK_TRAIL_DEFAULT;
 
+  // Inline SVG elevation profile for a trail, from the precomputed elev_profile
+  // array (feet) set by scripts/compute_trail_elevation.py. Returns '' when the
+  // trail has no profile (e.g. outside the 1m-LiDAR enrichment scope), so the
+  // popup degrades gracefully. Numbers only -> no escaping needed.
+  function buildElevProfileSVG(props, color) {
+    let prof = props.elev_profile;
+    if (typeof prof === 'string') { try { prof = JSON.parse(prof); } catch { prof = null; } }
+    if (!Array.isArray(prof) || prof.length < 2) return '';
+    const W = 240, H = 44, pad = 3;
+    const lo = Math.min(...prof), hi = Math.max(...prof), span = (hi - lo) || 1, n = prof.length;
+    const px = i => pad + (W - 2 * pad) * (i / (n - 1));
+    const py = v => pad + (H - 2 * pad) * (1 - (v - lo) / span);
+    const pts = prof.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(' ');
+    const area = `${pad},${(H - pad).toFixed(1)} ${pts} ${(W - pad).toFixed(1)},${(H - pad).toFixed(1)}`;
+    const c = color || SAUK_TRAIL_DEFAULT.color;
+    const cap = `${lo.toLocaleString()}–${hi.toLocaleString()} ft`;
+    return `<div class="tr-pop-elev">
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+        <polygon points="${area}" fill="${c}" fill-opacity="0.13"></polygon>
+        <polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></polyline>
+      </svg>
+      <div class="tr-elev-cap">${cap}</div>
+    </div>`;
+  }
+
   function buildSaukTrailPopupHTML(props) {
     const name = props.name && String(props.name).trim() ? props.name : 'Unnamed trail';
     const type = props.trail_type || '';
@@ -3239,8 +3292,10 @@
     const fact = (icon, val) => (val != null && String(val).trim() !== '')
       ? `<span><i class="fa-solid ${icon}"></i> ${escapeHtml(String(val))}</span>` : '';
     const len = (props.length_mi != null && !isNaN(props.length_mi)) ? `${(+props.length_mi).toFixed(1)} mi` : '';
+    const gain = (props.elev_gain_ft != null && !isNaN(props.elev_gain_ft)) ? `${Math.round(+props.elev_gain_ft)} ft gain` : '';
     const facts = [
       fact('fa-ruler-horizontal', len),
+      fact('fa-mountain', gain),
       fact('fa-gauge-high', props.skill_level),
       fact('fa-road', props.surface),
       fact('fa-circle-check', props.condition),
@@ -3252,6 +3307,7 @@
       </div>
       <div class="tr-pop-body">
         ${facts ? `<div class="tr-pop-facts">${facts}</div>` : ''}
+        ${buildElevProfileSVG(props, meta.color)}
         ${props.trail_function ? `<div class="tr-pop-fn">${escapeHtml(String(props.trail_function))}</div>` : ''}
         <button class="popup-directions-btn"><i class="fa-solid fa-route"></i> Directions</button>
         <div class="tr-pop-attr">Trail data by <a href="https://www.co.sauk.wi.us" target="_blank" rel="noopener">Sauk County GIS</a></div>
@@ -3330,7 +3386,61 @@
       </div><div class="popup-photo-count">${lbData.length} photo${lbData.length === 1 ? '' : 's'}</div>`;
   }
 
+  // Popup for a precomputed hiking loop / figure-8 / multi-loop circuit. Same card
+  // format as the Sauk trail popup: facts row + inline elevation profile.
+  const LOOP_TYPE_META = {
+    figure8:   { label: 'Figure-8',   icon: 'fa-infinity' },
+    composite: { label: 'Multi-loop', icon: 'fa-circle-nodes' },
+    loop:      { label: 'Loop',       icon: 'fa-arrows-spin' },
+  };
+  function buildLoopPopupHTML(props) {
+    const color = '#1f7a3d';
+    const name = props.name && String(props.name).trim() ? props.name : 'Hiking loop';
+    const meta = LOOP_TYPE_META[props.route_type] || LOOP_TYPE_META.loop;
+    const fact = (icon, val) => (val != null && String(val).trim() !== '')
+      ? `<span><i class="fa-solid ${icon}"></i> ${escapeHtml(String(val))}</span>` : '';
+    const dist = (props.distance_mi != null && !isNaN(props.distance_mi)) ? `${(+props.distance_mi).toFixed(1)} mi` : '';
+    const gain = (props.elev_gain_ft != null && !isNaN(props.elev_gain_ft)) ? `${Math.round(+props.elev_gain_ft)} ft gain` : '';
+    const hilo = (props.elev_min_ft != null && props.elev_max_ft != null && !isNaN(props.elev_min_ft))
+      ? `${Math.round(+props.elev_min_ft).toLocaleString()}–${Math.round(+props.elev_max_ft).toLocaleString()} ft` : '';
+    const facts = [
+      fact('fa-ruler-horizontal', dist),
+      fact('fa-mountain', gain),
+      fact('fa-layer-group', hilo),
+    ].filter(Boolean).join('');
+    let trails = props.trails_label;
+    if (!trails && Array.isArray(props.trail_names)) trails = props.trail_names.join(', ');
+    let near = props.nearby_parking;
+    if (typeof near === 'string') { try { near = JSON.parse(near); } catch { near = []; } }
+    if (!Array.isArray(near)) near = [];
+    const parkLabel = p => (p.name && String(p.name).trim() ? String(p.name)
+      : (p.kind === 'polygon' ? 'Parking lot' : 'Parking'));
+    const parkingBlock = near.length
+      ? `<div class="tr-pop-parking">
+          <label class="tr-pop-parking-lbl"><i class="fa-solid fa-square-parking"></i> Nearby parking (Directions go here)</label>
+          <select class="loop-parking-select">
+            ${near.map((p, i) => `<option value="${i}" data-lon="${p.lon}" data-lat="${p.lat}">${escapeHtml(parkLabel(p))} · ${(+p.dist_mi).toFixed(1)} mi${p.kind === 'polygon' ? '' : ' · point'}</option>`).join('')}
+          </select>
+        </div>`
+      : (props.start_parking ? `<div class="tr-pop-fn"><i class="fa-solid fa-square-parking"></i> Start near ${escapeHtml(String(props.start_parking))}</div>` : '');
+    return `<div class="dl-popup-custom"><div class="tr-pop">
+      <div class="tr-pop-head" style="border-bottom-color:${color}">
+        <div class="tr-pop-title">${escapeHtml(name)}</div>
+        <span class="tr-pop-type" style="background:${color}"><i class="fa-solid ${meta.icon}"></i> ${meta.label}</span>
+      </div>
+      <div class="tr-pop-body">
+        ${facts ? `<div class="tr-pop-facts">${facts}</div>` : ''}
+        ${buildElevProfileSVG(props, color)}
+        ${trails ? `<div class="tr-pop-fn"><i class="fa-solid fa-signs-post"></i> ${escapeHtml(String(trails))}</div>` : ''}
+        ${parkingBlock}
+        <button class="popup-directions-btn"><i class="fa-solid fa-route"></i> Directions</button>
+        <div class="tr-pop-attr">Trail data by <a href="https://www.co.sauk.wi.us" target="_blank" rel="noopener">Sauk County GIS</a> · elevation USGS 3DEP</div>
+      </div>
+    </div></div>`;
+  }
+
   function buildPopupHTML(props, sourceKey) {
+    if (sourceKey === 'hiking_loops') return buildLoopPopupHTML(props);
     const cfg = layerMeta[sourceKey] || { label: 'Feature', color: '#7f8c8d' };
     if (cfg.popup_template && cfg.popup_template.trim()) {
       let body = renderPopupTemplate(cfg.popup_template, buildCtx(props));
@@ -3861,6 +3971,9 @@
         spec.paint['line-color'] = ['coalesce', ['get', 'colour'], color];
         spec.paint['line-dasharray'] = [4, 2];
       }
+      // Hiking loops overlap heavily; show the full set as a faint web (the loops
+      // browser highlights a single selected loop over it via the loop_sel layer).
+      if (key === 'hiking_loops') spec.paint['line-opacity'] = LOOP_BASE_OPACITY;
       map.addLayer(spec);
       mapboxIds.push(key+'-line');
     } else if (geomType === 'point') {
@@ -4527,8 +4640,35 @@
           const chips = document.getElementById('poi-filter-chips');
           if (chips) chips.classList.toggle('visible', nowOn);
         }
+        if (layerCfg.source_key === 'hiking_loops') {
+          const lb = document.getElementById('loop-browser');
+          if (lb) lb.classList.toggle('visible', nowOn);
+          if (nowOn) populateLoopBrowser(); else clearLoopSel();
+        }
       });
       container.appendChild(row);
+
+      // Sortable loop browser beneath the Hiking Loops row.
+      if (layerCfg.source_key === 'hiking_loops') {
+        const lb = document.createElement('div');
+        lb.className = 'loop-browser' + (isOn ? ' visible' : '');
+        lb.id = 'loop-browser';
+        lb.innerHTML = `
+          <div class="loop-browser-bar">
+            <select id="loop-sort" class="loop-sort">
+              <option value="dist-asc">Distance, shortest</option>
+              <option value="dist-desc">Distance, longest</option>
+              <option value="name">Name</option>
+            </select>
+            <button id="loop-clear" class="loop-clear" type="button">Show all</button>
+          </div>
+          <div id="loop-list" class="loop-list"></div>`;
+        lb.addEventListener('click', e => e.stopPropagation());
+        lb.querySelector('#loop-sort').addEventListener('change', populateLoopBrowser);
+        lb.querySelector('#loop-clear').addEventListener('click', clearLoopSel);
+        container.appendChild(lb);
+        populateLoopBrowser();
+      }
 
       // Filter chips for the POI layer
       if (layerCfg.source_key === 'pois') {
@@ -4758,7 +4898,103 @@
     if (s) s.setData({ type: 'FeatureCollection', features: [] });
   }
 
+  // ── Hiking Loops browser ─────────────────────────────────────
+  // The hiking_loops layer is a faint web of all loops; the browser lets you pick
+  // one (sorted by distance), which we draw boldly via loop_sel and zoom to.
+  const LOOP_BASE_OPACITY = 0.3;
+  function ensureLoopSel() {
+    if (map.getSource('loop_sel')) return;
+    // Dashed connector from the selected loop to the chosen parking lot (spur),
+    // drawn beneath the amber loop highlight.
+    map.addSource('loop_spur', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'loop_spur-line', type: 'line', source: 'loop_spur',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#1f5fa8', 'line-dasharray': [1.6, 1.4],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 11, 2.5, 16, 5], 'line-opacity': 0.9 } });
+    map.addSource('loop_sel', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'loop_sel-line', type: 'line', source: 'loop_sel',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#ffd54f', 'line-blur': 1,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 11, 5, 16, 9], 'line-opacity': 0.95 } });
+  }
+  function setLoopSpur(coords) {
+    ensureLoopSel();
+    const s = map.getSource('loop_spur');
+    if (s) s.setData({ type: 'FeatureCollection',
+      features: (Array.isArray(coords) && coords.length > 1)
+        ? [{ type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {} }] : [] });
+  }
+  function loopBBox(geom) {
+    const cs = geom.type === 'LineString' ? geom.coordinates
+      : geom.type === 'MultiLineString' ? geom.coordinates.flat() : [];
+    if (!cs.length) return null;
+    let a = 180, b = 90, c = -180, d = -90;
+    for (const [x, y] of cs) { if (x < a) a = x; if (y < b) b = y; if (x > c) c = x; if (y > d) d = y; }
+    return [[a, b], [c, d]];
+  }
+  function selectLoop(f) {
+    ensureLoopSel();
+    map.getSource('loop_sel').setData({ type: 'FeatureCollection',
+      features: [{ type: 'Feature', geometry: f.geometry, properties: {} }] });
+    if (map.getLayer('hiking_loops-line')) map.setPaintProperty('hiking_loops-line', 'line-opacity', 0.1);
+    const bb = loopBBox(f.geometry);
+    if (bb) map.fitBounds(bb, { padding: isMobile() ? 40 : 70, maxZoom: 15 });
+    const c = featureCentroid(f.geometry);
+    if (c) openFeaturePopup(f, 'hiking_loops', c);
+  }
+  function clearLoopSel() {
+    const s = map.getSource('loop_sel');
+    if (s) s.setData({ type: 'FeatureCollection', features: [] });
+    const sp = map.getSource('loop_spur');
+    if (sp) sp.setData({ type: 'FeatureCollection', features: [] });
+    if (map.getLayer('hiking_loops-line')) map.setPaintProperty('hiking_loops-line', 'line-opacity', LOOP_BASE_OPACITY);
+    const le = document.getElementById('loop-list');
+    if (le) le.querySelectorAll('.loop-item.sel').forEach(x => x.classList.remove('sel'));
+  }
+  // (Re)render the sorted loop list from cached data. Safe to call before data
+  // loads (no-ops) and again after.
+  function populateLoopBrowser() {
+    const listEl = document.getElementById('loop-list');
+    if (!listEl) return;
+    const data = layerCache['hiking_loops'];
+    const feats = (data && data.features ? data.features : []).slice();
+    const mode = (document.getElementById('loop-sort') || {}).value || 'dist-asc';
+    feats.sort((a, b) => {
+      const pa = a.properties || {}, pb = b.properties || {};
+      if (mode === 'name') return String(pa.name || '').localeCompare(String(pb.name || ''));
+      const da = +pa.distance_mi || 0, db = +pb.distance_mi || 0;
+      return mode === 'dist-desc' ? db - da : da - db;
+    });
+    listEl._feats = feats;
+    listEl.innerHTML = feats.length ? feats.map((f, i) => {
+      const p = f.properties || {};
+      const multi = p.route_type && p.route_type !== 'loop';
+      const mi = isNaN(+p.distance_mi) ? '' : (+p.distance_mi).toFixed(1) + ' mi';
+      return `<div class="loop-item" data-i="${i}">
+          <i class="fa-solid ${multi ? 'fa-infinity' : 'fa-arrows-spin'} loop-ic" title="${p.route_type === 'composite' ? 'multi-loop' : multi ? 'figure-8' : 'loop'}"></i>
+          <span class="loop-nm">${escapeHtml(p.name || 'Loop')}</span>
+          <span class="loop-mi">${mi}</span>
+        </div>`;
+    }).join('') : '<div class="loop-empty">No loops loaded</div>';
+    listEl.querySelectorAll('.loop-item').forEach(el => {
+      el.addEventListener('click', () => {
+        listEl.querySelectorAll('.loop-item.sel').forEach(x => x.classList.remove('sel'));
+        el.classList.add('sel');
+        selectLoop(listEl._feats[+el.dataset.i]);
+      });
+    });
+  }
+
   function openFeaturePopup(feature, sourceKey, lngLat) {
+    // A feature from a map click is clipped to the map tiles, so its geometry can
+    // be a partial loop. Swap in the full geometry from the cached GeoJSON (by id)
+    // so highlight/zoom/centroid use the whole route.
+    if (sourceKey === 'hiking_loops') {
+      const cache = layerCache['hiking_loops'];
+      const fid = (feature.properties || {}).id;
+      const full = cache && cache.features.find(x => String((x.properties || {}).id) === String(fid));
+      if (full) feature = full;
+    }
     clearTrailHighlight();
     const html = buildPopupHTML(feature.properties, sourceKey);
     const surface = isMobile()
@@ -4768,6 +5004,10 @@
     if (sourceKey.startsWith('sauk_trail')) {
       highlightTrail(feature);
       if (typeof surface.on === 'function') surface.on('close', clearTrailHighlight);
+    } else if (sourceKey === 'hiking_loops') {
+      ensureLoopSel();
+      map.getSource('loop_sel').setData({ type: 'FeatureCollection',
+        features: [{ type: 'Feature', geometry: feature.geometry, properties: {} }] });
     }
     let sortMode = 'alpha';   // survives grade-pill rebuilds
 
@@ -4775,9 +5015,36 @@
     // state, so all wiring lives in a re-runnable function.
     function wire() {
       const el = surface.getElement();
+      // Nearby-parking dropdown (hiking loops): draw the spur to the selected lot,
+      // pan to it, and point Directions at it instead of the loop centroid.
+      const parkSel = el.querySelector('.loop-parking-select');
+      let nearLots = feature.properties.nearby_parking;
+      if (typeof nearLots === 'string') { try { nearLots = JSON.parse(nearLots); } catch { nearLots = []; } }
+      if (!Array.isArray(nearLots)) nearLots = [];
+      const selectedLot = () => {
+        if (!parkSel) return null;
+        const o = parkSel.options[parkSel.selectedIndex];
+        if (!o) return null;
+        const lon = parseFloat(o.dataset.lon), lat = parseFloat(o.dataset.lat);
+        return (isNaN(lon) || isNaN(lat)) ? null : [lon, lat];
+      };
+      const drawSpur = () => {
+        if (!parkSel) return;
+        const e = nearLots[parkSel.selectedIndex];
+        setLoopSpur(e && e.spur);
+      };
+      if (parkSel) {
+        drawSpur();   // show the nearest lot's spur immediately
+        parkSel.addEventListener('change', () => {
+          drawSpur();
+          const d = selectedLot();
+          if (d) map.easeTo({ center: d, zoom: Math.max(map.getZoom(), 14) });
+        });
+      }
       const dirBtn = el.querySelector('.popup-directions-btn');
       if (dirBtn) dirBtn.addEventListener('click', () => {
-        const dest = featureCentroid(feature.geometry)
+        const dest = selectedLot()
+          || featureCentroid(feature.geometry)
           || (Array.isArray(lngLat) ? lngLat : [lngLat.lng, lngLat.lat]);
         openDirections(dest);
       });
@@ -5210,6 +5477,7 @@
     initCampFilter(layers);
     initFeatureFilters(layers);
     initExperienceBar();
+    if (layerMeta['hiking_loops']) populateLoopBrowser();
 
     document.getElementById('feature-count-badge').innerHTML =
       `<i class="fa-solid fa-layer-group"></i> ${total.toLocaleString()} Features`;
