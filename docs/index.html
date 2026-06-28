@@ -1247,6 +1247,25 @@
     .mapboxgl-popup-close-button { color: rgba(255,255,255,0.6) !important; font-size: 18px !important; line-height: 1 !important; padding: 5px 8px !important; top: 0 !important; right: 0 !important; }
     .mapboxgl-popup-close-button:hover { color: #fff !important; background: rgba(255,255,255,0.12) !important; border-radius: 0 8px 0 4px !important; }
 
+    /* ─── Trails/loops popup pinned to the right side (desktop) ─── */
+    #trail-popup {
+      position: absolute; z-index: 44; top: 50%; right: 12px; transform: translateY(-50%);
+      width: 340px; max-width: calc(100% - 24px); max-height: calc(100% - 24px);
+      display: none; flex-direction: column;
+      background: #fff; border-radius: 10px; overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.45); font-family: 'Inter', sans-serif;
+    }
+    #trail-popup.open { display: flex; }
+    .trail-popup-content { overflow-y: auto; max-height: calc(100dvh - 24px); }
+    .trail-popup-content .dl-popup-custom,
+    .trail-popup-content .dl-popup-custom > * { width: 100% !important; max-width: 100%; box-sizing: border-box; }
+    .trail-popup-close {
+      position: absolute; top: 4px; right: 6px; z-index: 2; background: none; border: none;
+      color: rgba(255,255,255,0.75); font-size: 18px; line-height: 1; padding: 5px 8px; cursor: pointer;
+    }
+    .trail-popup-close:hover { color: #fff; background: rgba(255,255,255,0.14); border-radius: 0 8px 0 6px; }
+    @media (max-width: 600px) { #trail-popup { display: none !important; } }  /* phones use the bottom sheet */
+
     /* ─── Mobile feature bottom-sheet (small screens only; see #feature-sheet) ─── */
     #feature-sheet {
       position: absolute; left: 0; right: 0; bottom: 0; z-index: 40;
@@ -1677,6 +1696,11 @@
     <button id="basemap-switcher" title="Switch basemap" aria-label="Switch basemap">
       <span id="bms-label">Satellite</span>
     </button>
+    <!-- Trails/loops popup pinned to the right side (desktop) -->
+    <div id="trail-popup" aria-label="Trail details">
+      <button class="trail-popup-close" aria-label="Close">&#x2715;</button>
+      <div class="trail-popup-content"></div>
+    </div>
     <!-- Floating clear-filter pill — the always-visible way out of a climbing
          filter, even on mobile where the sidebar drawer is closed -->
     <button id="climb-filter-chip" style="display:none" title="Clear climbing filters">
@@ -5420,6 +5444,28 @@
     };
   }
 
+  // Desktop: trails/loops popups pinned to the right side instead of floating on
+  // the map. Returns the same surface API as the Mapbox popup / bottom sheet.
+  let _trailPanelWired = false;
+  function openTrailPanel(html) {
+    const panel = document.getElementById('trail-popup');
+    const content = panel.querySelector('.trail-popup-content');
+    content.innerHTML = html; content.scrollTop = 0;
+    panel.classList.add('open');
+    const close = () => { panel.classList.remove('open'); if (panel._onClose) panel._onClose(); };
+    if (!_trailPanelWired) {
+      _trailPanelWired = true;
+      panel.querySelector('.trail-popup-close').addEventListener('click', close);
+    }
+    panel._onClose = null;
+    return {
+      getElement: () => panel,
+      setHTML: (h) => { content.innerHTML = h; content.scrollTop = 0; },
+      remove: close,
+      on: (evt, cb) => { if (evt === 'close') panel._onClose = cb; },
+    };
+  }
+
   // Desktop arrow nav for horizontal galleries (photos + amenities). Touch devices
   // hide the arrows (CSS) and drag the strip natively (overflow-x: auto).
   function wireScrollers(root) {
@@ -5632,11 +5678,18 @@
       if (full) feature = full;
     }
     clearTrailHighlight();
+    const tpEl = document.getElementById('trail-popup');   // close any lingering right panel
+    if (tpEl) tpEl.classList.remove('open');
     const html = buildPopupHTML(feature.properties, sourceKey);
+    // Trails + loops pin to the right-side panel on desktop; phones use the sheet;
+    // everything else is a normal map-anchored popup.
+    const isTrailPopup = sourceKey.startsWith('sauk_trail') || sourceKey === 'hiking_loops';
     const surface = isMobile()
       ? openFeatureSheet(html)
-      : new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '336px' })
-          .setLngLat(lngLat).setHTML(html).addTo(map);
+      : isTrailPopup
+        ? openTrailPanel(html)
+        : new mapboxgl.Popup({ offset: 10, closeButton: true, maxWidth: '336px' })
+            .setLngLat(lngLat).setHTML(html).addTo(map);
     if (sourceKey.startsWith('sauk_trail')) {
       highlightTrail(feature);
       if (typeof surface.on === 'function') surface.on('close', clearTrailHighlight);
