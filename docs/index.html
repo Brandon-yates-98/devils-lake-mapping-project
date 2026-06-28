@@ -423,6 +423,13 @@
       background: rgba(14,22,12,0.97); border: 1px solid rgba(155,194,60,0.3); border-radius: 12px; padding: 4px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
     .fb-list.open { display: flex; }
+    /* Sort header at the top of the browse list (hiking loops) */
+    .fb-sort { display: flex; align-items: center; gap: 6px; padding: 3px 4px 6px; margin-bottom: 2px;
+      position: sticky; top: 0; background: rgba(14,22,12,0.99); border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 1; }
+    .fb-sort-lbl { font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+    .fb-sort-btn { background: rgba(155,194,60,0.12); color: #b6d96a; border: 1px solid rgba(155,194,60,0.35);
+      border-radius: 7px; padding: 3px 9px; font-size: 10.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .fb-sort-btn.active { background: rgba(155,194,60,0.3); border-color: rgba(155,194,60,0.7); color: #cfe3a8; }
     #exp-filters .cf-search-wrap { display: none; }   /* climbing search lives in the search column */
     #exp-filters #climbing-filter-panel { padding: 0; border: none; margin: 0; display: flex; flex-direction: column; gap: 4px; }
     #exp-filters #climbing-filter-panel .cf-label { margin-top: 9px; margin-bottom: 0; }
@@ -1888,6 +1895,8 @@
   let climbSearchRef = null;     // the climbing tab's search (buildTabSearch instance)
   let trailBrowseTrail = 'all';  // trail whose loops the trail search lists ('all' = trail list)
   let trailSearchRef = null;     // the trails tab's search (buildTabSearch instance)
+  let trailLoopSort = 'dist';    // loop list sort: 'dist' | 'gain'
+  let trailShowingLoops = false; // true when the trail list is showing loops (sort header)
   // Loop distance/elevation-gain filter (set by the Trails tab sliders).
   const trailLoopFilter = { distMin: -Infinity, distMax: Infinity, gainMin: -Infinity, gainMax: Infinity };
 
@@ -4915,9 +4924,15 @@
     const countEl = wrap.querySelector('.fb-list-count');
     const list = wrap.querySelector('.fb-list');
     const renderRows = items => {
-      list.innerHTML = items.length
+      const header = cfg.header ? cfg.header() : '';
+      list.innerHTML = header + (items.length
         ? items.map((it, i) => `<button class="exp-row" data-i="${i}"><span class="exp-row-name">${escapeHtml(it.name)}</span>${it.meta ? `<span class="exp-row-meta">${escapeHtml(it.meta)}</span>` : ''}</button>`).join('')
-        : '<div class="exp-list-empty">No matches</div>';
+        : '<div class="exp-list-empty">No matches</div>');
+      // Optional sort header (re-renders the list when a sort changes).
+      list.querySelectorAll('.fb-sort-btn').forEach(b => b.addEventListener('click', () => {
+        if (cfg.onSort) cfg.onSort(b.dataset.sort);
+        renderRows(cfg.getItems(input.value.trim()));
+      }));
       list.querySelectorAll('.exp-row').forEach(b => b.addEventListener('click', () => {
         // fly() may return true to keep the list open (e.g. drilling into an
         // area reveals its children in place instead of dismissing the list).
@@ -5082,8 +5097,15 @@
       trailSearchRef = addTabSearch('trails', {
         placeholder: 'Search trails & loops…',
         getItems: q => trailsSearchItems(q),
+        // Sort controls at the top of the list — only while showing loops.
+        header: () => trailShowingLoops ? `<div class="fb-sort">
+            <span class="fb-sort-lbl">Sort</span>
+            <button class="fb-sort-btn${trailLoopSort === 'dist' ? ' active' : ''}" data-sort="dist">Distance</button>
+            <button class="fb-sort-btn${trailLoopSort === 'gain' ? ' active' : ''}" data-sort="gain">Elev gain</button>
+          </div>` : '',
+        onSort: v => { trailLoopSort = v; },
       });
-      addPane('trails', 'Trails', 'fa-person-hiking', p => buildTrailFilters(p, layers));
+      addPane('trails', 'Hiking', 'fa-person-hiking', p => buildTrailFilters(p, layers));
     }
 
     if (!panes.length) { tabsEl.style.display = 'none'; return; }
@@ -5522,6 +5544,32 @@
       layout: { 'line-join': 'round', 'line-cap': 'round' },
       paint: { 'line-color': '#ffd54f', 'line-blur': 1,
         'line-width': ['interpolate', ['linear'], ['zoom'], 11, 5, 16, 9], 'line-opacity': 0.95 } });
+    // Highlight for the parking lot chosen in the loop popup (polygon fill+outline
+    // or a point marker), matching the blue spur.
+    map.addSource('park_sel', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'park_sel-fill', type: 'fill', source: 'park_sel',
+      paint: { 'fill-color': '#1f5fa8', 'fill-opacity': 0.35 } });
+    map.addLayer({ id: 'park_sel-line', type: 'line', source: 'park_sel',
+      paint: { 'line-color': '#1f5fa8', 'line-width': 2.5 } });
+    map.addLayer({ id: 'park_sel-pt', type: 'circle', source: 'park_sel',
+      paint: { 'circle-color': '#1f5fa8', 'circle-radius': 8, 'circle-opacity': 0.85,
+        'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
+  }
+  // Highlight the parking lot for a nearby_parking entry: the real parking feature
+  // (matched by OSM id) if cached, else a point at the entry's centroid.
+  function setParkSel(entry) {
+    ensureLoopSel();
+    const s = map.getSource('park_sel');
+    if (!s) return;
+    let feat = null;
+    if (entry) {
+      const feats = (layerCache['parking'] || {}).features || [];
+      feat = feats.find(f => entry.osm_id != null && String((f.properties || {})._osm_id) === String(entry.osm_id)) || null;
+      if (!feat && entry.lon != null && entry.lat != null) {
+        feat = { type: 'Feature', geometry: { type: 'Point', coordinates: [+entry.lon, +entry.lat] }, properties: {} };
+      }
+    }
+    s.setData({ type: 'FeatureCollection', features: feat ? [{ type: 'Feature', geometry: feat.geometry, properties: {} }] : [] });
   }
   function setLoopSpur(coords) {
     ensureLoopSel();
@@ -5553,6 +5601,8 @@
     if (s) s.setData({ type: 'FeatureCollection', features: [] });
     const sp = map.getSource('loop_spur');
     if (sp) sp.setData({ type: 'FeatureCollection', features: [] });
+    const pk = map.getSource('park_sel');
+    if (pk) pk.setData({ type: 'FeatureCollection', features: [] });
     if (map.getLayer('hiking_loops-line')) map.setPaintProperty('hiking_loops-line', 'line-opacity', LOOP_BASE_OPACITY);
     const le = document.getElementById('loop-list');
     if (le) le.querySelectorAll('.loop-item.sel').forEach(x => x.classList.remove('sel'));
@@ -5624,11 +5674,18 @@
     const gain = (p.elev_gain_ft != null && !isNaN(p.elev_gain_ft)) ? Math.round(+p.elev_gain_ft) + ' ft' : '';
     return [mi, gain].filter(Boolean).join(' · ');
   }
-  const byDist = (a, b) => (+a.properties.distance_mi || 0) - (+b.properties.distance_mi || 0);
+  // Loop sort: by distance or by elevation gain (ascending), per the sort header.
+  const loopSorter = (a, b) => {
+    const pa = a.properties || {}, pb = b.properties || {};
+    return trailLoopSort === 'gain'
+      ? (+pa.elev_gain_ft || 0) - (+pb.elev_gain_ft || 0)
+      : (+pa.distance_mi || 0) - (+pb.distance_mi || 0);
+  };
   // Search items: empty -> browse (trails at top, a trail's loops when drilled);
   // query -> loops within the current scope, matching the text.
   function trailsSearchItems(q) {
     const ql = (q || '').trim().toLowerCase();
+    trailShowingLoops = !!ql || trailBrowseTrail !== 'all';   // sort header only over loops
     if (ql) {
       const scope = trailBrowseTrail;
       return ((layerCache['hiking_loops'] || {}).features || [])
@@ -5637,7 +5694,7 @@
           if (!nm.toLowerCase().includes(ql) || !loopPassesFilter(f.properties)) return false;
           return scope === 'all' || loopTrailNames(f.properties).some(t => t.toLowerCase() === scope.toLowerCase());
         })
-        .sort(byDist).slice(0, 200)
+        .sort(loopSorter).slice(0, 200)
         .map(f => ({ name: f.properties.name || 'Loop', meta: loopMeta(f.properties), fly: () => { selectLoop(f); } }));
     }
     if (trailBrowseTrail === 'all') {
@@ -5652,7 +5709,7 @@
         }));
     }
     const items = [{ name: '↑ All Trails', meta: '', fly: () => { revealTrail('all'); return true; } }];
-    const loops = loopsForTrail(trailBrowseTrail).sort(byDist);
+    const loops = loopsForTrail(trailBrowseTrail).sort(loopSorter);
     loops.forEach(f => items.push({ name: f.properties.name || 'Loop', meta: loopMeta(f.properties), fly: () => { selectLoop(f); } }));
     if (!loops.length) items.push({ name: 'No loops on this trail', meta: '', fly: () => {} });
     return items;
@@ -5697,6 +5754,8 @@
       ensureLoopSel();
       map.getSource('loop_sel').setData({ type: 'FeatureCollection',
         features: [{ type: 'Feature', geometry: feature.geometry, properties: {} }] });
+      // Clear the spur + parking highlight when the loop popup closes.
+      if (typeof surface.on === 'function') surface.on('close', () => { setLoopSpur(); setParkSel(null); });
     }
     let sortMode = 'alpha';   // survives grade-pill rebuilds
 
@@ -5721,9 +5780,10 @@
         if (!parkSel) return;
         const e = nearLots[parkSel.selectedIndex];
         setLoopSpur(e && e.spur);
+        setParkSel(e || null);   // highlight the selected parking feature
       };
       if (parkSel) {
-        drawSpur();   // show the nearest lot's spur immediately
+        drawSpur();   // show the nearest lot's spur + highlight immediately
         parkSel.addEventListener('change', () => {
           drawSpur();
           const d = selectedLot();
