@@ -1859,6 +1859,8 @@
   let climbCountByKey = {};   // areaKey → # climbs in its sub-tree
   let climbBrowseArea = 'all';   // area whose children the climbing search lists
   let climbSearchRef = null;     // the climbing tab's search (buildTabSearch instance)
+  let trailBrowseTrail = 'all';  // trail whose loops the trail search lists ('all' = trail list)
+  let trailSearchRef = null;     // the trails tab's search (buildTabSearch instance)
 
   // Area-uuid chain a climb belongs to (root → immediate parent), newest schema
   // first; falls back to [area_id] then [area_name] for older imports.
@@ -5070,20 +5072,11 @@
       });
     }
     if (layers.some(l => l.source_key.startsWith('sauk_trail') || l.source_key === 'hiking_loops')) {
-      addTabSearch('trails', {
-        placeholder: 'Search trails…',
-        getItems: q => {
-          const ql = q.toLowerCase(), groups = new Map();
-          Object.keys(layerCache).forEach(k => {
-            if (!k.startsWith('sauk_trail')) return;
-            (layerCache[k].features || []).forEach(f => {
-              const n = (f.properties.name || '').trim();
-              if (n && (!ql || n.toLowerCase().includes(ql))) (groups.get(n) || groups.set(n, []).get(n)).push(f);
-            });
-          });
-          return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(0, 200)
-            .map(([name, feats]) => ({ name, meta: feats.length + ' seg', fly: () => flyToTrailName(feats) }));
-        },
+      // Hierarchical browse (mirrors climbing): trails are the higher step, the
+      // loops on a trail are the lower step (distance + elevation gain shown).
+      trailSearchRef = addTabSearch('trails', {
+        placeholder: 'Search trails & loops…',
+        getItems: q => trailsSearchItems(q),
       });
       addPane('trails', 'Trails', 'fa-person-hiking', p => buildTrailFilters(p, layers));
     }
@@ -5541,6 +5534,81 @@
         selectLoop(listEl._feats[+el.dataset.i]);
       });
     });
+  }
+
+  // ── Hierarchical trails browse (search column): trails -> their loops ──
+  // Named-trail features grouped by name (for fly/highlight + the trail list).
+  function trailNameGroups() {
+    const groups = new Map();
+    Object.keys(layerCache).forEach(k => {
+      if (!k.startsWith('sauk_trail')) return;
+      ((layerCache[k] || {}).features || []).forEach(f => {
+        const n = (f.properties.name || '').trim();
+        if (!n) return;
+        if (!groups.has(n)) groups.set(n, []);
+        groups.get(n).push(f);
+      });
+    });
+    return groups;
+  }
+  // The trail names a loop runs on (array prop, JSON string, or comma label).
+  function loopTrailNames(p) {
+    let t = p.trail_names;
+    if (typeof t === 'string') { try { t = JSON.parse(t); } catch { t = null; } }
+    if (Array.isArray(t)) return t.map(s => String(s).trim()).filter(Boolean);
+    if (typeof p.trails_label === 'string') return p.trails_label.split(',').map(s => s.trim()).filter(Boolean);
+    return [];
+  }
+  function loopsForTrail(name) {
+    const nl = name.toLowerCase();
+    return ((layerCache['hiking_loops'] || {}).features || [])
+      .filter(f => loopTrailNames(f.properties).some(t => t.toLowerCase() === nl));
+  }
+  // Loop list meta = distance + elevation gain (in place of climbing's grade).
+  function loopMeta(p) {
+    const mi = (p.distance_mi != null && !isNaN(p.distance_mi)) ? (+p.distance_mi).toFixed(1) + ' mi' : '';
+    const gain = (p.elev_gain_ft != null && !isNaN(p.elev_gain_ft)) ? Math.round(+p.elev_gain_ft) + ' ft' : '';
+    return [mi, gain].filter(Boolean).join(' · ');
+  }
+  const byDist = (a, b) => (+a.properties.distance_mi || 0) - (+b.properties.distance_mi || 0);
+  // Search items: empty -> browse (trails at top, a trail's loops when drilled);
+  // query -> loops within the current scope, matching the text.
+  function trailsSearchItems(q) {
+    const ql = (q || '').trim().toLowerCase();
+    if (ql) {
+      const scope = trailBrowseTrail;
+      return ((layerCache['hiking_loops'] || {}).features || [])
+        .filter(f => {
+          const nm = f.properties.name || '';
+          if (!nm.toLowerCase().includes(ql)) return false;
+          return scope === 'all' || loopTrailNames(f.properties).some(t => t.toLowerCase() === scope.toLowerCase());
+        })
+        .sort(byDist).slice(0, 200)
+        .map(f => ({ name: f.properties.name || 'Loop', meta: loopMeta(f.properties), fly: () => { selectLoop(f); } }));
+    }
+    if (trailBrowseTrail === 'all') {
+      return [...trailNameGroups().entries()]
+        .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true, sensitivity: 'base' }))
+        .slice(0, 400)
+        .map(([name, feats]) => {
+          const lc = loopsForTrail(name).length;
+          return { name, meta: lc ? `${lc} loop${lc === 1 ? '' : 's'} ›` : '›', fly: () => { revealTrail(name); return true; } };
+        });
+    }
+    const items = [{ name: '↑ All Trails', meta: '', fly: () => { revealTrail('all'); return true; } }];
+    const loops = loopsForTrail(trailBrowseTrail).sort(byDist);
+    loops.forEach(f => items.push({ name: f.properties.name || 'Loop', meta: loopMeta(f.properties), fly: () => { selectLoop(f); } }));
+    if (!loops.length) items.push({ name: 'No loops on this trail', meta: '', fly: () => {} });
+    return items;
+  }
+  // Select a trail (zoom + highlight) and reveal its loops in the search list.
+  function revealTrail(name) {
+    trailBrowseTrail = name;
+    if (name !== 'all') {
+      const feats = trailNameGroups().get(name);
+      if (feats && feats.length) flyToTrailName(feats);
+    }
+    if (trailSearchRef && trailSearchRef.open) trailSearchRef.open();
   }
 
   function openFeaturePopup(feature, sourceKey, lngLat) {
