@@ -6016,8 +6016,18 @@
   // loops when drilled, else all loops passing the filter).
   function fitHikingList() {
     if (!map || typeof mapboxgl === 'undefined') return;
-    // Trail level (browsing trail names): just center on Devil's Lake.
-    if (trailBrowseTrail === 'all') { map.easeTo({ center: [-89.73, 43.43], zoom: 12.5 }); return; }
+    // Trail level (browsing trail names): center on Devil's Lake, shifted down so
+    // it sits in the open space BELOW the list overlay (offset by ~half the list's
+    // on-screen height).
+    if (trailBrowseTrail === 'all') {
+      const mapRect = map.getContainer().getBoundingClientRect();
+      const list = document.querySelector('#fb-search-host .fb-search[data-tab="trails"] .fb-list');
+      let listBottom = 220;
+      if (list) { const r = list.getBoundingClientRect(); if (r.height) listBottom = r.bottom - mapRect.top; }
+      const offY = Math.min(listBottom / 2, mapRect.height * 0.35);
+      map.easeTo({ center: [-89.73, 43.43], zoom: 12.5, offset: [0, offY] });
+      return;
+    }
     const feats = loopsForTrail(trailBrowseTrail);
     if (!feats || !feats.length) return;
     const b = new mapboxgl.LngLatBounds();
