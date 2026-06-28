@@ -53,3 +53,11 @@ for geojson_file in sorted(osm_dir.glob("*.geojson")):
     print(f"  Done: {success} imported, {errors} errors\n")
 
 print("All layers imported.")
+
+# Name street-side parking after the adjacent road (migration 061). Idempotent;
+# needs the roads + parking layers present, which the loop above ensures.
+try:
+    res = supabase.rpc("name_street_parking", {}).execute()
+    print(f"Named {res.data} street-parking lots after their adjacent road.")
+except Exception as e:
+    print(f"name_street_parking skipped: {e}")
