@@ -916,6 +916,7 @@
     .tr-loop-sortbtn { background: #eef3e4; color: #4a7a2a; border: 1px solid #d7e3bf; border-radius: 6px;
       padding: 3px 8px; font-size: 10px; font-weight: 800; cursor: pointer; font-family: inherit; }
     .tr-loop-sortbtn.active { background: #4a7a2a; color: #fff; border-color: #4a7a2a; }
+    .tr-loop-list { max-height: 168px; overflow-y: auto; }
     .tr-loop-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left;
       background: #f4f7ee; border: 1px solid #e3ead6; border-radius: 6px; padding: 6px 9px; margin-bottom: 4px;
       color: #1f3a17; font-size: 12px; cursor: pointer; font-family: inherit; }
@@ -6158,7 +6159,7 @@
             const d = (+a.properties[key] || 0) - (+b.properties[key] || 0);
             return sort.dir === 'desc' ? -d : d;
           });
-          listEl.innerHTML = sorted.slice(0, 3).map(f =>
+          listEl.innerHTML = sorted.map(f =>
             `<button class="tr-loop-row" type="button" data-loop-id="${escapeHtml(String((f.properties || {}).id))}">
               <span class="tr-loop-nm">${escapeHtml(f.properties.name || 'Loop')}</span>
               <span class="tr-loop-meta">${escapeHtml(loopMeta(f.properties))}</span>
