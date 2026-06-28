@@ -413,8 +413,7 @@
     /* Per-tab search column (Climbing/Trails) — same width logic as .exp-bar-main:
        a 280px search-wrap + List button, so the search column matches camping. */
     #fb-search-host { display: flex; flex-direction: column; gap: 8px; flex: 0 1 auto; min-width: 0; }
-    #fb-search-host #cf-area { width: 100%; margin-top: 8px; }   /* Areas dropdown under the search bar */
-    #fb-search-host #cf-types { margin-top: 8px; }               /* type chips aligned under the dropdown */
+    #fb-search-host #cf-types { margin-top: 8px; }   /* type chips under the search bar */
     #exp-bar.collapsed #fb-search-host { display: none !important; }
     .fb-search { position: relative; }
     .fb-search .exp-search-wrap { flex: 0 1 280px; }
@@ -5007,18 +5006,18 @@
         placeholder: 'Search areas & climbs…',
         getItems: q => climbingSearchItems(q),
       });
-      // Move the Areas dropdown + type chips under the climbing search bar (the
-      // slot the DNR availability button occupies under the campground search), so
-      // the chips sit vertically aligned beneath the dropdown.
+      // Move the type chips under the climbing search bar. The old Areas dropdown
+      // is replaced by the hierarchical browse list (open via the List button), so
+      // it's hidden (kept in the DOM for its wiring) rather than shown here.
       const climbSearchEl = searchHost && searchHost.querySelector('.fb-search[data-tab="climbing"]');
       if (climbSearchEl) {
         const fbList = climbSearchEl.querySelector('.fb-list');
-        ['cf-area', 'cf-types'].forEach(id => {
+        ['cf-types'].forEach(id => {
           const el = document.getElementById(id);
           if (!el) return;
           const lbl = el.previousElementSibling;
           if (lbl && lbl.classList.contains('cf-label')) lbl.remove();
-          climbSearchEl.insertBefore(el, fbList);   // under the search row, in order
+          climbSearchEl.insertBefore(el, fbList);   // under the search row
         });
       }
       addPane('climbing', 'Climbing', 'fa-mountain-sun', p => {
@@ -5032,10 +5031,16 @@
         if (cp.dataset.fbReflow) return;
         cp.dataset.fbReflow = '1';
         // Keep the in-panel .cf-search-wrap in the DOM (hidden via CSS) — its
-        // #cf-search input is still wired by setupClimbingFilterListeners; the
-        // visible search lives in the search column.
-        // (Areas dropdown + type chips now live under the search bar in the
-        // search column; the pane keeps just the grade sliders.)
+        // #cf-search input is still wired by setupClimbingFilterListeners.
+        // The Areas <select> is replaced by the hierarchical browse list, so hide
+        // it (and drop its label) but keep it in the DOM for its change/reset wiring.
+        const areaSel = cp.querySelector('#cf-area');
+        if (areaSel) {
+          const al = areaSel.previousElementSibling;
+          if (al && al.classList.contains('cf-label')) al.remove();
+          areaSel.style.display = 'none';
+        }
+        // (Type chips now live under the search bar; the pane keeps just the sliders.)
         const grades = document.createElement('div'); grades.className = 'cf-grades';
         cp.querySelectorAll('.cf-vrange').forEach(vr => {
           const grp = document.createElement('div'); grp.className = 'cf-grade';
