@@ -413,6 +413,7 @@
     /* Per-tab search column (Climbing/Trails) — same width logic as .exp-bar-main:
        a 280px search-wrap + List button, so the search column matches camping. */
     #fb-search-host { display: flex; flex-direction: column; gap: 8px; flex: 0 1 auto; min-width: 0; }
+    #fb-search-host #cf-area { width: 100%; margin-top: 8px; }   /* Areas dropdown under the search bar */
     #exp-bar.collapsed #fb-search-host { display: none !important; }
     .fb-search .exp-search-wrap { flex: 0 1 280px; }
     .fb-list { display: none; flex-direction: column; gap: 2px; max-height: 240px; overflow-y: auto; margin-top: 6px;
@@ -4863,6 +4864,12 @@
     const tabsEl = document.getElementById('fb-tabs');
     const searchHost = document.getElementById('fb-search-host');
     if (!host || !tabsEl) return;
+    // Rescue the Areas dropdown back into the climbing panel before clearing the
+    // search column — it gets relocated under the climbing search and would
+    // otherwise be destroyed (with its wiring) on rebuild.
+    const cpPanel0 = document.getElementById('climbing-filter-panel');
+    const area0 = document.getElementById('cf-area');
+    if (cpPanel0 && area0 && !cpPanel0.contains(area0)) cpPanel0.appendChild(area0);
     host.innerHTML = '';
     tabsEl.innerHTML = '';
     if (searchHost) searchHost.innerHTML = '';
@@ -4905,6 +4912,16 @@
           return out.slice(0, 200);
         },
       });
+      // Move the Areas dropdown under the climbing search bar (the slot the DNR
+      // availability button occupies under the campground search).
+      const climbSearchEl = searchHost && searchHost.querySelector('.fb-search[data-tab="climbing"]');
+      const areaSel = document.getElementById('cf-area');
+      if (climbSearchEl && areaSel) {
+        const lbl = areaSel.previousElementSibling;
+        if (lbl && lbl.classList.contains('cf-label')) lbl.remove();
+        const fbList = climbSearchEl.querySelector('.fb-list');
+        climbSearchEl.insertBefore(areaSel, fbList);   // directly under the search row
+      }
       addPane('climbing', 'Climbing', 'fa-mountain-sun', p => {
         const cp = document.getElementById('climbing-filter-panel');
         if (!cp) return;
@@ -4918,8 +4935,8 @@
         // Keep the in-panel .cf-search-wrap in the DOM (hidden via CSS) — its
         // #cf-search input is still wired by setupClimbingFilterListeners; the
         // visible search lives in the search column.
+        // (Areas dropdown now lives under the search bar in the search column.)
         const dropLabel = el => { if (!el) return; const l = el.previousElementSibling; if (l && l.classList.contains('cf-label')) l.remove(); };
-        const area = cp.querySelector('#cf-area'); dropLabel(area);
         const types = cp.querySelector('#cf-types'); dropLabel(types);
         const grades = document.createElement('div'); grades.className = 'cf-grades';
         cp.querySelectorAll('.cf-vrange').forEach(vr => {
@@ -4930,7 +4947,6 @@
           grades.appendChild(grp);
         });
         // Reorder the controls in the panel (appendChild moves existing nodes).
-        if (area) cp.appendChild(area);
         cp.appendChild(grades);
         if (types) cp.appendChild(types);
         const rc = cp.querySelector('#cf-result-count'); if (rc) cp.appendChild(rc);
