@@ -436,10 +436,14 @@
     .cf-grade .cf-vrange { margin-left: 0; margin-right: 0; }
     #exp-filters #cf-types { margin-top: 10px; }
     /* Climbing: top-align the columns so the Route/Boulder grade headings line up
-       with the top of the search bar. */
+       with the top of the search bar, and span each grade column to the search
+       bar's height so the slider sits at its bottom edge. */
     #exp-bar[data-filter-tab="climbing"] .exp-bar-row { align-items: flex-start; }
     #exp-bar[data-filter-tab="climbing"] #exp-filters .cf-grades .cf-label { margin-top: 0; }
     #exp-bar[data-filter-tab="climbing"] #exp-filters .cf-grades { margin-top: 0; }
+    #exp-bar[data-filter-tab="climbing"] #exp-filters .cf-grade {
+      display: flex; flex-direction: column; justify-content: space-between; min-height: 35px; }
+    #exp-bar[data-filter-tab="climbing"] #exp-filters .cf-grade .cf-vrange { margin-top: 0; margin-bottom: 0; }
     @media (max-width: 600px) {
       #fb-search-host { flex: 1 1 100%; order: 1; }
       #exp-filters .fb-body { width: auto; }
