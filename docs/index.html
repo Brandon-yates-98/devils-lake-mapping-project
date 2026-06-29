@@ -5641,6 +5641,12 @@
     (sourceToMapboxLayers[sourceKey] || []).forEach(id => {
       if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', val);
     });
+    // Drop any selection/hover highlight tied to a layer that's being hidden, so
+    // it doesn't linger after the layer is toggled off (any toggle path).
+    if (!visible) {
+      if (sourceKey === 'hiking_loops') clearLoopSel();
+      else if (sourceKey.indexOf('sauk_trail') === 0) clearTrailHighlight();
+    }
   }
 
   // ── Interactions ─────────────────────────────────────────────
@@ -6032,7 +6038,7 @@
       let listBottom = 220;
       if (list) { const r = list.getBoundingClientRect(); if (r.height) listBottom = r.bottom - mapRect.top; }
       const offY = Math.min(listBottom / 2, mapRect.height * 0.35);
-      map.easeTo({ center: [-89.73, 43.43], zoom: 11, offset: [0, offY] });
+      map.easeTo({ center: [-89.73, 43.43], zoom: 10.75, offset: [0, offY] });
       return;
     }
     const feats = loopsForTrail(trailBrowseTrail);
