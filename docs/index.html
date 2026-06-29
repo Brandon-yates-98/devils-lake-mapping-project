@@ -895,7 +895,7 @@
     .tr-pop-body { background: #fff; padding: 11px 13px 12px; }
     .tr-pop-facts { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11.5px; color: #5a6a4a; margin-bottom: 8px; }
     .tr-pop-facts i { font-size: 10px; color: #9bc23c; margin-right: 3px; }
-    .tr-pop-elev { margin: 0 0 9px; }
+    .tr-pop-elev { margin: 0 0 9px; cursor: crosshair; }
     .tr-pop-elev svg { display: block; width: 100%; height: 44px; }
     .tr-elev-cap { margin-top: 2px; font-size: 9.5px; color: #9aa19a; text-align: right; }
     .tr-pop-parking { margin: 0 0 9px; }
@@ -3731,14 +3731,30 @@
     const lo = Math.min(...prof), hi = Math.max(...prof), span = (hi - lo) || 1, n = prof.length;
     const px = i => pad + (W - 2 * pad) * (i / (n - 1));
     const py = v => pad + (H - 2 * pad) * (1 - (v - lo) / span);
-    const pts = prof.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(' ');
-    const area = `${pad},${(H - pad).toFixed(1)} ${pts} ${(W - pad).toFixed(1)},${(H - pad).toFixed(1)}`;
+    const baseY = (H - pad).toFixed(1);
     const c = color || SAUK_TRAIL_DEFAULT.color;
+    // Per-segment fill colored by slope: red >10%, yellow 5–10%, else the trail
+    // color. Needs the total length to convert sample spacing to feet.
+    const totalMi = (props.length_mi != null && !isNaN(props.length_mi)) ? +props.length_mi
+      : (props.distance_mi != null && !isNaN(props.distance_mi)) ? +props.distance_mi : null;
+    const segFt = totalMi != null ? (totalMi * 5280) / (n - 1) : null;
+    let segPolys = '';
+    for (let i = 0; i < n - 1; i++) {
+      let fill = c, op = 0.13;
+      if (segFt) {
+        const slope = Math.abs(prof[i + 1] - prof[i]) / segFt * 100;
+        if (slope > 10) { fill = '#d93025'; op = 0.45; }
+        else if (slope >= 5) { fill = '#e6a817'; op = 0.42; }
+      }
+      segPolys += `<polygon points="${px(i).toFixed(1)},${baseY} ${px(i).toFixed(1)},${py(prof[i]).toFixed(1)} ${px(i + 1).toFixed(1)},${py(prof[i + 1]).toFixed(1)} ${px(i + 1).toFixed(1)},${baseY}" fill="${fill}" fill-opacity="${op}"></polygon>`;
+    }
+    const pts = prof.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(' ');
     const cap = `${lo.toLocaleString()}–${hi.toLocaleString()} ft`;
     return `<div class="tr-pop-elev">
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-        <polygon points="${area}" fill="${c}" fill-opacity="0.13"></polygon>
-        <polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        ${segPolys}
+        <polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>
+        <line class="tr-elev-cursor" x1="0" y1="0" x2="0" y2="${H}" stroke="#14250f" stroke-width="1" vector-effect="non-scaling-stroke" style="display:none"></line>
       </svg>
       <div class="tr-elev-cap">${cap}</div>
     </div>`;
@@ -5812,6 +5828,8 @@
   function clearTrailHighlight() {
     const s = map.getSource('trail_hl');
     if (s) s.setData({ type: 'FeatureCollection', features: [] });
+    const pp = map.getSource('profile_pt');
+    if (pp) pp.setData({ type: 'FeatureCollection', features: [] });
   }
 
   // ── Hiking Loops browser ─────────────────────────────────────
@@ -5855,6 +5873,42 @@
     map.addLayer({ id: 'park_sel-pt', type: 'circle', source: 'park_sel', filter: PT,
       paint: { 'circle-color': '#1f5fa8', 'circle-radius': 8, 'circle-opacity': 0.85,
         'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
+    // "You are here" marker for the elevation-profile hover.
+    map.addSource('profile_pt', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({ id: 'profile_pt-dot', type: 'circle', source: 'profile_pt',
+      paint: { 'circle-radius': 6, 'circle-color': '#fff', 'circle-stroke-color': '#d93025', 'circle-stroke-width': 3 } });
+  }
+  // Flatten a line/multiline geometry to a single coordinate sequence.
+  function flattenLineCoords(geom) {
+    if (!geom) return [];
+    if (geom.type === 'LineString') return geom.coordinates;
+    if (geom.type === 'MultiLineString') return geom.coordinates.flat();
+    return [];
+  }
+  // The lon/lat at fraction t (0..1) of a coordinate sequence's length.
+  function pointAlongLine(coords, t) {
+    if (!coords || coords.length < 2) return coords && coords[0] || null;
+    const seg = []; let total = 0;
+    for (let i = 0; i < coords.length - 1; i++) {
+      const a = coords[i], b = coords[i + 1];
+      const latMid = (a[1] + b[1]) / 2 * Math.PI / 180;
+      const d = Math.hypot((b[0] - a[0]) * Math.cos(latMid), b[1] - a[1]);
+      seg.push(d); total += d;
+    }
+    let target = Math.max(0, Math.min(1, t)) * total, acc = 0;
+    for (let i = 0; i < seg.length; i++) {
+      if (acc + seg[i] >= target) {
+        const f = seg[i] ? (target - acc) / seg[i] : 0, a = coords[i], b = coords[i + 1];
+        return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+      }
+      acc += seg[i];
+    }
+    return coords[coords.length - 1];
+  }
+  function setProfilePoint(coord) {
+    ensureLoopSel();
+    const s = map.getSource('profile_pt');
+    if (s) s.setData({ type: 'FeatureCollection', features: coord ? [{ type: 'Feature', geometry: { type: 'Point', coordinates: coord }, properties: {} }] : [] });
   }
   // Highlight the parking lot for a nearby_parking entry: the real parking feature
   // (matched by OSM id) if cached, else a point at the entry's centroid.
@@ -5908,6 +5962,8 @@
     if (s) s.setData({ type: 'FeatureCollection', features: [] });
     const hv = map.getSource('loop_hover');
     if (hv) hv.setData({ type: 'FeatureCollection', features: [] });
+    const pp = map.getSource('profile_pt');
+    if (pp) pp.setData({ type: 'FeatureCollection', features: [] });
     const sp = map.getSource('loop_spur');
     if (sp) sp.setData({ type: 'FeatureCollection', features: [] });
     const pk = map.getSource('park_sel');
@@ -6217,6 +6273,21 @@
           flyToClimb(fsrc, fid);
         });
       });
+      // Interactive elevation profile: hovering shows the position on the map.
+      const elev = el.querySelector('.tr-pop-elev');
+      if (elev && feature.geometry) {
+        const coords = flattenLineCoords(feature.geometry);
+        const cursor = elev.querySelector('.tr-elev-cursor');
+        if (coords.length > 1) {
+          elev.addEventListener('mousemove', e => {
+            const r = elev.getBoundingClientRect();
+            const t = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+            setProfilePoint(pointAlongLine(coords, t));
+            if (cursor) { const x = (3 + 234 * t).toFixed(1); cursor.setAttribute('x1', x); cursor.setAttribute('x2', x); cursor.style.display = ''; }
+          });
+          elev.addEventListener('mouseleave', () => { setProfilePoint(null); if (cursor) cursor.style.display = 'none'; });
+        }
+      }
       // Trail popup → loops on this trail: top 3, sortable by length / elev gain.
       const loopBox = el.querySelector('.tr-pop-loops');
       if (loopBox && sourceKey.startsWith('sauk_trail')) {
