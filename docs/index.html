@@ -1458,10 +1458,22 @@
       background: rgba(255,255,255,0.25); flex-shrink: 0;
     }
     .sheet-handle-title {
-      align-self: stretch; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+      align-self: stretch; display: flex; align-items: center; flex-wrap: nowrap; gap: 8px;
     }
     .sheet-handle-title .tr-pop-type { margin-top: 0; margin-left: auto; }
-    .feature-sheet-content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    /* Header text bumped up 2px (title 14→16, facts 11→13, chip 10→12). */
+    /* Title takes the slack and ellipsizes; the facts + chip keep their size and stay on
+       the one line, so a long trail/loop name never wraps or grows the header. */
+    .sheet-handle-title .tr-pop-title {
+      font-size: 16px; min-width: 0; flex: 0 1 auto;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sheet-handle-title .tr-pop-headfact { font-size: 13px; flex-shrink: 0; }
+    .sheet-handle-title .tr-pop-type { font-size: 12px; flex-shrink: 0; }
+    .sheet-handle-title .tr-pop-type i { font-size: 11px; }
+    /* White fill so enlarging the sheet past its content shows white (matching the card
+       bodies), not the dark sheet background. */
+    .feature-sheet-content { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #fff; }
     #feature-sheet .popup-header { border-radius: 0; }
     /* Popup content is authored for the narrow desktop popup (e.g. custom
        templates set .cp { width: 262px }). In the full-width bottom sheet, let
@@ -5757,13 +5769,15 @@
 
     Object.keys(layerToSource).forEach(lid => {
       if (lid === 'trails-line' || lid === 'trails-glow' || lid === 'trails-case') return;
+      if (layerToSource[lid] === 'roads') return;   // roads carry no useful popup — not interactive
       map.on('mouseenter', lid, () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', lid, () => { map.getCanvas().style.cursor = ''; });
     });
 
     const interactiveLayerIds = Object.keys(layerToSource).filter(lid =>
       !lid.endsWith('-glow') && !lid.endsWith('-case') && !lid.endsWith('-outline')
-      && !lid.startsWith('campground_hulls-'));
+      && !lid.startsWith('campground_hulls-')
+      && layerToSource[lid] !== 'roads');   // roads not clickable — their popup has no real info
     interactiveLayerIds.forEach(lid => {
       map.on('click', lid, (e) => {
         if (e.originalEvent._popupHandled) return;
@@ -5822,32 +5836,60 @@
       head.remove();
     };
     const setContent = h => { content.innerHTML = h; content.scrollTop = 0; hoistHeader(); };
+    // Fully hide the sheet by sliding it off with a viewport-relative transform. (The CSS
+    // translateY(110%) is only 110% of the current height, so a resized/shrunk sheet stayed
+    // partly on-screen and un-grabbable on iOS Safari with its dynamic bottom bar.)
+    const expBar = document.getElementById('exp-bar');
+    const hide = () => {
+      sheet.style.transition = 'transform 0.25s ease';
+      sheet.style.transform = 'translateY(110vh)';
+      sheet.classList.remove('open');
+      // Re-open the search module now the popup is gone.
+      if (expBar) { expBar.classList.remove('collapsed'); syncBarHeight(); }
+    };
+    // Fresh open: clear leftover resize/hide inline styles so it fits content and animates up.
+    sheet.style.height = ''; sheet.style.maxHeight = ''; sheet.style.transform = ''; sheet.style.transition = '';
     setContent(html);
     requestAnimationFrame(() => sheet.classList.add('open'));
+    // Collapse the search module while the popup is up (restored by hide()).
+    if (expBar) { expBar.classList.add('collapsed'); syncBarHeight(); }
     if (!_sheetWired) {
       _sheetWired = true;
-      // Swipe the handle bar (pill + title) down to dismiss.
-      let startY = null;
-      const dragStart = e => { startY = e.touches[0].clientY; sheet.style.transition = 'none'; };
+      // Bi-directional resize: drag the handle UP to enlarge the sheet, DOWN to shrink
+      // it; shrink it far enough and release to dismiss.
+      let startY = null, startH = 0;
+      const vh = () => window.innerHeight;
+      const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+      const dragStart = e => {
+        startY = e.touches[0].clientY;
+        startH = sheet.getBoundingClientRect().height;
+        sheet.style.transition = 'none';
+        sheet.style.transform = '';                        // drop any leftover hide transform
+        sheet.style.maxHeight = 'none';                    // allow growing past the default 70dvh cap
+      };
       const dragMove = e => {
         if (startY == null) return;
-        const dy = Math.max(0, e.touches[0].clientY - startY);
-        sheet.style.transform = `translateY(${dy}px)`;
-        if (dy > 0) e.preventDefault();   // don't let the content scroll while dragging
+        const dy = startY - e.touches[0].clientY;          // drag up → positive → taller
+        sheet.style.height = clamp(startH + dy, 48, vh() * 0.92) + 'px';
+        e.preventDefault();                                // resize instead of scrolling the content
       };
-      const dragEnd = e => {
-        sheet.style.transition = ''; sheet.style.transform = '';
-        if (startY != null && e.changedTouches[0].clientY - startY > 80) sheet.classList.remove('open');
+      const dragEnd = () => {
+        if (startY == null) return;
+        const h = sheet.getBoundingClientRect().height;
         startY = null;
+        if (h < vh() * 0.16) { hide(); return; }                             // shrunk small → dismiss (fully hide)
+        sheet.style.transition = '';
+        sheet.style.height = clamp(h, vh() * 0.28, vh() * 0.92) + 'px';       // else settle within bounds
       };
       handle.addEventListener('touchstart', dragStart, { passive: true });
       handle.addEventListener('touchmove', dragMove, { passive: false });
       handle.addEventListener('touchend', dragEnd);
+      handle.addEventListener('touchcancel', dragEnd);
     }
     return {
       getElement: () => sheet,
       setHTML: h => setContent(h),
-      remove: () => sheet.classList.remove('open'),
+      remove: () => hide(),
     };
   }
 
