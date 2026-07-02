@@ -939,6 +939,10 @@
     .tr-pop-title { font-size: 14px; font-weight: 800; color: #fff; line-height: 1.25; }
     .tr-pop-type { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; padding: 2px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; color: #fff; }
     .tr-pop-type i { font-size: 9px; }
+    /* Trail distance shown in the header (next to the title/chip). Light text so it
+       reads on the green desktop header and the dark mobile handle alike. */
+    .tr-pop-headfact { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.82); white-space: nowrap; vertical-align: middle; }
+    .tr-pop-headfact i { font-size: 9px; color: #9bc23c; margin-right: 3px; }
     .tr-pop-body { background: #fff; padding: 11px 13px 12px; }
     .tr-pop-facts { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11.5px; color: #5a6a4a; margin-bottom: 8px; }
     .tr-pop-facts i { font-size: 10px; color: #9bc23c; margin-right: 3px; }
@@ -1442,24 +1446,21 @@
     /* Full-width, tall invisible grab zone — the bare 4px pill is nearly impossible to
        hit with a fingertip. The visible pill (::before) stays pinned near the top; the
        whole strip below it is draggable. */
+    /* The drag handle doubles as the header: a centered pill on top, then the popup's
+       title + chip (hoisted up from the content by openFeatureSheet). The whole bar drags. */
     .feature-sheet-handle {
-      width: 100%; height: 56px; flex-shrink: 0; box-sizing: border-box;
-      margin: 0; padding-top: 9px; cursor: grab; touch-action: none;
-      display: flex; align-items: flex-start; justify-content: center;
+      width: 100%; flex-shrink: 0; box-sizing: border-box;
+      margin: 0; padding: 8px 13px 10px; cursor: grab; touch-action: none;
+      display: flex; flex-direction: column; align-items: center; gap: 7px;
     }
     .feature-sheet-handle::before {
       content: ''; width: 40px; height: 4px; border-radius: 2px;
-      background: rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.25); flex-shrink: 0;
     }
-    /* Dark chip so the ✕ stays visible over BOTH the dark header and the light
-       "Back to trail" button (loops opened from a trail render that button on top). */
-    .feature-sheet-close {
-      position: absolute; top: 6px; right: 8px; z-index: 2;
-      width: 40px; height: 40px;
-      background: rgba(0,0,0,0.45); border: none; border-radius: 8px;
-      color: #fff; font-size: 18px; cursor: pointer;
+    .sheet-handle-title {
+      align-self: stretch; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
     }
-    .feature-sheet-close:active { background: rgba(0,0,0,0.65); }
+    .sheet-handle-title .tr-pop-type { margin-top: 0; margin-left: auto; }
     .feature-sheet-content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
     #feature-sheet .popup-header { border-radius: 0; }
     /* Popup content is authored for the narrow desktop popup (e.g. custom
@@ -1477,16 +1478,8 @@
     #feature-sheet .cs-pop-svcap { color: rgba(255,255,255,0.6); }
     #feature-sheet .cs-fact-details { color: rgba(255,255,255,0.72); }
     #feature-sheet .cs-pop-attr { color: rgba(255,255,255,0.5); }
-    /* Trail/loop header: drop the dark green bar so the title + chip blend into the
-       sheet, and make the whole header a drag-to-dismiss grab surface (no ✕ on mobile). */
-    #feature-sheet .tr-pop-head {
-      background: none; border-bottom: none; padding: 0 13px;
-      cursor: grab; touch-action: none;
-      /* Title + chip share one row (they were stacked) and padding is trimmed, so the
-         header is ~half its previous height. Wraps to two rows for very long titles. */
-      display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-    }
-    #feature-sheet .tr-pop-head .tr-pop-type { margin-top: 0; }
+    /* Trail/loop title + chip are hoisted into the drag handle (see .sheet-handle-title),
+       so the in-content header is removed on mobile — no #feature-sheet .tr-pop-head needed. */
     /* Campground popup: drive times stacked, beside the price (mobile sheet). */
     #feature-sheet .cp-summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
     #feature-sheet .cp-pricecol { min-width: 0; }
@@ -3857,8 +3850,7 @@
       : (props.length_mi != null && !isNaN(props.length_mi)) ? `${(+props.length_mi).toFixed(1)} mi` : '';
     const gain = (se.elev_gain_ft != null && !isNaN(se.elev_gain_ft)) ? `${Math.round(+se.elev_gain_ft)} ft gain` : '';
     const facts = [
-      fact('fa-ruler-horizontal', len),
-      fact('fa-mountain', gain),
+      // distance + elevation gain moved up to the header (see .tr-pop-headfact)
       fact('fa-gauge-high', props.skill_level),
       fact('fa-road', props.surface),
       fact('fa-circle-check', props.condition),
@@ -3881,6 +3873,8 @@
     return `<div class="dl-popup-custom"><div class="tr-pop">
       <div class="tr-pop-head" style="border-bottom-color:${meta.color}">
         <div class="tr-pop-title">${escapeHtml(name)}</div>
+        ${len ? `<span class="tr-pop-headfact"><i class="fa-solid fa-ruler-horizontal"></i> ${len}</span>` : ''}
+        ${gain ? `<span class="tr-pop-headfact"><i class="fa-solid fa-mountain"></i> ${gain}</span>` : ''}
         ${type ? `<span class="tr-pop-type" style="background:${meta.color}"><i class="fa-solid ${meta.icon}"></i> ${escapeHtml(type)}</span>` : ''}
       </div>
       <div class="tr-pop-body">
@@ -5815,13 +5809,25 @@
   function openFeatureSheet(html) {
     const sheet = document.getElementById('feature-sheet');
     const content = sheet.querySelector('.feature-sheet-content');
-    content.innerHTML = html;
-    content.scrollTop = 0;
+    const handle = sheet.querySelector('.feature-sheet-handle');
+    // Move the popup's title + chip up into the drag handle so the handle bar IS the
+    // header (no separate header row). Runs on every (re)render of the content.
+    const hoistHeader = () => {
+      handle.querySelector('.sheet-handle-title')?.remove();   // clear the previous feature's title
+      const head = content.querySelector('.tr-pop-head');
+      if (!head) return;
+      const holder = document.createElement('div');
+      holder.className = 'sheet-handle-title';
+      while (head.firstChild) holder.appendChild(head.firstChild);   // title + type chip
+      handle.appendChild(holder);
+      head.remove();
+    };
+    const setContent = h => { content.innerHTML = h; content.scrollTop = 0; hoistHeader(); };
+    setContent(html);
     requestAnimationFrame(() => sheet.classList.add('open'));
     if (!_sheetWired) {
       _sheetWired = true;
-      // Swipe down to dismiss — via the handle pill OR by dragging the popup header
-      // (the title + chip). The header is re-injected per feature, so it's delegated.
+      // Swipe the handle bar (pill + title) down to dismiss.
       let startY = null;
       const dragStart = e => { startY = e.touches[0].clientY; sheet.style.transition = 'none'; };
       const dragMove = e => {
@@ -5835,18 +5841,13 @@
         if (startY != null && e.changedTouches[0].clientY - startY > 80) sheet.classList.remove('open');
         startY = null;
       };
-      const handle = sheet.querySelector('.feature-sheet-handle');
       handle.addEventListener('touchstart', dragStart, { passive: true });
       handle.addEventListener('touchmove', dragMove, { passive: false });
       handle.addEventListener('touchend', dragEnd);
-      // Header drag: only start when the touch lands on the title header.
-      content.addEventListener('touchstart', e => { if (e.target.closest('.tr-pop-head')) dragStart(e); }, { passive: true });
-      content.addEventListener('touchmove', e => { if (startY != null) dragMove(e); }, { passive: false });
-      content.addEventListener('touchend', dragEnd);
     }
     return {
       getElement: () => sheet,
-      setHTML: (h) => { content.innerHTML = h; content.scrollTop = 0; },
+      setHTML: h => setContent(h),
       remove: () => sheet.classList.remove('open'),
     };
   }
